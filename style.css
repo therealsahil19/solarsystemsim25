@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+    overflow: hidden; /* Hide scrollbars */
+}
+
+canvas {
+    display: block; /* Remove bottom space */
+}
+
+#ui-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: sans-serif;
+    z-index: 100;
+}
+
+#info-panel {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+    width: 250px;
+}
+
+#info-panel.hidden {
+    display: none;
+}
+
+#controls-panel {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#controls-panel label {
+    display: block;
+    margin-bottom: 5px;
+}

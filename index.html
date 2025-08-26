@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="bg"></canvas>
+
+    <div id="ui-container">
+        <div id="info-panel" class="hidden">
+            <h2 id="info-name"></h2>
+            <p><strong>Radius:</strong> <span id="info-radius"></span> km</p>
+            <p><strong>Distance from Sun:</strong> <span id="info-distance"></span> AU</p>
+            <p><strong>Orbital Period:</strong> <span id="info-period"></span> days</p>
+        </div>
+        <div id="controls-panel">
+            <label for="speed-slider">Simulation Speed</label>
+            <input type="range" id="speed-slider" min="0" max="500" value="50">
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
