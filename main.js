@@ -30,15 +30,10 @@ scene.add(ambientLight);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 32, 32),
-    new THREE.MeshStandardMaterial({ emissive: 0xffff00 })
-);
-scene.add(sun);
-
 // --- Simulation Core ---
 const textureLoader = new THREE.TextureLoader();
 const planetData = [
+    { name: 'Sun', radius: 696340, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1 },
     { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0 },
     { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7 },
     { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, moons: [
@@ -62,8 +57,14 @@ function scaleDistance(au) {
     return (2.5 * scale) + (10 * Math.log2(au / 2));
 }
 
+function scaleBodyRadius(radius) {
+    const scale = 0.018;
+    return scale * Math.sqrt(radius);
+}
+
 const celestialObjects = [];
 const selectableObjects = [];
+let sun;
 
 planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
@@ -71,12 +72,17 @@ planetData.forEach(p_data => {
 
     const scaledDistance = scaleDistance(p_data.semiMajorAxis);
 
-    const planetGeometry = new THREE.SphereGeometry(Math.log10(p_data.radius), 32, 32);
+    const planetGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius), 32, 32);
     const planetMaterial = new THREE.MeshStandardMaterial({ color: p_data.color });
     const planet = new THREE.Mesh(planetGeometry, planetMaterial);
     planet.userData = { name: p_data.name, type: 'planet', data: p_data };
     planetGroup.add(planet);
     selectableObjects.push(planet);
+
+    if (p_data.name === 'Sun') {
+        sun = planet;
+        planet.material.emissive = new THREE.Color(0xffff00);
+    }
 
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
@@ -98,8 +104,8 @@ planetData.forEach(p_data => {
 
     if (p_data.moons) {
         celestialObject.moons.forEach(m_data => {
-            const moonScaledDistance = Math.log10(p_data.radius) + m_data.semiMajorAxis * 200;
-            const moonGeometry = new THREE.SphereGeometry(Math.log10(m_data.radius), 16, 16);
+            const moonScaledDistance = scaleBodyRadius(p_data.radius) + m_data.semiMajorAxis * 200;
+            const moonGeometry = new THREE.SphereGeometry(scaleBodyRadius(m_data.radius), 16, 16);
             const moonMaterial = new THREE.MeshStandardMaterial({ color: m_data.color });
             const moon = new THREE.Mesh(moonGeometry, moonMaterial);
             moon.userData = { name: m_data.name, type: 'moon', data: m_data, parent: p_data };
@@ -232,7 +238,7 @@ function animate() {
 
         if (p.moons) {
             p.moons.forEach(m => {
-                const moonScaledDistance = Math.log10(p.radius) + m.semiMajorAxis * 200;
+                const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
                 const moonAngle = (2 * Math.PI * simulationTime) / m.orbitalPeriod;
                 m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
                 m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
