@@ -52,9 +52,33 @@ const planetData = [
 ];
 
 function scaleDistance(au) {
-    const scale = 15;
-    if (au <= 2.5) { return au * scale; }
-    return (2.5 * scale) + (10 * Math.log2(au / 2));
+    if (au === 0) return 0; // Sun is at the center
+
+    // Inner planets (Mercury, Venus, Earth, Mars) - up to 1.8 AU
+    if (au <= 1.8) {
+        // Start at 30 to be clear of the sun, then scale linearly
+        return 30 + au * 25;
+    }
+
+    // Gap, then Asteroid Belt - up to 3.5 AU
+    if (au <= 3.5) {
+        // Scaled position of Mars (approx) + a gap
+        const marsPosition = 30 + 1.524 * 25; // ~68.1
+        const gap = 30;
+        const beltStart = marsPosition + gap; // ~98.1
+
+        // Scale the region from Mars's orbit to the end of the belt region
+        return beltStart + (au - 1.524) * 15;
+    }
+
+    // Gap, then Outer Planets - beyond 3.5 AU
+    // Scaled position of the end of the belt region (at 3.5 AU)
+    const beltEndPosition = (30 + 1.524 * 25) + 30 + (3.5 - 1.524) * 15; // ~127.74
+    const outerGap = 50;
+    const outerStart = beltEndPosition + outerGap; // ~177.74
+
+    // Use a more aggressive linear scale for outer planets
+    return outerStart + (au - 3.5) * 30;
 }
 
 function scaleBodyRadius(radius) {
@@ -127,9 +151,9 @@ planetData.forEach(p_data => {
 function createStarryBackground() {
     const starVertices = [];
     for (let i = 0; i < 10000; i++) {
-        const x = (Math.random() - 0.5) * 2000;
-        const y = (Math.random() - 0.5) * 2000;
-        const z = (Math.random() - 0.5) * 2000;
+        const x = (Math.random() - 0.5) * 4000;
+        const y = (Math.random() - 0.5) * 4000;
+        const z = (Math.random() - 0.5) * 4000;
         starVertices.push(x, y, z);
     }
     const starGeometry = new THREE.BufferGeometry();
@@ -160,7 +184,7 @@ function createAsteroidBelt() {
 
 function createOortCloud() {
     const oortVertices = [];
-    const oortRadius = 1000;
+    const oortRadius = 1500;
     for (let i = 0; i < 1000; i++) {
         const u = Math.random();
         const v = Math.random();
