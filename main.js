@@ -127,7 +127,7 @@ const planetData = [
 function scaleRingRadius(radiusKm) {
     return radiusKm / 8000;
 }
-    }, moons: [
+    , moons: [
         { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
         { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
         { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
