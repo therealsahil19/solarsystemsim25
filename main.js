@@ -40,15 +40,29 @@ const planetData = [
         { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3 }
     ]},
     { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0 },
-    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, moons: [
+    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, rings: { innerRadius: 7, outerRadius: 9, color: 0xffd8ad }, moons: [
         { name: 'Io', radius: 1821, color: 0.0028, semiMajorAxis: 0.03, orbitalPeriod: 1.77 },
         { name: 'Europa', radius: 1560, color: 0.0045, semiMajorAxis: 0.04, orbitalPeriod: 3.55 },
         { name: 'Ganymede', radius: 2634, color: 0.0071, semiMajorAxis: 0.05, orbitalPeriod: 7.15 },
         { name: 'Callisto', radius: 2410, color: 0.0126, semiMajorAxis: 0.06, orbitalPeriod: 16.69 },
     ]},
-    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, rings: { innerRadius: 4, outerRadius: 6, texture: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Saturn_rings_texture.png' } },
-    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589 },
-    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800 },
+    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, rings: { innerRadius: 8, outerRadius: 12, texture: 'https://upload.wikimedia.org/wikipedia/commons/7/7d/Solarsystemscope_texture_2k_saturn_ring_alpha.png' }, moons: [
+        { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94 },
+        { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4 },
+        { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16 },
+        { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33 },
+    ] },
+    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, rings: { innerRadius: 5.7, outerRadius: 6.0, color: 0x99aaff }, moons: [
+        { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413 },
+        { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520 },
+        { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144 },
+        { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706 },
+    ] },
+    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, rings: { innerRadius: 6.1, outerRadius: 7.2, color: 0x6677ff }, moons: [
+        { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
+        { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
+        { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
+    ] },
 ];
 
 function scaleDistance(au) {
@@ -118,9 +132,14 @@ planetData.forEach(p_data => {
     scene.add(orbit);
 
     if (p_data.rings) {
-        const ringTexture = textureLoader.load(p_data.rings.texture);
         const ringGeometry = new THREE.RingGeometry(p_data.rings.innerRadius, p_data.rings.outerRadius, 64);
-        const ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        let ringMaterial;
+        if (p_data.rings.texture) {
+            const ringTexture = textureLoader.load(p_data.rings.texture);
+            ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        } else {
+            ringMaterial = new THREE.MeshBasicMaterial({ color: p_data.rings.color, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        }
         const rings = new THREE.Mesh(ringGeometry, ringMaterial);
         rings.rotation.x = Math.PI / 2;
         planetGroup.add(rings);
@@ -139,7 +158,7 @@ planetData.forEach(p_data => {
 
             const moonOrbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
                 new THREE.Path().absellipse(0, 0, moonScaledDistance, moonScaledDistance, 0, 2 * Math.PI, false, 0).getSpacedPoints(100)
-            ), new THREE.LineBasicMaterial({ color: 0x888888, opacity: 0.5, transparent: true }));
+            ), new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.5, transparent: true }));
             moonOrbit.rotation.x = Math.PI / 2;
             planetGroup.add(moonOrbit);
         });
