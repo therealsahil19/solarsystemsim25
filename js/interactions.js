@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 
-export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls) {
+export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls, resetSimulation) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
     window.addEventListener('click', (event) => {
         // ignore clicks on the UI
-        if (domElements.celestialSelector.contains(event.target)) {
+        if (domElements.celestialSelector.contains(event.target) || domElements.controlsPanel.contains(event.target)) {
             return;
         }
 
@@ -30,6 +30,19 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
 
     domElements.speedSlider.addEventListener('input', (event) => {
         simulation.speed = Number(event.target.value);
+        if (simulation.isPaused) {
+            simulation.isPaused = false;
+            domElements.pauseButton.textContent = 'Pause';
+        }
+    });
+
+    domElements.pauseButton.addEventListener('click', () => {
+        simulation.isPaused = !simulation.isPaused;
+        domElements.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
+    });
+
+    domElements.resetButton.addEventListener('click', () => {
+        resetSimulation();
     });
 
     domElements.freeCameraButton.addEventListener('click', () => {

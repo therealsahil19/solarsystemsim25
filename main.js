@@ -19,8 +19,12 @@ const selectableObjects = [];
 let sun;
 const simulation = {
     speed: 50,
+    isPaused: false,
     selectedObject: null,
     focusTarget: null,
+    time: 0,
+    // Store the last speed before pausing
+    lastSpeed: 50,
 };
 
 // --- Object Creation ---
@@ -115,32 +119,119 @@ createOortCloud();
 
 function onBodySelected(name) {
     const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
-    if (selectedObject) {
-        simulation.selectedObject = selectedObject;
-        simulation.focusTarget = selectedObject;
+    if (!selectedObject) return;
 
-        const infoPanelData = selectedObject.userData;
-        DOM.infoName.textContent = infoPanelData.name;
-        DOM.infoRadius.textContent = `${infoPanelData.data.radius.toLocaleString()} km`;
-        DOM.infoDistance.textContent = infoPanelData.type === 'moon'
-            ? `${Math.round(infoPanelData.data.semiMajorAxisKm).toLocaleString()} km`
-            : `${infoPanelData.data.semiMajorAxis} AU`;
-        DOM.infoPeriod.textContent = `${infoPanelData.data.orbitalPeriod} days`;
-        DOM.infoPanel.classList.remove('hidden');
-        DOM.freeCameraButton.classList.remove('hidden');
+    simulation.selectedObject = selectedObject;
+    simulation.focusTarget = selectedObject;
 
-        const radius = scaleBodyRadius(selectedObject.userData.data.radius);
-        controls.minDistance = radius * 1.5;
-        controls.maxDistance = Infinity;
+    const { data, type } = selectedObject.userData;
 
-        const color = `#${selectedObject.material.color.getHexString()}`;
-        updateInfoPanelColor(color);
+    // --- Update Header and Color ---
+    DOM.infoName.textContent = data.name;
+    const color = `#${selectedObject.material.color.getHexString()}`;
+    updateInfoPanelColor(color);
+
+    // --- Create and Display Placeholder Image ---
+    DOM.infoImageContainer.innerHTML = ''; // Clear previous image
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+    const rect = document.createElementNS(svgNS, "rect");
+    rect.setAttribute("width", "100%");
+    rect.setAttribute("height", "100%");
+    rect.setAttribute("fill", color);
+    svg.appendChild(rect);
+    DOM.infoImageContainer.appendChild(svg);
+
+    // --- Populate Basic Stats ---
+    DOM.infoBasicStats.innerHTML = '';
+    const stats = {
+        'Radius': { value: `${data.radius.toLocaleString()} km` },
+        'Distance': {
+            value: type === 'moon' ? `${Math.round(data.semiMajorAxisKm).toLocaleString()} km` : `${data.semiMajorAxis} AU`,
+            tooltip: type !== 'moon' ? 'Astronomical Unit: the average distance from Earth to the Sun.' : null
+        },
+        'Orbital Period': {
+            value: `${data.orbitalPeriod} days`,
+            tooltip: 'The time it takes for the object to complete one orbit around its parent body.'
+        }
+    };
+
+    for (const [key, { value, tooltip }] of Object.entries(stats)) {
+        const strong = document.createElement('strong');
+        strong.textContent = `${key}:`;
+
+        const span = document.createElement('span');
+        span.textContent = value;
+
+        if (tooltip) {
+            const tooltipSpan = document.createElement('span');
+            tooltipSpan.className = 'tooltip';
+            tooltipSpan.textContent = '(?)';
+            const tooltipText = document.createElement('span');
+            tooltipText.className = 'tooltip-text';
+            tooltipText.textContent = tooltip;
+            tooltipSpan.appendChild(tooltipText);
+            span.appendChild(tooltipSpan);
+        }
+
+        DOM.infoBasicStats.appendChild(strong);
+        DOM.infoBasicStats.appendChild(span);
     }
+
+    // --- Populate Advanced Details ---
+    const advancedStats = {};
+    if (data.axialTilt) {
+        advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
+    }
+    if (data.rings) {
+        advancedStats['Rings'] = `${data.rings.bands.length} main bands`;
+    }
+
+    if (Object.keys(advancedStats).length > 0) {
+        DOM.infoAdvancedDetails.classList.remove('hidden');
+        DOM.advancedDetailsContent.innerHTML = '';
+        for (const [key, value] of Object.entries(advancedStats)) {
+            const strong = document.createElement('strong');
+            strong.textContent = `${key}:`;
+            const span = document.createElement('span');
+            span.textContent = value;
+            DOM.advancedDetailsContent.appendChild(strong);
+            DOM.advancedDetailsContent.appendChild(span);
+        }
+    } else {
+        DOM.infoAdvancedDetails.classList.add('hidden');
+    }
+
+
+    // --- Show Panel and Buttons ---
+    DOM.infoPanel.classList.remove('hidden');
+    DOM.freeCameraButton.classList.remove('hidden');
+
+    // --- Adjust Camera ---
+    const radius = scaleBodyRadius(data.radius);
+    controls.minDistance = radius * 1.5;
+    controls.maxDistance = Infinity;
 }
 
 createCelestialBodySelector(planetData, onBodySelected);
 initInfoPanel();
-setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls);
+
+function resetSimulation() {
+    simulation.time = 0;
+    simulation.focusTarget = sun;
+    simulation.selectedObject = sun;
+    camera.position.set(0, 150, 400); // Reset camera position
+    controls.target.set(0, 0, 0);
+    if (simulation.isPaused) {
+        simulation.isPaused = false;
+        DOM.pauseButton.textContent = 'Pause';
+    }
+    onBodySelected('Sun');
+}
+
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation);
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
@@ -149,19 +240,21 @@ const cameraTarget = new THREE.Vector3();
 function animate() {
     requestAnimationFrame(animate);
 
-    const elapsedTime = clock.getElapsedTime();
-    const simulationTime = elapsedTime * simulation.speed;
+    const deltaTime = clock.getDelta();
+    if (!simulation.isPaused) {
+        simulation.time += deltaTime * simulation.speed;
+    }
 
     celestialObjects.forEach(p => {
         const scaledDistance = scaleDistance(p.semiMajorAxis);
-        const planetAngle = (2 * Math.PI * simulationTime) / p.orbitalPeriod;
+        const planetAngle = (2 * Math.PI * simulation.time) / p.orbitalPeriod;
         p.group.position.x = scaledDistance * Math.cos(planetAngle);
         p.group.position.z = scaledDistance * Math.sin(planetAngle);
 
         if (p.moons) {
             p.moons.forEach(m => {
                 const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
-                const moonAngle = (2 * Math.PI * simulationTime) / m.orbitalPeriod;
+                const moonAngle = (2 * Math.PI * simulation.time) / m.orbitalPeriod;
                 m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
                 m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
             });

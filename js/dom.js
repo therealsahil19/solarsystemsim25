@@ -1,11 +1,18 @@
+import * as THREE from 'three';
+
 export const infoPanel = document.getElementById('info-panel');
 export const infoName = document.getElementById('info-name');
-export const infoRadius = document.getElementById('info-radius');
-export const infoDistance = document.getElementById('info-distance');
-export const infoPeriod = document.getElementById('info-period');
+export const infoImageContainer = document.getElementById('info-image-container');
+export const infoBasicStats = document.getElementById('info-basic-stats');
+export const infoAdvancedDetails = document.getElementById('info-advanced-details');
+export const advancedDetailsToggle = document.getElementById('advanced-details-toggle');
+export const advancedDetailsContent = document.getElementById('advanced-details-content');
 export const speedSlider = document.getElementById('speed-slider');
+export const pauseButton = document.getElementById('pause-btn');
+export const resetButton = document.getElementById('reset-btn');
 export const canvas = document.querySelector('#bg');
 
+export const controlsPanel = document.getElementById('controls-panel');
 export const selectionPanel = document.getElementById('selection-panel');
 export const celestialSelector = document.getElementById('celestial-selector');
 export const celestialSelectorToggle = document.getElementById('celestial-selector-toggle');
@@ -18,6 +25,17 @@ export function createCelestialBodySelector(planetData, onSelect) {
 
     planetData.forEach(body => {
         const listItem = document.createElement('li');
+
+        listItem.style.display = 'flex';
+        listItem.style.alignItems = 'center';
+        listItem.style.gap = '10px';
+
+        const colorCircle = document.createElement('div');
+        colorCircle.style.width = '15px';
+        colorCircle.style.height = '15px';
+        colorCircle.style.borderRadius = '50%';
+        colorCircle.style.backgroundColor = `#${new THREE.Color(body.color).getHexString()}`;
+        listItem.appendChild(colorCircle);
 
         const bodyName = document.createElement('div');
         bodyName.textContent = body.name;

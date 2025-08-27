@@ -65,6 +65,14 @@ export function initInfoPanel() {
     closeButton.addEventListener('click', () => {
         infoPanel.classList.add('hidden');
     });
+
+    // --- Collapsible Advanced Details ---
+    const advancedToggle = document.getElementById('advanced-details-toggle');
+    const advancedContent = document.getElementById('advanced-details-content');
+
+    advancedToggle.addEventListener('click', () => {
+        advancedContent.classList.toggle('hidden');
+    });
 }
 
 export function updateInfoPanelColor(color) {
