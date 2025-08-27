@@ -6,9 +6,15 @@ A 3D interactive solar system simulator built with JavaScript and Three.js. This
 
 *   **3D Solar System Visualization:** Renders the sun, planets, and major moons in a 3D space using Three.js.
 *   **Dynamic Orbital Simulation:** Planets and moons orbit their parent bodies based on real-world orbital periods. The simulation speed is adjustable.
-*   **Interactive Camera Controls:** The camera can be freely panned, zoomed, and rotated for exploration.
-*   **Click to Focus:** Users can click on any planet or moon to automatically focus the camera on it.
-*   **Information Panel:** Displays key data (radius, distance from the sun, orbital period) for any selected celestial body.
+*   **Celestial Body Selector:** A hierarchical dropdown menu allows for easy navigation to any celestial body, including planets and their moons.
+*   **Advanced Camera Controls:**
+    *   Smooth, animated camera transitions when selecting a new object.
+    *   Click on any celestial body in the 3D view to focus on it.
+    *   A "Free Camera" mode to detach from any focused object and explore freely.
+*   **Interactive Information Panel:**
+    *   Displays key data (radius, distance from the sun, orbital period) for any selected celestial body.
+    *   The panel is positioned on the right side of the screen and is draggable, resizable, and closable.
+    *   Features a dynamic colored border that matches the color of the selected celestial body.
 *   **Astronomical Scenery:** The scene includes a rich, starry background, a procedurally generated asteroid belt between Mars and Jupiter, and a representation of the Oort cloud at the edge of the system.
 *   **Detailed and Realistic Planetary Rings:** Each of the four gas giants features a unique and detailed ring system, modeled with realistic lighting and textures.
     *   **Jupiter:** A faint, wispy, and dusty main ring with even fainter "gossamer" rings, rendered with a particle system to capture its delicate, reddish nature.

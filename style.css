@@ -9,18 +9,80 @@ canvas {
 
 #ui-container {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Allow clicks to pass through */
     color: white;
     font-family: sans-serif;
     z-index: 100;
 }
 
+#ui-container > div {
+    pointer-events: auto; /* Re-enable pointer events for children */
+    position: absolute;
+}
+
 #info-panel {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 10px;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
     border-radius: 5px;
-    width: 250px;
+    width: 300px;
+    min-width: 200px;
+    min-height: 150px;
+    border-top: 5px solid #fff; /* Default border color */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Hide content that overflows during resize */
+}
+
+#info-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    padding: 10px;
+    border-bottom: 1px solid #555;
+}
+
+#info-panel-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+#info-panel-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+#info-panel-content {
+    padding: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 10px;
+    flex-grow: 1;
+}
+
+#info-panel-content p {
+    margin: 0;
+}
+
+#info-panel-content p strong {
+    font-weight: bold;
+}
+
+#info-panel-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    cursor: se-resize;
 }
 
 #info-panel.hidden {
@@ -28,13 +90,79 @@ canvas {
 }
 
 #controls-panel {
+    top: 10px;
+    left: 10px;
     background-color: rgba(0, 0, 0, 0.5);
     padding: 10px;
     border-radius: 5px;
-    margin-top: 10px;
 }
 
 #controls-panel label {
     display: block;
     margin-bottom: 5px;
+}
+
+#selection-panel {
+    top: 90px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    background-color: #444;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    width: 200px;
+    text-align: left;
+}
+
+.dropdown-menu {
+    position: absolute;
+    background-color: #333;
+    width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dropdown-menu.hidden {
+    display: none;
+}
+
+.dropdown-menu li {
+    color: white;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+    background-color: #555;
+}
+
+.dropdown-menu .moon-list {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.dropdown-menu .moon-list.hidden {
+    display: none;
+}
+
+.dropdown-menu .has-moons > span {
+    display: inline-block;
+    width: 10px;
+    cursor: pointer;
 }

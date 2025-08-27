@@ -11,14 +11,29 @@
 
     <div id="ui-container">
         <div id="info-panel" class="hidden">
-            <h2 id="info-name"></h2>
-            <p><strong>Radius:</strong> <span id="info-radius"></span> km</p>
-            <p><strong>Distance from Sun:</strong> <span id="info-distance"></span> AU</p>
-            <p><strong>Orbital Period:</strong> <span id="info-period"></span> days</p>
+            <div id="info-panel-header">
+                <h2 id="info-name"></h2>
+                <button id="info-panel-close">X</button>
+            </div>
+            <div id="info-panel-content">
+                <p><strong>Radius:</strong> <span id="info-radius"></span> km</p>
+                <p><strong>Distance from Sun:</strong> <span id="info-distance"></span> AU</p>
+                <p><strong>Orbital Period:</strong> <span id="info-period"></span> days</p>
+            </div>
+            <div id="info-panel-resize-handle"></div>
         </div>
         <div id="controls-panel">
             <label for="speed-slider">Simulation Speed</label>
             <input type="range" id="speed-slider" min="0" max="500" value="50">
+        </div>
+        <div id="selection-panel">
+            <div id="celestial-selector" class="dropdown">
+                <button id="celestial-selector-toggle" class="dropdown-toggle">Celestial Bodies</button>
+                <div id="celestial-selector-menu" class="dropdown-menu hidden">
+                    <!-- Items will be populated by JS -->
+                </div>
+            </div>
+            <button id="free-camera-btn" class="hidden">Free Camera</button>
         </div>
     </div>
 

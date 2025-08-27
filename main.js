@@ -5,7 +5,9 @@ import { planetData } from './js/data.js';
 import { scaleDistance, scaleBodyRadius } from './js/utils.js';
 import { createPlanetRings } from './js/rings.js';
 import { createMoons } from './js/moons.js';
+import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
+import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
 
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
@@ -111,7 +113,34 @@ createStarryBackground();
 createAsteroidBelt();
 createOortCloud();
 
-setupInteractions(camera, selectableObjects, sun, DOM, simulation);
+function onBodySelected(name) {
+    const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
+    if (selectedObject) {
+        simulation.selectedObject = selectedObject;
+        simulation.focusTarget = selectedObject;
+
+        const infoPanelData = selectedObject.userData;
+        DOM.infoName.textContent = infoPanelData.name;
+        DOM.infoRadius.textContent = `${infoPanelData.data.radius.toLocaleString()} km`;
+        DOM.infoDistance.textContent = infoPanelData.type === 'moon'
+            ? `${Math.round(infoPanelData.data.semiMajorAxisKm).toLocaleString()} km`
+            : `${infoPanelData.data.semiMajorAxis} AU`;
+        DOM.infoPeriod.textContent = `${infoPanelData.data.orbitalPeriod} days`;
+        DOM.infoPanel.classList.remove('hidden');
+        DOM.freeCameraButton.classList.remove('hidden');
+
+        const radius = scaleBodyRadius(selectedObject.userData.data.radius);
+        controls.minDistance = radius * 1.5;
+        controls.maxDistance = Infinity;
+
+        const color = `#${selectedObject.material.color.getHexString()}`;
+        updateInfoPanelColor(color);
+    }
+}
+
+createCelestialBodySelector(planetData, onBodySelected);
+initInfoPanel();
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls);
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
@@ -140,12 +169,26 @@ function animate() {
     });
 
     if (simulation.focusTarget) {
+        // If there's a focus target, move the camera towards it.
         if (simulation.focusTarget === sun) {
             cameraTarget.set(0, 0, 0);
         } else {
             simulation.focusTarget.getWorldPosition(cameraTarget);
         }
+
+        // Smoothly move camera to a position offset from the target.
+        // The offset is scaled by the radius of the target to ensure a good view.
+        if (simulation.focusTarget.userData.data) {
+            const radius = scaleBodyRadius(simulation.focusTarget.userData.data.radius);
+            const offset = new THREE.Vector3(0, radius * 0.5, radius * 4);
+            const desiredCameraPosition = cameraTarget.clone().add(offset);
+            // We use lerp to create a smooth animation without external libraries.
+            camera.position.lerp(desiredCameraPosition, 0.05);
+        }
+
     }
+    // We always lerp the controls target to smoothly follow the selected object
+    // or to stay in place if in free camera mode.
     controls.target.lerp(cameraTarget, 0.05);
 
     controls.update();

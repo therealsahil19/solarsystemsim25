@@ -1,10 +1,15 @@
 import * as THREE from 'three';
 
-export function setupInteractions(camera, selectableObjects, sun, domElements, simulation) {
+export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
     window.addEventListener('click', (event) => {
+        // ignore clicks on the UI
+        if (domElements.celestialSelector.contains(event.target)) {
+            return;
+        }
+
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -12,13 +17,14 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
 
         if (intersects.length > 0) {
             const clicked = intersects[0].object;
-            simulation.selectedObject = clicked;
-            simulation.focusTarget = clicked;
-            updateInfoPanel(clicked.userData);
+            onBodySelected(clicked.userData.name);
         } else {
             simulation.selectedObject = null;
-            simulation.focusTarget = sun; // Focus on sun if nothing is clicked
+            simulation.focusTarget = null; // Free the camera
             domElements.infoPanel.classList.add('hidden');
+            domElements.freeCameraButton.classList.add('hidden');
+            controls.minDistance = 0;
+            controls.maxDistance = Infinity;
         }
     });
 
@@ -26,15 +32,14 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
         simulation.speed = Number(event.target.value);
     });
 
-    function updateInfoPanel(data) {
-        domElements.infoName.textContent = data.name;
-        domElements.infoRadius.textContent = `${data.data.radius.toLocaleString()} km`;
-        domElements.infoDistance.textContent = data.type === 'moon'
-            ? `${Math.round(data.data.semiMajorAxisKm).toLocaleString()} km (from ${data.parent.name})`
-            : `${data.data.semiMajorAxis} AU`;
-        domElements.infoPeriod.textContent = `${data.data.orbitalPeriod} days`;
-        domElements.infoPanel.classList.remove('hidden');
-    }
+    domElements.freeCameraButton.addEventListener('click', () => {
+        // Setting focusTarget to null stops the camera from following an object,
+        // enabling "Free Camera" mode. The camera remains in its current position.
+        simulation.focusTarget = null;
+        domElements.freeCameraButton.classList.add('hidden');
+        controls.minDistance = 0; // Reset zoom constraint
+        controls.maxDistance = Infinity;
+    });
 
     // Initial state
     simulation.focusTarget = sun;
