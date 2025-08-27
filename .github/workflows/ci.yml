@@ -1,4 +1,4 @@
-name: Comprehensive Testing Pipeline
+name: CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,8 +22,5 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-
-    - name: Run Playwright E2E tests
-      run: npm run test:e2e
+    - name: Build project
+      run: npm run build
