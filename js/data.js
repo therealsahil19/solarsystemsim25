@@ -1,12 +1,12 @@
 export const planetData = [
     { name: 'Sun', radius: 696340, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1 },
-    { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0 },
-    { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7 },
-    { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, moons: [
+    { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_mercury.jpg' },
+    { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/4k_venus_atmosphere.jpg' },
+    { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, texture: 'https://visibleearth.nasa.gov/images/147190/explorer-base-map/147191l.png', cloudTexture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_earth_clouds.jpg', moons: [
         { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3, semiMajorAxisKm: 384400 }
     ]},
-    { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0 },
-    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08,
+    { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_mars.jpg' },
+    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/2k_jupiter.jpg',
         rings: {
             type: 'jupiter',
             color: 0x9B8B80, // Dark reddish
@@ -23,10 +23,10 @@ export const planetData = [
             { name: 'Ganymede', radius: 2634, color: 0x9E978E, semiMajorAxis: 0.05, orbitalPeriod: 7.15, semiMajorAxisKm: 1070000 },
             { name: 'Callisto', radius: 2410, color: 0x5C5C5C, semiMajorAxis: 0.06, orbitalPeriod: 16.69, semiMajorAxisKm: 1883000 },
     ]},
-    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73,
+    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_saturn.jpg',
         rings: {
             type: 'saturn',
-            texture: 'assets/textures/saturn_rings.png',
+            texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_saturn_ring_alpha.jpg',
             color: 0xFFFEEA,
             bands: [
                 { innerRadius: 74658, outerRadius: 92000 },  // C Ring
@@ -40,7 +40,7 @@ export const planetData = [
             { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16, semiMajorAxisKm: 1221865 },
             { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33, semiMajorAxisKm: 3560854 },
     ] },
-    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92,
+    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/2k_uranus.jpg',
         rings: {
             type: 'uranus',
             color: 0x36454F, // Charcoal gray
@@ -62,7 +62,7 @@ export const planetData = [
             { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144, semiMajorAxisKm: 265986 },
             { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706, semiMajorAxisKm: 436298 },
     ] },
-    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6,
+    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/2k_neptune.jpg',
         rings: {
             type: 'neptune',
             color: 0x607B8B, // Bluish tint
