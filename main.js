@@ -32,18 +32,48 @@ planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
     scene.add(planetGroup);
 
-    const planetGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius), 32, 32);
-    const planetMaterial = new THREE.MeshStandardMaterial({ color: p_data.color });
-    const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+    const planetGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius), 64, 64);
+    let planetMaterial;
+    let planet;
+
+    if (p_data.name === 'Sun') {
+        planetMaterial = new THREE.MeshStandardMaterial({
+            emissive: 0xffff00,
+            emissiveIntensity: 1.5,
+            color: 0xffff00
+        });
+        if (p_data.texture) {
+            const sunTexture = textureLoader.load(p_data.texture);
+            planetMaterial.map = sunTexture;
+            planetMaterial.emissiveMap = sunTexture;
+        }
+        planet = new THREE.Mesh(planetGeometry, planetMaterial);
+        sun = planet;
+        sun.add(pointLight);
+    } else {
+        planetMaterial = new THREE.MeshStandardMaterial({ color: p_data.color });
+        if (p_data.texture) {
+            planetMaterial.map = textureLoader.load(p_data.texture);
+        }
+        planet = new THREE.Mesh(planetGeometry, planetMaterial);
+
+        if (p_data.name === 'Earth' && p_data.cloudTexture) {
+            const cloudGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius) * 1.01, 64, 64);
+            const cloudTextureMap = textureLoader.load(p_data.cloudTexture)
+            const cloudMaterial = new THREE.MeshStandardMaterial({
+                map: cloudTextureMap,
+                alphaMap: cloudTextureMap,
+                transparent: true,
+                opacity: 0.8,
+            });
+            const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            planet.add(cloudMesh); // Add clouds as a child of the planet
+        }
+    }
+
     planet.userData = { name: p_data.name, type: 'planet', data: p_data };
     planetGroup.add(planet);
     selectableObjects.push(planet);
-
-    if (p_data.name === 'Sun') {
-        sun = planet;
-        planet.material.emissive = new THREE.Color(0xffff00);
-        sun.add(pointLight);
-    }
 
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
