@@ -40,25 +40,58 @@ const planetData = [
         { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3 }
     ]},
     { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0 },
-    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, rings: { innerRadius: 7, outerRadius: 9, color: 0xffd8ad }, moons: [
+    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08, rings: { innerRadius: 5.0, outerRadius: 5.5, color: 0x444444, opacity: 0.1 }, moons: [
         { name: 'Io', radius: 1821, color: 0.0028, semiMajorAxis: 0.03, orbitalPeriod: 1.77 },
         { name: 'Europa', radius: 1560, color: 0.0045, semiMajorAxis: 0.04, orbitalPeriod: 3.55 },
         { name: 'Ganymede', radius: 2634, color: 0.0071, semiMajorAxis: 0.05, orbitalPeriod: 7.15 },
         { name: 'Callisto', radius: 2410, color: 0.0126, semiMajorAxis: 0.06, orbitalPeriod: 16.69 },
     ]},
-    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, rings: { innerRadius: 8, outerRadius: 12, texture: 'https://upload.wikimedia.org/wikipedia/commons/7/7d/Solarsystemscope_texture_2k_saturn_ring_alpha.png' }, moons: [
+    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73, rings: { innerRadius: 8, outerRadius: 12, texture: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Solarsystemscope_texture_8k_saturn_ring_alpha.png', color: 0xFFFEEA }, moons: [
         { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94 },
         { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4 },
         { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16 },
         { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33 },
     ] },
-    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, rings: { innerRadius: 5.7, outerRadius: 6.0, color: 0x99aaff }, moons: [
+    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92, rings: {
+        color: 0x555555, // dark gray
+        opacity: 0.4,
+        bands: [
+            { innerRadius: 4.50, outerRadius: 4.54 },
+            { innerRadius: 4.60, outerRadius: 4.65 },
+            { innerRadius: 4.75, outerRadius: 4.80 },
+            { innerRadius: 4.90, outerRadius: 4.96 },
+            { innerRadius: 5.10, outerRadius: 5.17 },
+            { innerRadius: 5.30, outerRadius: 5.35 },
+            { innerRadius: 5.50, outerRadius: 5.56 },
+            { innerRadius: 5.70, outerRadius: 5.77 },
+            { innerRadius: 5.90, outerRadius: 6.00 },
+        ]
+    }, moons: [
         { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413 },
         { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520 },
         { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144 },
         { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706 },
     ] },
-    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, rings: { innerRadius: 6.1, outerRadius: 7.2, color: 0x6677ff }, moons: [
+    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6, rings: {
+        color: 0x888888,
+        opacity: 0.1,
+        arcColor: 0xAAAAFF,
+        arcOpacity: 0.5,
+        bands: [
+            { innerRadius: 4.8, outerRadius: 5.0 },   // Galle
+            { innerRadius: 6.05, outerRadius: 6.1 },  // Le Verrier
+            { innerRadius: 6.1, outerRadius: 6.5 },   // Lassell
+            { innerRadius: 7.18, outerRadius: 7.22 }  // Adams continuous
+        ],
+        arcs: [
+            // Adams Ring Arcs
+            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (247 * Math.PI / 180), thetaLength: (10 * Math.PI / 180) }, // Fraternité
+            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (261 * Math.PI / 180), thetaLength: (3 * Math.PI / 180) },  // Égalité 1
+            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (265 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) },  // Égalité 2
+            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (276 * Math.PI / 180), thetaLength: (4 * Math.PI / 180) },  // Liberté
+            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (284.5 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) }, // Courage
+        ]
+    }, moons: [
         { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
         { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
         { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
@@ -104,6 +137,60 @@ const celestialObjects = [];
 const selectableObjects = [];
 let sun;
 
+function createPlanetRings(p_data, planetGroup) {
+    if (!p_data.rings) return;
+
+    const ringGroup = new THREE.Group();
+    planetGroup.add(ringGroup);
+
+    // Apply tilt to the whole group
+    ringGroup.rotation.x = Math.PI / 2;
+    if (p_data.axialTilt) {
+        const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
+        ringGroup.rotation.z = tiltInRadians;
+    }
+
+    if (p_data.rings.bands) { // Handle continuous rings (Uranus, Neptune)
+        const color = p_data.rings.color || 0x888888;
+        const opacity = p_data.rings.opacity !== undefined ? p_data.rings.opacity : 0.5;
+        const ringMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
+
+        p_data.rings.bands.forEach(band => {
+            const ringGeometry = new THREE.RingGeometry(band.innerRadius, band.outerRadius, 128);
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ringGroup.add(ring);
+        });
+    }
+
+    if (p_data.rings.arcs) { // Handle ring arcs (Neptune)
+        const color = p_data.rings.arcColor || p_data.rings.color || 0x888888;
+        const opacity = p_data.rings.arcOpacity !== undefined ? p_data.rings.arcOpacity : 0.8;
+        const arcMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
+
+        p_data.rings.arcs.forEach(arc => {
+            const arcGeometry = new THREE.RingGeometry(arc.innerRadius, arc.outerRadius, 128, 1, arc.thetaStart, arc.thetaLength);
+            const arcMesh = new THREE.Mesh(arcGeometry, arcMaterial);
+            ringGroup.add(arcMesh);
+        });
+    }
+
+    // Handle single, non-banded, non-arced rings (Jupiter, Saturn)
+    if (!p_data.rings.bands && !p_data.rings.arcs) {
+        let ringMaterial;
+        if (p_data.rings.texture) {
+            const ringTexture = textureLoader.load(p_data.rings.texture);
+            const color = p_data.rings.color ? p_data.rings.color : 0xffffff;
+            ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        } else {
+            const opacity = p_data.rings.opacity !== undefined ? p_data.rings.opacity : 0.5;
+            ringMaterial = new THREE.MeshBasicMaterial({ color: p_data.rings.color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
+        }
+        const ringGeometry = new THREE.RingGeometry(p_data.rings.innerRadius, p_data.rings.outerRadius, 128);
+        const rings = new THREE.Mesh(ringGeometry, ringMaterial);
+        ringGroup.add(rings);
+    }
+}
+
 planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
     scene.add(planetGroup);
@@ -132,17 +219,7 @@ planetData.forEach(p_data => {
     scene.add(orbit);
 
     if (p_data.rings) {
-        const ringGeometry = new THREE.RingGeometry(p_data.rings.innerRadius, p_data.rings.outerRadius, 64);
-        let ringMaterial;
-        if (p_data.rings.texture) {
-            const ringTexture = textureLoader.load(p_data.rings.texture);
-            ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-        } else {
-            ringMaterial = new THREE.MeshBasicMaterial({ color: p_data.rings.color, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-        }
-        const rings = new THREE.Mesh(ringGeometry, ringMaterial);
-        rings.rotation.x = Math.PI / 2;
-        planetGroup.add(rings);
+        createPlanetRings(p_data, planetGroup);
     }
 
     if (p_data.moons) {
