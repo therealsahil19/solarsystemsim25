@@ -1,0 +1,25 @@
+# Dependencies
+/node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+/dist
+/out
+/build
+
+# Caches
+.npm
+.vite
+.yarn-cache
+
+# OS-specific
+.DS_Store
+Thumbs.db
