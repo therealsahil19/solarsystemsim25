@@ -40,57 +40,93 @@ const planetData = [
         { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3 }
     ]},
     { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0 },
-    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08, rings: { innerRadius: 5.0, outerRadius: 5.5, color: 0x444444, opacity: 0.1 }, moons: [
-        { name: 'Io', radius: 1821, color: 0.0028, semiMajorAxis: 0.03, orbitalPeriod: 1.77 },
-        { name: 'Europa', radius: 1560, color: 0.0045, semiMajorAxis: 0.04, orbitalPeriod: 3.55 },
-        { name: 'Ganymede', radius: 2634, color: 0.0071, semiMajorAxis: 0.05, orbitalPeriod: 7.15 },
-        { name: 'Callisto', radius: 2410, color: 0.0126, semiMajorAxis: 0.06, orbitalPeriod: 16.69 },
+    { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08,
+        rings: {
+            type: 'jupiter',
+            color: 0x9B8B80, // Dark reddish
+            bands: [
+                { innerRadius: 92000, outerRadius: 122500, type: 'halo' },
+                { innerRadius: 122500, outerRadius: 129000, type: 'main' },
+                { innerRadius: 129000, outerRadius: 182000, type: 'gossamer' },
+                { innerRadius: 129000, outerRadius: 226000, type: 'gossamer' }
+            ]
+        },
+        moons: [
+            { name: 'Io', radius: 1821, color: 0.0028, semiMajorAxis: 0.03, orbitalPeriod: 1.77 },
+            { name: 'Europa', radius: 1560, color: 0.0045, semiMajorAxis: 0.04, orbitalPeriod: 3.55 },
+            { name: 'Ganymede', radius: 2634, color: 0.0071, semiMajorAxis: 0.05, orbitalPeriod: 7.15 },
+            { name: 'Callisto', radius: 2410, color: 0.0126, semiMajorAxis: 0.06, orbitalPeriod: 16.69 },
     ]},
-    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73, rings: { innerRadius: 8, outerRadius: 12, texture: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Solarsystemscope_texture_8k_saturn_ring_alpha.png', color: 0xFFFEEA }, moons: [
-        { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94 },
-        { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4 },
-        { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16 },
-        { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33 },
+    { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73,
+        rings: {
+            type: 'saturn',
+            texture: 'https://bjj.mmedia.is/data/s_rings/transparency.png',
+            color: 0xFFFEEA,
+            bands: [
+                { innerRadius: 74658, outerRadius: 92000 },  // C Ring
+                { innerRadius: 92000, outerRadius: 117580 }, // B Ring
+                { innerRadius: 122170, outerRadius: 136775 } // A Ring
+            ]
+        },
+        moons: [
+            { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94 },
+            { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4 },
+            { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16 },
+            { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33 },
     ] },
-    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92, rings: {
-        color: 0x555555, // dark gray
-        opacity: 0.4,
-        bands: [
-            { innerRadius: 4.50, outerRadius: 4.54 },
-            { innerRadius: 4.60, outerRadius: 4.65 },
-            { innerRadius: 4.75, outerRadius: 4.80 },
-            { innerRadius: 4.90, outerRadius: 4.96 },
-            { innerRadius: 5.10, outerRadius: 5.17 },
-            { innerRadius: 5.30, outerRadius: 5.35 },
-            { innerRadius: 5.50, outerRadius: 5.56 },
-            { innerRadius: 5.70, outerRadius: 5.77 },
-            { innerRadius: 5.90, outerRadius: 6.00 },
-        ]
-    }, moons: [
-        { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413 },
-        { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520 },
-        { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144 },
-        { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706 },
+    { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92,
+        rings: {
+            type: 'uranus',
+            color: 0x36454F, // Charcoal gray
+            bands: [
+                { innerRadius: 41836, outerRadius: 41838 }, // Ring 6
+                { innerRadius: 42233, outerRadius: 42236 }, // Ring 5
+                { innerRadius: 42568, outerRadius: 42572 }, // Ring 4
+                { innerRadius: 44714, outerRadius: 44722 }, // Alpha
+                { innerRadius: 45657, outerRadius: 45665 }, // Beta
+                { innerRadius: 47174, outerRadius: 47176 }, // Eta
+                { innerRadius: 47625, outerRadius: 47629 }, // Gamma
+                { innerRadius: 48297, outerRadius: 48303 }, // Delta
+                { innerRadius: 51120, outerRadius: 51178 }  // Epsilon
+            ]
+        },
+        moons: [
+            { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413 },
+            { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520 },
+            { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144 },
+            { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706 },
     ] },
-    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6, rings: {
-        color: 0x888888,
-        opacity: 0.1,
-        arcColor: 0xAAAAFF,
-        arcOpacity: 0.5,
-        bands: [
-            { innerRadius: 4.8, outerRadius: 5.0 },   // Galle
-            { innerRadius: 6.05, outerRadius: 6.1 },  // Le Verrier
-            { innerRadius: 6.1, outerRadius: 6.5 },   // Lassell
-            { innerRadius: 7.18, outerRadius: 7.22 }  // Adams continuous
-        ],
-        arcs: [
-            // Adams Ring Arcs
-            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (247 * Math.PI / 180), thetaLength: (10 * Math.PI / 180) }, // Fraternité
-            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (261 * Math.PI / 180), thetaLength: (3 * Math.PI / 180) },  // Égalité 1
-            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (265 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) },  // Égalité 2
-            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (276 * Math.PI / 180), thetaLength: (4 * Math.PI / 180) },  // Liberté
-            { innerRadius: 7.18, outerRadius: 7.22, thetaStart: (284.5 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) }, // Courage
-        ]
+    { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6,
+        rings: {
+            type: 'neptune',
+            color: 0x607B8B, // Bluish tint
+            bands: [
+                { innerRadius: 40900, outerRadius: 42900 },   // Galle
+                { innerRadius: 53143, outerRadius: 53257 },  // Le Verrier
+                { innerRadius: 53200, outerRadius: 57200 },   // Lassell
+                { innerRadius: 62914, outerRadius: 62950 }    // Adams
+            ],
+            arcs: [
+                { innerRadius: 62914, outerRadius: 62950, thetaStart: (247 * Math.PI / 180), thetaLength: (10 * Math.PI / 180) }, // Fraternité
+                { innerRadius: 62914, outerRadius: 62950, thetaStart: (261 * Math.PI / 180), thetaLength: (3 * Math.PI / 180) },  // Égalité 1
+                { innerRadius: 62914, outerRadius: 62950, thetaStart: (265 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) },  // Égalité 2
+                { innerRadius: 62914, outerRadius: 62950, thetaStart: (276 * Math.PI / 180), thetaLength: (4 * Math.PI / 180) },  // Liberté
+                { innerRadius: 62914, outerRadius: 62950, thetaStart: (284.5 * Math.PI / 180), thetaLength: (1 * Math.PI / 180) }, // Courage
+            ]
+        },
+        moons: [
+            { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
+            { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
+            { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
+    ] },
+];
+
+// This is a placeholder for a more sophisticated ring scaling function.
+// The values are divided by a constant to bring them into a similar
+// scale as the planet radii in the simulation.
+function scaleRingRadius(radiusKm) {
+    return radiusKm / 8000;
+}
     }, moons: [
         { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
         { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
@@ -133,13 +169,19 @@ function scaleBodyRadius(radius) {
     return scale * Math.sqrt(radius);
 }
 
+// This is a placeholder for a more sophisticated ring scaling function.
+// The values are divided by a constant to bring them into a similar
+// scale as the planet radii in the simulation.
+function scaleRingRadius(radiusKm) {
+    return radiusKm / 8000;
+}
+
 const celestialObjects = [];
 const selectableObjects = [];
 let sun;
 
-function createPlanetRings(p_data, planetGroup) {
-    if (!p_data.rings) return;
-
+function createJupiterRings(p_data, planetGroup) {
+    const ringData = p_data.rings;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
@@ -150,44 +192,261 @@ function createPlanetRings(p_data, planetGroup) {
         ringGroup.rotation.z = tiltInRadians;
     }
 
-    if (p_data.rings.bands) { // Handle continuous rings (Uranus, Neptune)
-        const color = p_data.rings.color || 0x888888;
-        const opacity = p_data.rings.opacity !== undefined ? p_data.rings.opacity : 0.5;
-        const ringMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
+    const mainRingData = ringData.bands.find(b => b.type === 'main');
+    const haloRingData = ringData.bands.find(b => b.type === 'halo');
+    const gossamerRingsData = ringData.bands.filter(b => b.type === 'gossamer');
 
-        p_data.rings.bands.forEach(band => {
-            const ringGeometry = new THREE.RingGeometry(band.innerRadius, band.outerRadius, 128);
-            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-            ringGroup.add(ring);
-        });
-    }
-
-    if (p_data.rings.arcs) { // Handle ring arcs (Neptune)
-        const color = p_data.rings.arcColor || p_data.rings.color || 0x888888;
-        const opacity = p_data.rings.arcOpacity !== undefined ? p_data.rings.arcOpacity : 0.8;
-        const arcMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
-
-        p_data.rings.arcs.forEach(arc => {
-            const arcGeometry = new THREE.RingGeometry(arc.innerRadius, arc.outerRadius, 128, 1, arc.thetaStart, arc.thetaLength);
-            const arcMesh = new THREE.Mesh(arcGeometry, arcMaterial);
-            ringGroup.add(arcMesh);
-        });
-    }
-
-    // Handle single, non-banded, non-arced rings (Jupiter, Saturn)
-    if (!p_data.rings.bands && !p_data.rings.arcs) {
-        let ringMaterial;
-        if (p_data.rings.texture) {
-            const ringTexture = textureLoader.load(p_data.rings.texture);
-            const color = p_data.rings.color ? p_data.rings.color : 0xffffff;
-            ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-        } else {
-            const opacity = p_data.rings.opacity !== undefined ? p_data.rings.opacity : 0.5;
-            ringMaterial = new THREE.MeshBasicMaterial({ color: p_data.rings.color, side: THREE.DoubleSide, transparent: true, opacity: opacity });
+    // Function to create a particle-based ring
+    const createParticleRing = (innerRadiusKm, outerRadiusKm, particleCount, color, size, opacity) => {
+        const innerRadius = scaleRingRadius(innerRadiusKm);
+        const outerRadius = scaleRingRadius(outerRadiusKm);
+        const vertices = [];
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = THREE.MathUtils.randFloat(innerRadius, outerRadius);
+            const x = radius * Math.cos(angle);
+            const y = radius * Math.sin(angle);
+            // Add a small vertical displacement for a "wispy" effect
+            const z = (Math.random() - 0.5) * 0.05;
+            vertices.push(x, y, z);
         }
-        const ringGeometry = new THREE.RingGeometry(p_data.rings.innerRadius, p_data.rings.outerRadius, 128);
-        const rings = new THREE.Mesh(ringGeometry, ringMaterial);
-        ringGroup.add(rings);
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+        const material = new THREE.PointsMaterial({
+            color: color,
+            size: size,
+            transparent: true,
+            opacity: opacity,
+            blending: THREE.AdditiveBlending, // Gives a nice "glow" for faint rings
+        });
+
+        const points = new THREE.Points(geometry, material);
+        return points;
+    };
+
+    // Main Ring - Denser
+    if (mainRingData) {
+        const mainRing = createParticleRing(
+            mainRingData.innerRadius,
+            mainRingData.outerRadius,
+            20000, // More particles for a denser look
+            ringData.color,
+            0.02,
+            0.05 // Faint but visible
+        );
+        ringGroup.add(mainRing);
+    }
+
+    // Halo Ring - Fainter, more diffuse
+    if (haloRingData) {
+        const haloRing = createParticleRing(
+            haloRingData.innerRadius,
+            haloRingData.outerRadius,
+            10000,
+            ringData.color,
+            0.02,
+            0.02
+        );
+        ringGroup.add(haloRing);
+    }
+
+    // Gossamer Rings - Faintest
+    gossamerRingsData.forEach(gossamerData => {
+        const gossamerRing = createParticleRing(
+            gossamerData.innerRadius,
+            gossamerData.outerRadius,
+            15000,
+            ringData.color,
+            0.015,
+            0.01 // Barely visible
+        );
+        ringGroup.add(gossamerRing);
+    });
+}
+
+function createSaturnRings(p_data, planetGroup) {
+    const ringData = p_data.rings;
+    const ringGroup = new THREE.Group();
+    planetGroup.add(ringGroup);
+
+    // Apply tilt to the whole group
+    ringGroup.rotation.x = Math.PI / 2;
+    if (p_data.axialTilt) {
+        const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
+        ringGroup.rotation.z = tiltInRadians;
+    }
+
+    // Use the high-resolution texture for transparency
+    const ringTexture = textureLoader.load(ringData.texture);
+    // This texture will act as an alphaMap, defining the gaps.
+    const ringMaterial = new THREE.MeshStandardMaterial({
+        map: ringTexture, // Use the texture for color and brightness variations
+        alphaMap: ringTexture, // Use the same texture for transparency
+        color: ringData.color,
+        side: THREE.DoubleSide,
+        transparent: true,
+        roughness: 0.4, // Icy look
+        metalness: 0.1, // Not very metallic
+    });
+
+    // Create one large ring geometry. The texture will create the illusion of bands and gaps.
+    const innerRadius = scaleRingRadius(ringData.bands[0].innerRadius);
+    const outerRadius = scaleRingRadius(ringData.bands[ringData.bands.length - 1].outerRadius);
+
+    const ringGeometry = new THREE.RingGeometry(
+        innerRadius,
+        outerRadius,
+        256 // Increased segments for better texture mapping
+    );
+
+    const rings = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringGroup.add(rings);
+}
+
+function createUranusRings(p_data, planetGroup) {
+    const ringData = p_data.rings;
+    const ringGroup = new THREE.Group();
+    planetGroup.add(ringGroup);
+
+    // Apply tilt to the whole group
+    ringGroup.rotation.x = Math.PI / 2;
+    if (p_data.axialTilt) {
+        const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
+        ringGroup.rotation.z = tiltInRadians;
+    }
+
+    // Create a subtle noise texture for the alpha map to make rings look less perfect
+    const noiseCanvas = document.createElement('canvas');
+    const noiseContext = noiseCanvas.getContext('2d');
+    noiseCanvas.width = 128;
+    noiseCanvas.height = 1;
+    const imageData = noiseContext.createImageData(128, 1);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        const value = Math.random() * 100 + 155; // Mostly opaque with some transparency
+        imageData.data[i] = value;
+        imageData.data[i + 1] = value;
+        imageData.data[i + 2] = value;
+        imageData.data[i + 3] = 255;
+    }
+    noiseContext.putImageData(imageData, 0, 0);
+    const noiseTexture = new THREE.CanvasTexture(noiseCanvas);
+    noiseTexture.wrapS = THREE.RepeatWrapping;
+    noiseTexture.repeat.x = 8;
+
+    const ringMaterial = new THREE.MeshStandardMaterial({
+        color: ringData.color,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.7,
+        roughness: 0.8,
+        metalness: 0.2,
+        alphaMap: noiseTexture
+    });
+
+    ringData.bands.forEach(band => {
+        const innerRadius = scaleRingRadius(band.innerRadius);
+        const outerRadius = scaleRingRadius(band.outerRadius);
+        const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 128);
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ringGroup.add(ring);
+    });
+}
+
+function createNeptuneRings(p_data, planetGroup) {
+    const ringData = p_data.rings;
+    const ringGroup = new THREE.Group();
+    planetGroup.add(ringGroup);
+
+    // Apply tilt to the whole group
+    ringGroup.rotation.x = Math.PI / 2;
+    if (p_data.axialTilt) {
+        const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
+        ringGroup.rotation.z = tiltInRadians;
+    }
+
+    // Create a patchy noise texture for the main rings
+    const noiseCanvas = document.createElement('canvas');
+    const noiseContext = noiseCanvas.getContext('2d');
+    noiseCanvas.width = 256;
+    noiseCanvas.height = 1;
+    const imageData = noiseContext.createImageData(256, 1);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        const value = Math.random() > 0.6 ? Math.random() * 80 + 20 : 0; // Create a clumpy/patchy effect
+        imageData.data[i] = value;
+        imageData.data[i + 1] = value;
+        imageData.data[i + 2] = value;
+        imageData.data[i + 3] = 255;
+    }
+    noiseContext.putImageData(imageData, 0, 0);
+    const noiseTexture = new THREE.CanvasTexture(noiseCanvas);
+    noiseTexture.wrapS = THREE.RepeatWrapping;
+    noiseTexture.repeat.x = 32;
+
+    // Material for the main, continuous parts of the rings
+    const ringMaterial = new THREE.MeshStandardMaterial({
+        color: ringData.color,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.9,
+        metalness: 0.1,
+        alphaMap: noiseTexture,
+    });
+
+    ringData.bands.forEach(band => {
+        const innerRadius = scaleRingRadius(band.innerRadius);
+        const outerRadius = scaleRingRadius(band.outerRadius);
+        const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 256);
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ringGroup.add(ring);
+    });
+
+    // Material for the brighter arcs
+    const arcMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(ringData.color).multiplyScalar(1.8), // Brighter blue
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 1.0,
+        roughness: 0.8,
+        metalness: 0.2,
+    });
+
+    ringData.arcs.forEach(arc => {
+        const innerRadius = scaleRingRadius(arc.innerRadius);
+        const outerRadius = scaleRingRadius(arc.outerRadius);
+        const arcGeometry = new THREE.RingGeometry(
+            innerRadius,
+            outerRadius,
+            128,
+            1,
+            arc.thetaStart,
+            arc.thetaLength
+        );
+        const arcMesh = new THREE.Mesh(arcGeometry, arcMaterial);
+        ringGroup.add(arcMesh);
+    });
+}
+
+function createPlanetRings(p_data, planetGroup) {
+    if (!p_data.rings) return;
+
+    switch (p_data.rings.type) {
+        case 'jupiter':
+            createJupiterRings(p_data, planetGroup);
+            break;
+        case 'saturn':
+            createSaturnRings(p_data, planetGroup);
+            break;
+        case 'uranus':
+            createUranusRings(p_data, planetGroup);
+            break;
+        case 'neptune':
+            createNeptuneRings(p_data, planetGroup);
+            break;
+        default:
+            console.warn(`Unknown ring type for planet ${p_data.name}`);
     }
 }
 
