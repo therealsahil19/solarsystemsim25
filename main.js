@@ -11,19 +11,20 @@ const speedSlider = document.getElementById('speed-slider');
 
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
 camera.position.z = 80;
 camera.position.y = 30;
+camera.updateProjectionMatrix();
 
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
   antialias: true,
+  logarithmicDepthBuffer: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
 const pointLight = new THREE.PointLight(0xffffff, 500);
-scene.add(pointLight);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
 scene.add(ambientLight);
 
@@ -37,7 +38,7 @@ const planetData = [
     { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0 },
     { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7 },
     { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, moons: [
-        { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3 }
+        { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3, semiMajorAxisKm: 384400 }
     ]},
     { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0 },
     { name: 'Jupiter', radius: 69911, color: 0xffd8ad, semiMajorAxis: 5.204, orbitalPeriod: 4331, axialTilt: 3.08,
@@ -52,15 +53,15 @@ const planetData = [
             ]
         },
         moons: [
-            { name: 'Io', radius: 1821, color: 0.0028, semiMajorAxis: 0.03, orbitalPeriod: 1.77 },
-            { name: 'Europa', radius: 1560, color: 0.0045, semiMajorAxis: 0.04, orbitalPeriod: 3.55 },
-            { name: 'Ganymede', radius: 2634, color: 0.0071, semiMajorAxis: 0.05, orbitalPeriod: 7.15 },
-            { name: 'Callisto', radius: 2410, color: 0.0126, semiMajorAxis: 0.06, orbitalPeriod: 16.69 },
+            { name: 'Io', radius: 1821, color: 0xE5C851, semiMajorAxis: 0.03, orbitalPeriod: 1.77, semiMajorAxisKm: 421600 },
+            { name: 'Europa', radius: 1560, color: 0x8B7D82, semiMajorAxis: 0.04, orbitalPeriod: 3.55, semiMajorAxisKm: 670900 },
+            { name: 'Ganymede', radius: 2634, color: 0x9E978E, semiMajorAxis: 0.05, orbitalPeriod: 7.15, semiMajorAxisKm: 1070000 },
+            { name: 'Callisto', radius: 2410, color: 0x5C5C5C, semiMajorAxis: 0.06, orbitalPeriod: 16.69, semiMajorAxisKm: 1883000 },
     ]},
     { name: 'Saturn', radius: 58232, color: 0xf0e5c8, semiMajorAxis: 9.582, orbitalPeriod: 10747, axialTilt: 26.73,
         rings: {
             type: 'saturn',
-            texture: 'https://bjj.mmedia.is/data/s_rings/transparency.png',
+            texture: 'assets/textures/saturn_rings.png',
             color: 0xFFFEEA,
             bands: [
                 { innerRadius: 74658, outerRadius: 92000 },  // C Ring
@@ -69,10 +70,10 @@ const planetData = [
             ]
         },
         moons: [
-            { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94 },
-            { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4 },
-            { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16 },
-            { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33 },
+            { name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0.045, orbitalPeriod: 0.94, semiMajorAxisKm: 185539 },
+            { name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0.055, orbitalPeriod: 1.4, semiMajorAxisKm: 238042 },
+            { name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0.1, orbitalPeriod: 16, semiMajorAxisKm: 1221865 },
+            { name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 79.33, semiMajorAxisKm: 3560854 },
     ] },
     { name: 'Uranus', radius: 25362, color: 0xAFDBF5, semiMajorAxis: 19.229, orbitalPeriod: 30589, axialTilt: 97.92,
         rings: {
@@ -91,10 +92,10 @@ const planetData = [
             ]
         },
         moons: [
-            { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413 },
-            { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520 },
-            { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144 },
-            { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706 },
+            { name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0.02, orbitalPeriod: 1.413, semiMajorAxisKm: 129846 },
+            { name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 2.520, semiMajorAxisKm: 190929 },
+            { name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: 4.144, semiMajorAxisKm: 265986 },
+            { name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0.05, orbitalPeriod: 8.706, semiMajorAxisKm: 436298 },
     ] },
     { name: 'Neptune', radius: 24622, color: 0x3d5ef5, semiMajorAxis: 30.109, orbitalPeriod: 59800, axialTilt: 29.6,
         rings: {
@@ -115,22 +116,9 @@ const planetData = [
             ]
         },
         moons: [
-            { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
-            { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
-            { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
-    ] },
-];
-
-// This is a placeholder for a more sophisticated ring scaling function.
-// The values are divided by a constant to bring them into a similar
-// scale as the planet radii in the simulation.
-function scaleRingRadius(radiusKm) {
-    return radiusKm / 8000;
-}
-    , moons: [
-        { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122 },
-        { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877 },
-        { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13 },
+            { name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0.03, orbitalPeriod: 1.122, semiMajorAxisKm: 117600 },
+            { name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0.04, orbitalPeriod: -5.877, semiMajorAxisKm: 354760 },
+            { name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0.2, orbitalPeriod: 360.13, semiMajorAxisKm: 5513400 },
     ] },
 ];
 
@@ -279,7 +267,8 @@ function createSaturnRings(p_data, planetGroup) {
     }
 
     // Use the high-resolution texture for transparency
-    const ringTexture = textureLoader.load(ringData.texture);
+    const ringTexture = textureLoader.load('assets/textures/saturn_rings.png');
+    ringTexture.colorSpace = THREE.SRGBColorSpace;
     // This texture will act as an alphaMap, defining the gaps.
     const ringMaterial = new THREE.MeshStandardMaterial({
         map: ringTexture, // Use the texture for color and brightness variations
@@ -466,6 +455,7 @@ planetData.forEach(p_data => {
     if (p_data.name === 'Sun') {
         sun = planet;
         planet.material.emissive = new THREE.Color(0xffff00);
+        sun.add(pointLight);
     }
 
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
@@ -594,7 +584,9 @@ speedSlider.addEventListener('input', (event) => {
 function updateInfoPanel(data) {
     infoName.textContent = data.name;
     infoRadius.textContent = `${data.data.radius.toLocaleString()} km`;
-    infoDistance.textContent = data.type === 'moon' ? `${data.data.semiMajorAxis * 149.6} M km (from ${data.parent.name})` : `${data.data.semiMajorAxis} AU`;
+    infoDistance.textContent = data.type === 'moon'
+        ? `${Math.round(data.data.semiMajorAxisKm).toLocaleString()} km (from ${data.parent.name})`
+        : `${data.data.semiMajorAxis} AU`;
     infoPeriod.textContent = `${data.data.orbitalPeriod} days`;
     infoPanel.classList.remove('hidden');
 }
