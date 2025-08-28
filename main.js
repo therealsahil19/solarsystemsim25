@@ -156,6 +156,21 @@ createStarryBackground();
 createAsteroidBelt();
 createOortCloud();
 
+function clampZoomForBody(bodyMesh) {
+    const box = new THREE.Box3().setFromObject(bodyMesh);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const min = Math.max(sphere.radius * 1.2, 1);
+    const max = Math.max(sphere.radius * 100, 1e6); // adjust for system scale
+
+    controls.minDistance = min;
+    controls.maxDistance = max;
+
+    // Also tighten camera near/far for depth precision
+    camera.near = Math.max(sphere.radius * 0.001, 0.01);
+    camera.far = Math.max(sphere.radius * 2000, 1e7);
+    camera.updateProjectionMatrix();
+}
+
 function onBodySelected(name) {
     const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
     if (!selectedObject) return;
@@ -249,9 +264,7 @@ function onBodySelected(name) {
     DOM.freeCameraButton.classList.remove('hidden');
 
     // --- Adjust Camera ---
-    const radius = scaleBodyRadius(data.radius);
-    controls.minDistance = radius * 1.5;
-    controls.maxDistance = MAX_ZOOM_OUT;
+    clampZoomForBody(selectedObject);
 }
 
 createCelestialBodySelector(planetData, onBodySelected);
