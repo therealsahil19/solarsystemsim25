@@ -24,6 +24,7 @@
     "vite": "^7.1.3"
   },
   "dependencies": {
-    "@playwright/test": "^1.55.0"
+    "@playwright/test": "^1.55.0",
+    "@tweenjs/tween.js": "^23.1.1"
   }
 }
