@@ -11,7 +11,7 @@ export function setupScene(canvas) {
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        logarithmicDepthBuffer: true
+        logarithmicDepthBuffer: false
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

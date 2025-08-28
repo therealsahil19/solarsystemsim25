@@ -22,5 +22,8 @@
   "devDependencies": {
     "three": "^0.179.1",
     "vite": "^7.1.3"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.55.0"
   }
 }

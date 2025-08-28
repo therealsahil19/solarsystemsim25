@@ -18,7 +18,7 @@ export const speedLevels = [0.5, 1, 2, 4, 8, 16, 32, 64, 128];
 const celestialObjects = [];
 const selectableObjects = [];
 let sun;
-const MAX_ZOOM_OUT = 1600;
+const MAX_ZOOM_OUT = 1700;
 
 const simulation = {
     speed: speedLevels[1],
