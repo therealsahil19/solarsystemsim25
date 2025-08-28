@@ -8,7 +8,9 @@ import { createMoons } from './js/moons.js';
 import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
+feature/smooth-camera-transitions
 import * as TWEEN from './node_modules/@tweenjs/tween.js/dist/tween.esm.js';
+main
 
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
