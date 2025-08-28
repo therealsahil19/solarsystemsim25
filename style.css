@@ -198,6 +198,10 @@ canvas {
     transform: scale(0.95);
 }
 
+.control-btn.hidden {
+    display: none;
+}
+
 /* --- Selection Panel --- */
 #selection-panel {
     top: 80px; /* Adjusted position */
