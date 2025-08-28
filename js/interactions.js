@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { speedLevels } from '../main.js';
+import { speedLevels, MAX_ZOOM_OUT } from '../main.js';
 
 export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls, resetSimulation) {
     const raycaster = new THREE.Raycaster();
@@ -19,13 +19,6 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
         if (intersects.length > 0) {
             const clicked = intersects[0].object;
             onBodySelected(clicked.userData.name);
-        } else {
-            simulation.selectedObject = null;
-            simulation.focusTarget = null; // Free the camera
-            domElements.infoPanel.classList.add('hidden');
-            domElements.freeCameraButton.classList.add('hidden');
-            controls.minDistance = 0;
-            controls.maxDistance = 1600; // Oort cloud visible
         }
     });
 
@@ -55,7 +48,7 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
         simulation.focusTarget = null;
         domElements.freeCameraButton.classList.add('hidden');
         controls.minDistance = 0; // Reset zoom constraint
-        controls.maxDistance = 1600; // Oort cloud visible
+        controls.maxDistance = MAX_ZOOM_OUT; // Oort cloud visible
     });
 
     // --- User Interaction Tracking ---
