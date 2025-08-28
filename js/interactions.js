@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { speedLevels } from '../main.js';
 
 export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls, resetSimulation) {
     const raycaster = new THREE.Raycaster();
@@ -29,7 +30,10 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
     });
 
     domElements.speedSlider.addEventListener('input', (event) => {
-        simulation.speed = Number(event.target.value);
+        const speedIndex = parseInt(event.target.value, 10);
+        simulation.speed = speedLevels[speedIndex];
+        domElements.speedValue.textContent = `${speedLevels[speedIndex]}x`;
+
         if (simulation.isPaused) {
             simulation.isPaused = false;
             domElements.pauseButton.textContent = 'Pause';
@@ -55,5 +59,5 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
     });
 
     // Initial state
-    simulation.focusTarget = sun;
+    // simulation.focusTarget = sun; // Let's start with a free camera
 }

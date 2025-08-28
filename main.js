@@ -14,17 +14,18 @@ const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas)
 const textureLoader = new THREE.TextureLoader();
 
 // --- State ---
+export const speedLevels = [0.5, 1, 2, 4, 8, 16, 32];
 const celestialObjects = [];
 const selectableObjects = [];
 let sun;
 const simulation = {
-    speed: 50,
+    speed: speedLevels[1],
     isPaused: false,
     selectedObject: null,
     focusTarget: null,
     time: 0,
     // Store the last speed before pausing
-    lastSpeed: 50,
+    lastSpeed: speedLevels[1],
 };
 
 // --- Object Creation ---

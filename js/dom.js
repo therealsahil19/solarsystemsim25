@@ -8,6 +8,7 @@ export const infoAdvancedDetails = document.getElementById('info-advanced-detail
 export const advancedDetailsToggle = document.getElementById('advanced-details-toggle');
 export const advancedDetailsContent = document.getElementById('advanced-details-content');
 export const speedSlider = document.getElementById('speed-slider');
+export const speedValue = document.getElementById('speed-value');
 export const pauseButton = document.getElementById('pause-btn');
 export const resetButton = document.getElementById('reset-btn');
 export const canvas = document.querySelector('#bg');

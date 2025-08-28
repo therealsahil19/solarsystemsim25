@@ -32,8 +32,8 @@
             <div id="info-panel-resize-handle"></div>
         </div>
         <div id="controls-panel" class="panel">
-            <label for="speed-slider">Speed</label>
-            <input type="range" id="speed-slider" min="0" max="500" value="50">
+            <label for="speed-slider">Speed: <span id="speed-value">1x</span></label>
+            <input type="range" id="speed-slider" min="0" max="6" value="1" step="1">
             <button id="pause-btn" class="control-btn">Pause</button>
             <button id="reset-btn" class="control-btn">Reset</button>
         </div>
@@ -44,7 +44,7 @@
                     <!-- Items will be populated by JS -->
                 </div>
             </div>
-            <button id="free-camera-btn" class="control-btn hidden">Free Camera</button>
+            <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
         </div>
     </div>
 
