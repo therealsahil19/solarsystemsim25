@@ -274,14 +274,37 @@ setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelecte
 
 // --- Shadow Toggle ---
 const shadowToggle = document.getElementById('shadow-toggle');
-shadowToggle.addEventListener('change', (e) => {
-    renderer.shadowMap.enabled = e.target.checked;
+const shadowLabel = document.getElementById('shadow-label');
+const shadowIcon = document.getElementById('shadow-icon');
+const tooltipText = document.querySelector('.tooltip .tooltip-text');
+
+function updateShadowUI() {
+    const isEnabled = shadowToggle.checked;
+
+    // Update Icon and Label
+    shadowIcon.textContent = isEnabled ? '○' : '●';
+    shadowLabel.textContent = isEnabled ? 'Shadows: On' : 'Shadows: Off';
+
+    // Update Tooltip
+    if (isEnabled) {
+        tooltipText.textContent = 'Shadows are enabled, providing realistic shading. This may impact performance.';
+    } else {
+        tooltipText.textContent = 'Shadows are disabled for better performance. Enable for more realism.';
+    }
+
+    // Update Renderer
+    renderer.shadowMap.enabled = isEnabled;
     scene.traverse((object) => {
         if (object.material) {
             object.material.needsUpdate = true;
         }
     });
-});
+}
+
+shadowToggle.addEventListener('change', updateShadowUI);
+
+// Initial UI setup
+updateShadowUI();
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
