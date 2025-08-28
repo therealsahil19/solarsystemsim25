@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './node_modules/three/build/three.module.js';
 import * as DOM from './js/dom.js';
 import { setupScene } from './js/scene.js';
 import { planetData } from './js/data.js';
@@ -8,7 +8,9 @@ import { createMoons } from './js/moons.js';
 import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
-import * as TWEEN from '@tweenjs/tween.js';
+feature/smooth-camera-transitions
+import * as TWEEN from './node_modules/@tweenjs/tween.js/dist/tween.esm.js';
+main
 
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
