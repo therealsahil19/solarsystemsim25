@@ -177,6 +177,52 @@ canvas {
     font-weight: 500;
 }
 
+#speed-slider {
+    width: 200px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+#speed-slider::-webkit-slider-runnable-track {
+    background: #2a2a3a;
+    height: 6px;
+    border-radius: 3px;
+}
+
+#speed-slider::-moz-range-track {
+    background: #2a2a3a;
+    height: 6px;
+    border-radius: 3px;
+}
+
+#speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -5px; /* Centers thumb on track */
+    background-color: #fff;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    border: 2px solid #333;
+}
+
+#speed-slider::-moz-range-thumb {
+    background-color: #fff;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    border: 2px solid #333;
+}
+
+#speed-markers {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+    color: #fff;
+}
+
 /* --- Simulation Control Buttons --- */
 .control-btn {
     background-color: rgba(40, 40, 50, 0.8);

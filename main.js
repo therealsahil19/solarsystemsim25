@@ -14,10 +14,12 @@ const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas)
 const textureLoader = new THREE.TextureLoader();
 
 // --- State ---
-export const speedLevels = [0.5, 1, 2, 4, 8, 16, 32];
+export const speedLevels = [0.5, 1, 2, 4, 8, 16, 32, 64, 128];
 const celestialObjects = [];
 const selectableObjects = [];
 let sun;
+const MAX_ZOOM_OUT = 1600;
+
 const simulation = {
     speed: speedLevels[1],
     isPaused: false,
@@ -26,6 +28,7 @@ const simulation = {
     time: 0,
     // Store the last speed before pausing
     lastSpeed: speedLevels[1],
+    isUserInteracting: false,
 };
 
 // --- Object Creation ---
@@ -243,7 +246,7 @@ function onBodySelected(name) {
     // --- Adjust Camera ---
     const radius = scaleBodyRadius(data.radius);
     controls.minDistance = radius * 1.5;
-    controls.maxDistance = Infinity;
+    controls.maxDistance = MAX_ZOOM_OUT;
 }
 
 createCelestialBodySelector(planetData, onBodySelected);
@@ -300,17 +303,17 @@ function animate() {
             simulation.focusTarget.getWorldPosition(cameraTarget);
         }
 
-        // Smoothly move camera to a position offset from the target.
-        // The offset is scaled by the radius of the target to ensure a good view.
-        if (simulation.focusTarget.userData.data) {
+        // When an object is focused, the camera's target should smoothly follow it.
+        // The OrbitControls will handle the camera's position (rotation, zoom) relative to this target.
+        if (!simulation.isUserInteracting && simulation.focusTarget.userData.data) {
             const radius = scaleBodyRadius(simulation.focusTarget.userData.data.radius);
             const offset = new THREE.Vector3(0, radius * 0.5, radius * 4);
             const desiredCameraPosition = cameraTarget.clone().add(offset);
             // We use lerp to create a smooth animation without external libraries.
             camera.position.lerp(desiredCameraPosition, 0.05);
         }
-
     }
+
     // We always lerp the controls target to smoothly follow the selected object
     // or to stay in place if in free camera mode.
     controls.target.lerp(cameraTarget, 0.05);
