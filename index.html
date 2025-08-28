@@ -33,7 +33,18 @@
         </div>
         <div id="controls-panel" class="panel">
             <label for="speed-slider">Speed: <span id="speed-value">1x</span></label>
-            <input type="range" id="speed-slider" min="0" max="6" value="1" step="1">
+            <input type="range" id="speed-slider" min="0" max="8" value="1" step="1" list="speed-markers">
+            <datalist id="speed-markers">
+                <option value="0"></option>
+                <option value="1"></option>
+                <option value="2"></option>
+                <option value="3"></option>
+                <option value="4"></option>
+                <option value="5"></option>
+                <option value="6"></option>
+                <option value="7"></option>
+                <option value="8"></option>
+            </datalist>
             <button id="pause-btn" class="control-btn">Pause</button>
             <button id="reset-btn" class="control-btn">Reset</button>
         </div>

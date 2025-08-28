@@ -25,7 +25,7 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
             domElements.infoPanel.classList.add('hidden');
             domElements.freeCameraButton.classList.add('hidden');
             controls.minDistance = 0;
-            controls.maxDistance = Infinity;
+            controls.maxDistance = 1600; // Oort cloud visible
         }
     });
 
@@ -55,7 +55,15 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
         simulation.focusTarget = null;
         domElements.freeCameraButton.classList.add('hidden');
         controls.minDistance = 0; // Reset zoom constraint
-        controls.maxDistance = Infinity;
+        controls.maxDistance = 1600; // Oort cloud visible
+    });
+
+    // --- User Interaction Tracking ---
+    controls.addEventListener('start', () => {
+        simulation.isUserInteracting = true;
+    });
+    controls.addEventListener('end', () => {
+        simulation.isUserInteracting = false;
     });
 
     // Initial state
