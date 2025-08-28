@@ -8,6 +8,7 @@ import { createMoons } from './js/moons.js';
 import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
+import * as TWEEN from '@tweenjs/tween.js';
 
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
@@ -29,6 +30,7 @@ const simulation = {
     // Store the last speed before pausing
     lastSpeed: speedLevels[1],
     isUserInteracting: false,
+    isTweening: false,
 };
 
 // --- Object Creation ---
@@ -171,12 +173,35 @@ function clampZoomForBody(bodyMesh) {
     camera.updateProjectionMatrix();
 }
 
+function focusOn(bodyMesh, duration = 900) {
+  simulation.isTweening = true;
+  const box = new THREE.Box3().setFromObject(bodyMesh);
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
+  const target = sphere.center.clone();
+
+  // compute a camera position offset that keeps the same direction but backs off
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const newPos = target.clone().add(dir.multiplyScalar(Math.max(sphere.radius * 3, 50)));
+
+  // animate controls.target
+  new TWEEN.Tween(controls.target)
+    .to({ x: target.x, y: target.y, z: target.z }, duration)
+    .easing(TWEEN.Easing.Cubic.Out)
+    .onComplete(() => {
+      simulation.isTweening = false;
+    })
+    .start();
+  // animate camera.position
+  new TWEEN.Tween(camera.position).to({ x: newPos.x, y: newPos.y, z: newPos.z }, duration).easing(TWEEN.Easing.Cubic.Out).start();
+}
+
 function onBodySelected(name) {
     const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
     if (!selectedObject) return;
 
     simulation.selectedObject = selectedObject;
     simulation.focusTarget = selectedObject;
+    focusOn(selectedObject);
 
     const { data, type } = selectedObject.userData;
 
@@ -356,20 +381,12 @@ function animate() {
         }
 
         // When an object is focused, the camera's target should smoothly follow it.
-        // The OrbitControls will handle the camera's position (rotation, zoom) relative to this target.
-        if (!simulation.isUserInteracting && simulation.focusTarget.userData.data) {
-            const radius = scaleBodyRadius(simulation.focusTarget.userData.data.radius);
-            const offset = new THREE.Vector3(0, radius * 0.5, radius * 4);
-            const desiredCameraPosition = cameraTarget.clone().add(offset);
-            // We use lerp to create a smooth animation without external libraries.
-            camera.position.lerp(desiredCameraPosition, 0.05);
+        if (!simulation.isTweening) {
+            controls.target.lerp(cameraTarget, 0.05);
         }
     }
 
-    // We always lerp the controls target to smoothly follow the selected object
-    // or to stay in place if in free camera mode.
-    controls.target.lerp(cameraTarget, 0.05);
-
+    TWEEN.update();
     controls.update();
     renderer.render(scene, camera);
 }
