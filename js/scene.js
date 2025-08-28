@@ -31,6 +31,13 @@ export function setupScene(canvas) {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.rotateSpeed = 0.9;
+    controls.zoomSpeed = 0.7;
+    controls.enablePan = true;
+    controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+    controls.saveState(); // for reset()
 
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
