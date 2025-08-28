@@ -9,6 +9,8 @@ export function createMoons(p_data, planetGroup, selectableObjects) {
         const moonGeometry = new THREE.SphereGeometry(scaleBodyRadius(m_data.radius), 16, 16);
         const moonMaterial = new THREE.MeshStandardMaterial({ color: m_data.color });
         const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+        moon.castShadow = true;
+        moon.receiveShadow = true;
         moon.userData = { name: m_data.name, type: 'moon', data: m_data, parent: p_data };
         m_data.mesh = moon;
         planetGroup.add(moon);

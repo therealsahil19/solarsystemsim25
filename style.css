@@ -173,6 +173,12 @@ canvas {
     gap: 10px;
 }
 
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 #controls-panel label {
     font-weight: 500;
 }

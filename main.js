@@ -54,12 +54,16 @@ planetData.forEach(p_data => {
         planet = new THREE.Mesh(planetGeometry, planetMaterial);
         sun = planet;
         sun.add(pointLight);
+        sun.castShadow = true;
+        sun.receiveShadow = false;
     } else {
         planetMaterial = new THREE.MeshStandardMaterial({ color: p_data.color });
         if (p_data.texture) {
             planetMaterial.map = textureLoader.load(p_data.texture);
         }
         planet = new THREE.Mesh(planetGeometry, planetMaterial);
+        planet.castShadow = true;
+        planet.receiveShadow = true;
 
         if (p_data.name === 'Earth' && p_data.cloudTexture) {
             const cloudGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius) * 1.01, 64, 64);
@@ -71,6 +75,7 @@ planetData.forEach(p_data => {
                 opacity: 0.8,
             });
             const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            cloudMesh.castShadow = true;
             planet.add(cloudMesh); // Add clouds as a child of the planet
         }
     }
@@ -266,6 +271,17 @@ function resetSimulation() {
 }
 
 setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation);
+
+// --- Shadow Toggle ---
+const shadowToggle = document.getElementById('shadow-toggle');
+shadowToggle.addEventListener('change', (e) => {
+    renderer.shadowMap.enabled = e.target.checked;
+    scene.traverse((object) => {
+        if (object.material) {
+            object.material.needsUpdate = true;
+        }
+    });
+});
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
