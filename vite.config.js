@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/solarsystemsim25/',
   server: {
     port: 3000, // Optional: specify a port
   },
