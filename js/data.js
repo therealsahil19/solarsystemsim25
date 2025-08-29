@@ -2,7 +2,7 @@ export const planetData = [
     { name: 'Sun', radius: 696340, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1 },
     { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_mercury.jpg' },
     { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/4k_venus_atmosphere.jpg' },
-    { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, texture: 'https://visibleearth.nasa.gov/images/147190/explorer-base-map/147191l.png', cloudTexture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_earth_clouds.jpg', moons: [
+    { name: 'Earth', radius: 6371, color: 0x0000ff, semiMajorAxis: 1.0, orbitalPeriod: 365.2, cloudTexture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_earth_clouds.jpg', moons: [
         { name: 'Moon', radius: 1737, color: 0xcccccc, semiMajorAxis: 0.015, orbitalPeriod: 27.3, semiMajorAxisKm: 384400 }
     ]},
     { name: 'Mars', radius: 3390, color: 0xff0000, semiMajorAxis: 1.524, orbitalPeriod: 687.0, texture: 'https://raw.githubusercontent.com/therealsahil19/solarsystemsim25/main/assets/8k_mars.jpg' },
