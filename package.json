@@ -20,11 +20,11 @@
   },
   "homepage": "https://github.com/therealsahil19/solarsystemsim25#readme",
   "devDependencies": {
-    "three": "^0.179.1",
     "vite": "^7.1.3"
   },
   "dependencies": {
     "@playwright/test": "^1.55.0",
-    "@tweenjs/tween.js": "^23.1.1"
+    "@tweenjs/tween.js": "^23.1.1",
+    "three": "^0.179.1"
   }
 }
