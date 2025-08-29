@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Simulator</title>
+  <script type="module" crossorigin src="/solarsystemsim25/assets/index-CrNB9iOz.js"></script>
+  <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-Dp-C1wMa.css">
+</head>
+<body>
+    <canvas id="bg"></canvas>
+
+    <div id="ui-container">
+        <div id="info-panel" class="panel hidden">
+            <div id="info-panel-header">
+                <h2 id="info-name"></h2>
+                <button id="info-panel-close">&times;</button>
+            </div>
+            <div id="info-panel-content">
+                <div id="info-image-container">
+                    <!-- Planet image will be added here -->
+                </div>
+                <div id="info-basic-stats">
+                    <!-- Basic stats will be populated here -->
+                </div>
+                <div id="info-advanced-details" class="hidden">
+                    <button id="advanced-details-toggle">Advanced Details</button>
+                    <div id="advanced-details-content" class="hidden">
+                        <!-- Advanced details will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div id="info-panel-resize-handle"></div>
+        </div>
+        <div id="controls-panel" class="panel">
+            <label for="speed-slider">Speed: <span id="speed-value">1x</span></label>
+            <input type="range" id="speed-slider" min="0" max="8" value="1" step="1" list="speed-markers">
+            <datalist id="speed-markers">
+                <option value="0"></option>
+                <option value="1"></option>
+                <option value="2"></option>
+                <option value="3"></option>
+                <option value="4"></option>
+                <option value="5"></option>
+                <option value="6"></option>
+                <option value="7"></option>
+                <option value="8"></option>
+            </datalist>
+            <button id="pause-btn" class="control-btn">Pause</button>
+            <button id="reset-btn" class="control-btn">Reset</button>
+            <div class="control-group tooltip">
+                <input type="checkbox" id="shadow-toggle" checked>
+                <label for="shadow-toggle" id="shadow-label">Shadows</label>
+                <span id="shadow-icon">☀️</span>
+                <span class="tooltip-text">Toggle realistic planet shadows. This may affect performance.</span>
+            </div>
+        </div>
+        <div id="selection-panel" class="panel">
+            <div id="celestial-selector" class="dropdown">
+                <button id="celestial-selector-toggle" class="dropdown-toggle">Select a Body</button>
+                <div id="celestial-selector-menu" class="dropdown-menu hidden">
+                    <!-- Items will be populated by JS -->
+                </div>
+            </div>
+            <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
+        </div>
+    </div>
+
+</body>
+</html>
