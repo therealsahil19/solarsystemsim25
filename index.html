@@ -63,6 +63,19 @@
             </div>
             <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
         </div>
+
+        <div id="small-info-card" class="panel hidden" role="region" aria-label="Selected body summary">
+            <img id="card-thumb" src="" alt="Selected body thumbnail" />
+            <div class="card-body">
+                <div id="card-title" class="card-title"></div>
+                <div id="card-stats" class="card-stats"></div>
+                <div class="card-buttons">
+                    <button id="btn-frame" title="Frame (F)">Frame</button>
+                    <button id="btn-follow" aria-pressed="false">Follow</button>
+                    <button id="btn-orbit">Orbit</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="main.js"></script>

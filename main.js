@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import * as DOM from './js/dom.js';
 import { setupScene } from './js/scene.js';
 import { planetData } from './js/data.js';
-import { scaleDistance, scaleBodyRadius } from './js/utils.js';
+import { scaleDistance, scaleBodyRadius, instantaneousOrbitalSpeed, speedDisplayKmPerS, AU_TO_M } from './js/utils.js';
 import { createPlanetRings } from './js/rings.js';
 import { createMoons } from './js/moons.js';
 import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
+import { OrbitManager } from './js/OrbitManager.js';
 import * as TWEEN from '@tweenjs/tween.js';
 
 // --- Config ---
@@ -29,6 +30,9 @@ const simulation = {
     isPaused: false,
     selectedObject: null,
     focusTarget: null,
+    followTarget: null,
+    followOffset: new THREE.Vector3(),
+    followSmoothing: 0.05,
     time: 0,
     // Store the last speed before pausing
     lastSpeed: speedLevels[1],
@@ -107,16 +111,12 @@ planetData.forEach(p_data => {
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
 
-    const scaledDistance = scaleDistance(p_data.semiMajorAxis);
-    const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-        new THREE.Path().absellipse(0, 0, scaledDistance, scaledDistance, 0, 2 * Math.PI, false, 0).getSpacedPoints(200)
-    ), new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.5, transparent: true }));
-    orbit.rotation.x = Math.PI / 2;
-    scene.add(orbit);
-
     createPlanetRings(p_data, planetGroup, textureLoader);
     createMoons(p_data, planetGroup, selectableObjects);
 });
+
+const orbitManager = new OrbitManager(celestialObjects);
+orbitManager.init(scene);
 
 function createStarryBackground() {
     const starVertices = [];
@@ -134,28 +134,40 @@ function createStarryBackground() {
 }
 
 function createAsteroidBelt() {
-    const asteroidVertices = [];
+    const count = 5000;
+    const geom = new THREE.SphereGeometry(0.05, 6, 6); // Low-poly spheres
+    const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+    const inst = new THREE.InstancedMesh(geom, mat, count);
+
+    const dummy = new THREE.Object3D();
     const beltMin = scaleDistance(2.2);
     const beltMax = scaleDistance(3.2);
-    for (let i = 0; i < 5000; i++) {
+
+    for (let i = 0; i < count; i++) {
         const angle = Math.random() * 2 * Math.PI;
         const radius = THREE.MathUtils.randFloat(beltMin, beltMax);
         const x = radius * Math.cos(angle);
         const z = radius * Math.sin(angle);
         const y = THREE.MathUtils.randFloat(-0.5, 0.5);
-        asteroidVertices.push(x, y, z);
+
+        dummy.position.set(x, y, z);
+        dummy.scale.setScalar(Math.random() * 0.5 + 0.5); // Random size
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
     }
-    const asteroidGeometry = new THREE.BufferGeometry();
-    asteroidGeometry.setAttribute('position', new THREE.Float32BufferAttribute(asteroidVertices, 3));
-    const asteroidMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.05 });
-    const asteroidBelt = new THREE.Points(asteroidGeometry, asteroidMaterial);
-    scene.add(asteroidBelt);
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
 }
 
 function createOortCloud() {
-    const oortVertices = [];
+    const count = 1000;
     const oortRadius = 1500;
-    for (let i = 0; i < 1000; i++) {
+    const geom = new THREE.SphereGeometry(0.5, 6, 6);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x446688, transparent: true, opacity: 0.5 });
+    const inst = new THREE.InstancedMesh(geom, mat, count);
+
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < count; i++) {
         const u = Math.random();
         const v = Math.random();
         const theta = 2 * Math.PI * u;
@@ -163,13 +175,12 @@ function createOortCloud() {
         const x = oortRadius * Math.sin(phi) * Math.cos(theta);
         const y = oortRadius * Math.sin(phi) * Math.sin(theta);
         const z = oortRadius * Math.cos(phi);
-        oortVertices.push(x, y, z);
+        dummy.position.set(x, y, z);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
     }
-    const oortGeometry = new THREE.BufferGeometry();
-    oortGeometry.setAttribute('position', new THREE.Float32BufferAttribute(oortVertices, 3));
-    const oortMaterial = new THREE.PointsMaterial({ color: 0x446688, size: 0.5, transparent: true, opacity: 0.2 });
-    const oortCloud = new THREE.Points(oortGeometry, oortMaterial);
-    scene.add(oortCloud);
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
 }
 
 createStarryBackground();
@@ -242,6 +253,13 @@ function onBodySelected(name) {
     frameObject(selectedObject);
 
     const { data, type } = selectedObject.userData;
+
+    // --- Update Small Info Card ---
+    DOM.smallInfoCard.classList.remove('hidden');
+    DOM.cardTitle.textContent = data.name;
+    DOM.cardThumb.src = data.texture || ''; // Use texture if available
+    DOM.cardThumb.alt = `${data.name} thumbnail`;
+
 
     // --- Update Header and Color ---
     DOM.infoName.textContent = data.name;
@@ -344,9 +362,14 @@ function resetSimulation() {
         DOM.pauseButton.textContent = 'Pause';
     }
     onBodySelected('Sun');
+    DOM.smallInfoCard.classList.add('hidden');
 }
 
+feat/simulation-enhancements
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, celestialObjects);
+=======
 setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI);
+main
 
 // --- Shadow Toggle ---
 const shadowToggle = document.getElementById('shadow-toggle');
@@ -456,10 +479,16 @@ function animate() {
     }
 
     celestialObjects.forEach(p => {
-        const scaledDistance = scaleDistance(p.semiMajorAxis);
+        if (p.name === 'Sun') return; // Sun doesn't orbit
+
+        const a = scaleDistance(p.semiMajorAxis);
+        const e = p.eccentricity;
+        const b = a * Math.sqrt(1 - e * e);
+        const c = a * e;
+
         const planetAngle = (2 * Math.PI * simulation.time) / p.orbitalPeriod;
-        p.group.position.x = scaledDistance * Math.cos(planetAngle);
-        p.group.position.z = scaledDistance * Math.sin(planetAngle);
+        p.group.position.x = a * Math.cos(planetAngle) - c;
+        p.group.position.z = b * Math.sin(planetAngle);
 
         if (p.moons) {
             p.moons.forEach(m => {
@@ -484,6 +513,42 @@ function animate() {
             controls.target.lerp(cameraTarget, 0.05);
         }
     }
+
+    // --- Handle Following Camera ---
+    if (simulation.followTarget) {
+        const targetPosition = new THREE.Vector3();
+        simulation.followTarget.getWorldPosition(targetPosition);
+        const desiredCamPos = targetPosition.clone().add(simulation.followOffset);
+        camera.position.lerp(desiredCamPos, simulation.followSmoothing);
+        controls.target.lerp(targetPosition, simulation.followSmoothing);
+    }
+
+    // --- Update Small Info Card Stats ---
+    if (simulation.selectedObject && simulation.selectedObject.userData.data) {
+        const selectedBody = celestialObjects.find(c => c.name === simulation.selectedObject.userData.name);
+        if (selectedBody && selectedBody.name !== 'Sun') {
+            // The sun is at a focus of the ellipse, which is at the origin of the scene.
+            // The planet's position is already relative to the sun.
+            const r_scaled = selectedBody.group.position.length();
+
+            // To get the unscaled distance, we need to know the current angle, which we can derive from the simulation time.
+            const planetAngle = (2 * Math.PI * simulation.time) / selectedBody.orbitalPeriod;
+            const a_au = selectedBody.semiMajorAxis;
+            const e = selectedBody.eccentricity;
+            // Unscaled distance r from the focus (sun)
+            const r_au = a_au * (1 - e * e) / (1 + e * Math.cos(planetAngle));
+
+            const r_m = r_au * AU_TO_M;
+            const a_m = a_au * AU_TO_M;
+            const speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m });
+            DOM.cardStats.textContent = `Dist: ${r_au.toFixed(2)} AU • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
+        } else if (selectedBody) {
+            DOM.cardStats.textContent = 'At the center of the solar system';
+        }
+    }
+
+    // --- Update Orbit LODs ---
+    orbitManager.updateLODs(camera, 800);
 
     TWEEN.update();
     controls.update();
