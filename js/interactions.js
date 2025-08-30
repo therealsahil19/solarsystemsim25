@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { speedLevels, MAX_ZOOM_OUT } from '../main.js';
 
-export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls, resetSimulation) {
+export function setupInteractions(camera, selectableObjects, sun, domElements, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -29,13 +29,13 @@ export function setupInteractions(camera, selectableObjects, sun, domElements, s
 
         if (simulation.isPaused) {
             simulation.isPaused = false;
-            domElements.pauseButton.textContent = 'Pause';
+            updatePauseButtonUI();
         }
     });
 
     domElements.pauseButton.addEventListener('click', () => {
         simulation.isPaused = !simulation.isPaused;
-        domElements.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
+        updatePauseButtonUI();
     });
 
     domElements.resetButton.addEventListener('click', () => {

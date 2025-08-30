@@ -10,6 +10,9 @@ import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
 import * as TWEEN from '@tweenjs/tween.js';
 
+// --- Config ---
+const CAMERA_FOCUS_DEFAULT_MS = 700;
+
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
 const textureLoader = new THREE.TextureLoader();
@@ -32,6 +35,7 @@ const simulation = {
     isUserInteracting: false,
     isTweening: false,
 };
+let visibilityPaused = false;
 
 // --- Object Creation ---
 planetData.forEach(p_data => {
@@ -159,26 +163,46 @@ function clampZoomForBody(bodyMesh) {
     camera.updateProjectionMatrix();
 }
 
-function focusOn(bodyMesh, duration = 900) {
-  simulation.isTweening = true;
-  const box = new THREE.Box3().setFromObject(bodyMesh);
-  const sphere = box.getBoundingSphere(new THREE.Sphere());
-  const target = sphere.center.clone();
+function cancelActiveCameraTween() {
+    if (window._activeCameraTween) {
+        window._activeCameraTween.stop?.();
+        window._activeCameraTween = null;
+    }
+}
 
-  // compute a camera position offset that keeps the same direction but backs off
-  const dir = camera.position.clone().sub(controls.target).normalize();
-  const newPos = target.clone().add(dir.multiplyScalar(Math.max(sphere.radius * 3, 50)));
+function frameObject(object3D, opts = {}) {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const DEFAULT = { duration: CAMERA_FOCUS_DEFAULT_MS, fitOffset: 1.2 };
+    const { duration, fitOffset } = { ...DEFAULT, ...opts };
+    const dur = prefersReduced ? Math.min(duration, 150) : duration;
 
-  // animate controls.target
-  new TWEEN.Tween(controls.target)
-    .to({ x: target.x, y: target.y, z: target.z }, duration)
-    .easing(TWEEN.Easing.Cubic.Out)
-    .onComplete(() => {
-      simulation.isTweening = false;
-    })
-    .start();
-  // animate camera.position
-  new TWEEN.Tween(camera.position).to({ x: newPos.x, y: newPos.y, z: newPos.z }, duration).easing(TWEEN.Easing.Cubic.Out).start();
+    simulation.isTweening = true;
+
+    const box = new THREE.Box3().setFromObject(object3D);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3()).length() || 1;
+    const fov = camera.fov * (Math.PI / 180);
+    const distance = Math.abs(size / Math.sin(fov / 2)) * fitOffset;
+
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const newPos = center.clone().add(dir.multiplyScalar(distance));
+
+    cancelActiveCameraTween();
+
+    const t1 = new TWEEN.Tween(controls.target)
+        .to(center, dur)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .onUpdate(() => controls.update())
+        .onComplete(() => simulation.isTweening = false)
+        .start();
+
+    const t2 = new TWEEN.Tween(camera.position)
+        .to(newPos, dur)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .onUpdate(() => camera.lookAt(controls.target))
+        .start();
+
+    window._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
 }
 
 function onBodySelected(name) {
@@ -187,7 +211,7 @@ function onBodySelected(name) {
 
     simulation.selectedObject = selectedObject;
     simulation.focusTarget = selectedObject;
-    focusOn(selectedObject);
+    frameObject(selectedObject);
 
     const { data, type } = selectedObject.userData;
 
@@ -294,7 +318,7 @@ function resetSimulation() {
     onBodySelected('Sun');
 }
 
-setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation);
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI);
 
 // --- Shadow Toggle ---
 const shadowToggle = document.getElementById('shadow-toggle');
@@ -329,6 +353,44 @@ shadowToggle.addEventListener('change', updateShadowUI);
 
 // Initial UI setup
 updateShadowUI();
+
+function updatePauseButtonUI() {
+    DOM.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
+}
+
+// --- Visibility API for Pausing ---
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (!simulation.isPaused) {
+            visibilityPaused = true;
+            simulation.isPaused = true;
+            updatePauseButtonUI();
+        }
+    } else {
+        if (visibilityPaused) {
+            simulation.isPaused = false;
+            visibilityPaused = false;
+            updatePauseButtonUI();
+        }
+    }
+});
+
+window.addEventListener('blur', () => {
+    if (!simulation.isPaused) {
+        visibilityPaused = true;
+        simulation.isPaused = true;
+        updatePauseButtonUI();
+    }
+});
+
+window.addEventListener('focus', () => {
+    if (visibilityPaused) {
+        simulation.isPaused = false;
+        visibilityPaused = false;
+        updatePauseButtonUI();
+    }
+});
+
 
 // --- Animation Loop ---
 const clock = new THREE.Clock();
