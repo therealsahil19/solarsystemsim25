@@ -37,6 +37,34 @@ const simulation = {
 };
 let visibilityPaused = false;
 
+// ===== perfState (module scope) =====
+const perfState = {
+  MAX_DPR: 1.75,      // clamp for devicePixelRatio
+  MIN_SCALE: 0.5,     // lowest dynamicScale
+  dynamicScale: 1.0,  // current scale multiplier (0.5..1.0)
+  frameTimes: [],     // circular buffer of recent frame durations (ms)
+  evalInterval: 1000, // ms between evaluations
+  lastEval: performance.now(),
+  evalWindow: 60,     // number of samples to average (~1s at 60fps)
+  upperMs: 22,        // if avg > upperMs -> step down
+  lowerMs: 13,        // if avg < lowerMs -> step up
+  step: 0.1,          // change step for dynamicScale
+};
+
+// Apply DPR + resize (call whenever dynamicScale or DPR clamp changes)
+function applyDPR() {
+  const dpr = Math.min(window.devicePixelRatio || 1, perfState.MAX_DPR) * perfState.dynamicScale;
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(window.innerWidth, window.innerHeight, false); // false -> don't change style
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+}
+
+// Call once at init to set initial DPR
+applyDPR();
+
+window.addEventListener('resize', applyDPR);
+
 // --- Object Creation ---
 planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
@@ -393,15 +421,38 @@ window.addEventListener('focus', () => {
 
 
 // --- Animation Loop ---
-const clock = new THREE.Clock();
 const cameraTarget = new THREE.Vector3();
 
 function animate() {
     requestAnimationFrame(animate);
 
-    const deltaTime = clock.getDelta();
+    const now = performance.now();
+    const dt = now - (animate._lastTime || now);
+    animate._lastTime = now;
+
+    // store dt (ms) in circular buffer
+    const buf = perfState.frameTimes;
+    buf.push(dt);
+    if (buf.length > perfState.evalWindow) buf.shift();
+
+    // Evaluate every perfState.evalInterval ms
+    if (now - perfState.lastEval >= perfState.evalInterval && buf.length > 3) {
+        perfState.lastEval = now;
+        const avg = buf.reduce((s, v) => s + v, 0) / buf.length;
+
+        if (avg > perfState.upperMs && perfState.dynamicScale > perfState.MIN_SCALE) {
+            perfState.dynamicScale = Math.max(perfState.MIN_SCALE, +(perfState.dynamicScale - perfState.step).toFixed(2));
+            applyDPR();
+            // console.log('perf: lowered scale =>', perfState.dynamicScale, 'avg ms', avg.toFixed(1));
+        } else if (avg < perfState.lowerMs && perfState.dynamicScale < 1.0) {
+            perfState.dynamicScale = Math.min(1.0, +(perfState.dynamicScale + perfState.step).toFixed(2));
+            applyDPR();
+            // console.log('perf: raised scale =>', perfState.dynamicScale, 'avg ms', avg.toFixed(1));
+        }
+    }
+
     if (!simulation.isPaused) {
-        simulation.time += deltaTime * simulation.speed;
+        simulation.time += (dt / 1000) * simulation.speed;
     }
 
     celestialObjects.forEach(p => {

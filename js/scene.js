@@ -14,7 +14,6 @@ export function setupScene(canvas) {
         logarithmicDepthBuffer: false
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -38,12 +37,6 @@ export function setupScene(canvas) {
     controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
     controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     controls.saveState(); // for reset()
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
 
     return { scene, camera, renderer, controls, pointLight };
 }
