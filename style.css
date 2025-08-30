@@ -365,6 +365,7 @@ canvas {
     opacity: 1;
 }
 
+feat/desktop-experience-improvements
 /* --- Debug HUD --- */
 #debug-hud {
     top: 80px;
@@ -464,4 +465,72 @@ canvas {
 #time-scale-input {
     width: 70px;
     text-align: center;
+=======
+/* --- Small Info Card --- */
+#small-info-card {
+    top: 80px;
+    right: 10px;
+    width: 280px;
+    display: flex;
+    padding: 10px;
+    /* Inherits .panel styles, so we just add specifics */
+}
+
+#card-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+    background-color: #111; /* Placeholder */
+}
+
+#small-info-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 12px;
+    flex-grow: 1;
+}
+
+#small-info-card .card-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+}
+
+#small-info-card .card-stats {
+    font-size: 0.85em;
+    color: #ccc;
+    margin-bottom: 8px;
+}
+
+#small-info-card .card-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+#small-info-card .card-buttons button {
+    background: rgba(80, 80, 90, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #eee;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+#small-info-card .card-buttons button:hover {
+    background: rgba(100, 100, 110, 0.9);
+}
+
+#small-info-card .card-buttons button[aria-pressed="true"] {
+    background: #4d90fe;
+    border-color: #4d90fe;
+    color: white;
+main
 }

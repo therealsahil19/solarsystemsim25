@@ -81,6 +81,7 @@
             <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
         </div>
 
+feat/desktop-experience-improvements
         <div id="debug-hud" class="panel hidden">
             <h4>Debug Info</h4>
             <div>Preset: <span id="debug-preset"></span></div>
@@ -103,6 +104,19 @@
                 <li><kbd>+</kbd>/<kbd>-</kbd><span>Increase/Decrease Speed</span></li>
             </ul>
             <button id="help-overlay-close" class="control-btn">Close</button>
+=======
+        <div id="small-info-card" class="panel hidden" role="region" aria-label="Selected body summary">
+            <img id="card-thumb" src="" alt="Selected body thumbnail" />
+            <div class="card-body">
+                <div id="card-title" class="card-title"></div>
+                <div id="card-stats" class="card-stats"></div>
+                <div class="card-buttons">
+                    <button id="btn-frame" title="Frame (F)">Frame</button>
+                    <button id="btn-follow" aria-pressed="false">Follow</button>
+                    <button id="btn-orbit">Orbit</button>
+                </div>
+            </div>
+main
         </div>
     </div>
 

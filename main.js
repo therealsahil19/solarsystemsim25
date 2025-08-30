@@ -2,13 +2,17 @@ import * as THREE from 'three';
 import * as DOM from './js/dom.js';
 import { setupScene } from './js/scene.js';
 import { planetData } from './js/data.js';
-import { scaleDistance, scaleBodyRadius } from './js/utils.js';
+import { scaleDistance, scaleBodyRadius, instantaneousOrbitalSpeed, speedDisplayKmPerS, AU_TO_M } from './js/utils.js';
 import { createPlanetRings } from './js/rings.js';
 import { createMoons } from './js/moons.js';
 import { createCelestialBodySelector } from './js/dom.js';
 import { setupInteractions } from './js/interactions.js';
 import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
+import { OrbitManager } from './js/OrbitManager.js';
 import * as TWEEN from '@tweenjs/tween.js';
+
+// --- Config ---
+const CAMERA_FOCUS_DEFAULT_MS = 700;
 
 // --- Setup ---
 const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
@@ -26,12 +30,16 @@ const simulation = {
     isPaused: false,
     selectedObject: null,
     focusTarget: null,
+    followTarget: null,
+    followOffset: new THREE.Vector3(),
+    followSmoothing: 0.05,
     time: 0,
     lastSpeed: 1,
     isUserInteracting: false,
     isTweening: false,
     singleStep: false,
 };
+let visibilityPaused = false;
 
 // ===== perfState (module scope) =====
 const perfState = {
@@ -146,6 +154,7 @@ planetData.forEach(p_data => {
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
 
+feat/desktop-experience-improvements
     const scaledDistance = scaleDistance(p_data.semiMajorAxis);
     const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
         new THREE.Path().absellipse(0, 0, scaledDistance, scaledDistance, 0, 2 * Math.PI, false, 0).getSpacedPoints(200)
@@ -154,9 +163,14 @@ planetData.forEach(p_data => {
     scene.add(orbit);
     orbits.push(orbit);
 
+=======
+main
     createPlanetRings(p_data, planetGroup, textureLoader);
     createMoons(p_data, planetGroup, selectableObjects);
 });
+
+const orbitManager = new OrbitManager(celestialObjects);
+orbitManager.init(scene);
 
 function createStarryBackground() {
     const starVertices = [];
@@ -174,28 +188,40 @@ function createStarryBackground() {
 }
 
 function createAsteroidBelt() {
-    const asteroidVertices = [];
+    const count = 5000;
+    const geom = new THREE.SphereGeometry(0.05, 6, 6); // Low-poly spheres
+    const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+    const inst = new THREE.InstancedMesh(geom, mat, count);
+
+    const dummy = new THREE.Object3D();
     const beltMin = scaleDistance(2.2);
     const beltMax = scaleDistance(3.2);
-    for (let i = 0; i < 5000; i++) {
+
+    for (let i = 0; i < count; i++) {
         const angle = Math.random() * 2 * Math.PI;
         const radius = THREE.MathUtils.randFloat(beltMin, beltMax);
         const x = radius * Math.cos(angle);
         const z = radius * Math.sin(angle);
         const y = THREE.MathUtils.randFloat(-0.5, 0.5);
-        asteroidVertices.push(x, y, z);
+
+        dummy.position.set(x, y, z);
+        dummy.scale.setScalar(Math.random() * 0.5 + 0.5); // Random size
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
     }
-    const asteroidGeometry = new THREE.BufferGeometry();
-    asteroidGeometry.setAttribute('position', new THREE.Float32BufferAttribute(asteroidVertices, 3));
-    const asteroidMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.05 });
-    const asteroidBelt = new THREE.Points(asteroidGeometry, asteroidMaterial);
-    scene.add(asteroidBelt);
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
 }
 
 function createOortCloud() {
-    const oortVertices = [];
+    const count = 1000;
     const oortRadius = 1500;
-    for (let i = 0; i < 1000; i++) {
+    const geom = new THREE.SphereGeometry(0.5, 6, 6);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x446688, transparent: true, opacity: 0.5 });
+    const inst = new THREE.InstancedMesh(geom, mat, count);
+
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < count; i++) {
         const u = Math.random();
         const v = Math.random();
         const theta = 2 * Math.PI * u;
@@ -203,13 +229,12 @@ function createOortCloud() {
         const x = oortRadius * Math.sin(phi) * Math.cos(theta);
         const y = oortRadius * Math.sin(phi) * Math.sin(theta);
         const z = oortRadius * Math.cos(phi);
-        oortVertices.push(x, y, z);
+        dummy.position.set(x, y, z);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
     }
-    const oortGeometry = new THREE.BufferGeometry();
-    oortGeometry.setAttribute('position', new THREE.Float32BufferAttribute(oortVertices, 3));
-    const oortMaterial = new THREE.PointsMaterial({ color: 0x446688, size: 0.5, transparent: true, opacity: 0.2 });
-    const oortCloud = new THREE.Points(oortGeometry, oortMaterial);
-    scene.add(oortCloud);
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
 }
 
 createStarryBackground();
@@ -231,26 +256,46 @@ function clampZoomForBody(bodyMesh) {
     camera.updateProjectionMatrix();
 }
 
-function focusOn(bodyMesh, duration = 900) {
-  simulation.isTweening = true;
-  const box = new THREE.Box3().setFromObject(bodyMesh);
-  const sphere = box.getBoundingSphere(new THREE.Sphere());
-  const target = sphere.center.clone();
+function cancelActiveCameraTween() {
+    if (window._activeCameraTween) {
+        window._activeCameraTween.stop?.();
+        window._activeCameraTween = null;
+    }
+}
 
-  // compute a camera position offset that keeps the same direction but backs off
-  const dir = camera.position.clone().sub(controls.target).normalize();
-  const newPos = target.clone().add(dir.multiplyScalar(Math.max(sphere.radius * 3, 50)));
+function frameObject(object3D, opts = {}) {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const DEFAULT = { duration: CAMERA_FOCUS_DEFAULT_MS, fitOffset: 1.2 };
+    const { duration, fitOffset } = { ...DEFAULT, ...opts };
+    const dur = prefersReduced ? Math.min(duration, 150) : duration;
 
-  // animate controls.target
-  new TWEEN.Tween(controls.target)
-    .to({ x: target.x, y: target.y, z: target.z }, duration)
-    .easing(TWEEN.Easing.Cubic.Out)
-    .onComplete(() => {
-      simulation.isTweening = false;
-    })
-    .start();
-  // animate camera.position
-  new TWEEN.Tween(camera.position).to({ x: newPos.x, y: newPos.y, z: newPos.z }, duration).easing(TWEEN.Easing.Cubic.Out).start();
+    simulation.isTweening = true;
+
+    const box = new THREE.Box3().setFromObject(object3D);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3()).length() || 1;
+    const fov = camera.fov * (Math.PI / 180);
+    const distance = Math.abs(size / Math.sin(fov / 2)) * fitOffset;
+
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const newPos = center.clone().add(dir.multiplyScalar(distance));
+
+    cancelActiveCameraTween();
+
+    const t1 = new TWEEN.Tween(controls.target)
+        .to(center, dur)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .onUpdate(() => controls.update())
+        .onComplete(() => simulation.isTweening = false)
+        .start();
+
+    const t2 = new TWEEN.Tween(camera.position)
+        .to(newPos, dur)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .onUpdate(() => camera.lookAt(controls.target))
+        .start();
+
+    window._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
 }
 
 function onBodySelected(name) {
@@ -259,9 +304,16 @@ function onBodySelected(name) {
 
     simulation.selectedObject = selectedObject;
     simulation.focusTarget = selectedObject;
-    focusOn(selectedObject);
+    frameObject(selectedObject);
 
     const { data, type } = selectedObject.userData;
+
+    // --- Update Small Info Card ---
+    DOM.smallInfoCard.classList.remove('hidden');
+    DOM.cardTitle.textContent = data.name;
+    DOM.cardThumb.src = data.texture || ''; // Use texture if available
+    DOM.cardThumb.alt = `${data.name} thumbnail`;
+
 
     // --- Update Header and Color ---
     DOM.infoName.textContent = data.name;
@@ -364,9 +416,18 @@ function resetSimulation() {
         DOM.pauseButton.textContent = 'Pause';
     }
     onBodySelected('Sun');
+    DOM.smallInfoCard.classList.add('hidden');
 }
 
+feat/desktop-experience-improvements
 setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, orbits, planetData);
+=======
+feat/simulation-enhancements
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, celestialObjects);
+=======
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI);
+main
+main
 
 // --- Shadow Toggle ---
 const shadowToggle = document.getElementById('shadow-toggle');
@@ -402,6 +463,7 @@ shadowToggle.addEventListener('change', updateShadowUI);
 // Initial UI setup
 updateShadowUI();
 
+feat/desktop-experience-improvements
 // --- Performance Preset Handling ---
 let currentPreset = DOM.performancePreset.value;
 setPerformancePreset(currentPreset);
@@ -423,6 +485,44 @@ function updateDebugHUD(avg) {
     DOM.debugScale.textContent = perfState.dynamicScale.toFixed(2);
 }
 
+=======
+function updatePauseButtonUI() {
+    DOM.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
+}
+
+// --- Visibility API for Pausing ---
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (!simulation.isPaused) {
+            visibilityPaused = true;
+            simulation.isPaused = true;
+            updatePauseButtonUI();
+        }
+    } else {
+        if (visibilityPaused) {
+            simulation.isPaused = false;
+            visibilityPaused = false;
+            updatePauseButtonUI();
+        }
+    }
+});
+
+window.addEventListener('blur', () => {
+    if (!simulation.isPaused) {
+        visibilityPaused = true;
+        simulation.isPaused = true;
+        updatePauseButtonUI();
+    }
+});
+
+window.addEventListener('focus', () => {
+    if (visibilityPaused) {
+        simulation.isPaused = false;
+        visibilityPaused = false;
+        updatePauseButtonUI();
+    }
+});
+main
 
 
 // --- Animation Loop ---
@@ -467,10 +567,16 @@ function animate() {
     }
 
     celestialObjects.forEach(p => {
-        const scaledDistance = scaleDistance(p.semiMajorAxis);
+        if (p.name === 'Sun') return; // Sun doesn't orbit
+
+        const a = scaleDistance(p.semiMajorAxis);
+        const e = p.eccentricity;
+        const b = a * Math.sqrt(1 - e * e);
+        const c = a * e;
+
         const planetAngle = (2 * Math.PI * simulation.time) / p.orbitalPeriod;
-        p.group.position.x = scaledDistance * Math.cos(planetAngle);
-        p.group.position.z = scaledDistance * Math.sin(planetAngle);
+        p.group.position.x = a * Math.cos(planetAngle) - c;
+        p.group.position.z = b * Math.sin(planetAngle);
 
         if (p.moons) {
             p.moons.forEach(m => {
@@ -495,6 +601,42 @@ function animate() {
             controls.target.lerp(cameraTarget, 0.05);
         }
     }
+
+    // --- Handle Following Camera ---
+    if (simulation.followTarget) {
+        const targetPosition = new THREE.Vector3();
+        simulation.followTarget.getWorldPosition(targetPosition);
+        const desiredCamPos = targetPosition.clone().add(simulation.followOffset);
+        camera.position.lerp(desiredCamPos, simulation.followSmoothing);
+        controls.target.lerp(targetPosition, simulation.followSmoothing);
+    }
+
+    // --- Update Small Info Card Stats ---
+    if (simulation.selectedObject && simulation.selectedObject.userData.data) {
+        const selectedBody = celestialObjects.find(c => c.name === simulation.selectedObject.userData.name);
+        if (selectedBody && selectedBody.name !== 'Sun') {
+            // The sun is at a focus of the ellipse, which is at the origin of the scene.
+            // The planet's position is already relative to the sun.
+            const r_scaled = selectedBody.group.position.length();
+
+            // To get the unscaled distance, we need to know the current angle, which we can derive from the simulation time.
+            const planetAngle = (2 * Math.PI * simulation.time) / selectedBody.orbitalPeriod;
+            const a_au = selectedBody.semiMajorAxis;
+            const e = selectedBody.eccentricity;
+            // Unscaled distance r from the focus (sun)
+            const r_au = a_au * (1 - e * e) / (1 + e * Math.cos(planetAngle));
+
+            const r_m = r_au * AU_TO_M;
+            const a_m = a_au * AU_TO_M;
+            const speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m });
+            DOM.cardStats.textContent = `Dist: ${r_au.toFixed(2)} AU • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
+        } else if (selectedBody) {
+            DOM.cardStats.textContent = 'At the center of the solar system';
+        }
+    }
+
+    // --- Update Orbit LODs ---
+    orbitManager.updateLODs(camera, 800);
 
     TWEEN.update();
     controls.update();

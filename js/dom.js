@@ -36,6 +36,15 @@ export const timeStepForward = document.getElementById('time-step-forward');
 export const timePresetButtons = document.querySelectorAll('.time-preset');
 export const timeScaleInput = document.getElementById('time-scale-input');
 
+// Small Info Card
+export const smallInfoCard = document.getElementById('small-info-card');
+export const cardThumb = document.getElementById('card-thumb');
+export const cardTitle = document.getElementById('card-title');
+export const cardStats = document.getElementById('card-stats');
+export const btnFrame = document.getElementById('btn-frame');
+export const btnFollow = document.getElementById('btn-follow');
+export const btnOrbit = document.getElementById('btn-orbit');
+
 export function createCelestialBodySelector(planetData, onSelect) {
     const list = document.createElement('ul');
     list.className = 'dropdown-menu-list';
