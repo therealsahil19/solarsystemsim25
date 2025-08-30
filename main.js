@@ -19,14 +19,14 @@ const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas)
 const textureLoader = new THREE.TextureLoader();
 
 // --- State ---
-export const speedLevels = [0.5, 1, 2, 4, 8, 16, 32, 64, 128];
 const celestialObjects = [];
 const selectableObjects = [];
+const orbits = [];
 let sun;
 export const MAX_ZOOM_OUT = 1700;
 
 const simulation = {
-    speed: speedLevels[1],
+    speed: 1,
     isPaused: false,
     selectedObject: null,
     focusTarget: null,
@@ -34,10 +34,10 @@ const simulation = {
     followOffset: new THREE.Vector3(),
     followSmoothing: 0.05,
     time: 0,
-    // Store the last speed before pausing
-    lastSpeed: speedLevels[1],
+    lastSpeed: 1,
     isUserInteracting: false,
     isTweening: false,
+    singleStep: false,
 };
 let visibilityPaused = false;
 
@@ -54,6 +54,49 @@ const perfState = {
   lowerMs: 13,        // if avg < lowerMs -> step up
   step: 0.1,          // change step for dynamicScale
 };
+
+// ===== Performance Presets =====
+const performancePresets = {
+    low: {
+        MAX_DPR: 1.0,
+        dynamicScale: 0.75,
+        shadowMapSize: 512,
+    },
+    medium: {
+        MAX_DPR: 1.5,
+        dynamicScale: 0.9,
+        shadowMapSize: 1024,
+    },
+    high: {
+        MAX_DPR: 2.0,
+        dynamicScale: 1.0,
+        shadowMapSize: 4096,
+    },
+};
+
+function setPerformancePreset(presetName) {
+    if (presetName === 'auto') {
+        // Restore adaptive behavior defaults
+        perfState.MAX_DPR = 1.75;
+        // Let the adaptive logic control dynamicScale.
+    } else {
+        const preset = performancePresets[presetName];
+        if (!preset) return;
+
+        perfState.MAX_DPR = preset.MAX_DPR;
+        perfState.dynamicScale = preset.dynamicScale;
+
+        if (pointLight.shadow.mapSize.width !== preset.shadowMapSize) {
+            pointLight.shadow.mapSize.width = preset.shadowMapSize;
+            pointLight.shadow.mapSize.height = preset.shadowMapSize;
+            if (pointLight.shadow.map) {
+                pointLight.shadow.map.dispose();
+                pointLight.shadow.map = null;
+            }
+        }
+    }
+    applyDPR();
+}
 
 // Apply DPR + resize (call whenever dynamicScale or DPR clamp changes)
 function applyDPR() {
@@ -111,6 +154,17 @@ planetData.forEach(p_data => {
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
 
+feat/desktop-experience-improvements
+    const scaledDistance = scaleDistance(p_data.semiMajorAxis);
+    const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        new THREE.Path().absellipse(0, 0, scaledDistance, scaledDistance, 0, 2 * Math.PI, false, 0).getSpacedPoints(200)
+    ), new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.5, transparent: true }));
+    orbit.rotation.x = Math.PI / 2;
+    scene.add(orbit);
+    orbits.push(orbit);
+
+=======
+main
     createPlanetRings(p_data, planetGroup, textureLoader);
     createMoons(p_data, planetGroup, selectableObjects);
 });
@@ -365,10 +419,14 @@ function resetSimulation() {
     DOM.smallInfoCard.classList.add('hidden');
 }
 
+feat/desktop-experience-improvements
+setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, orbits, planetData);
+=======
 feat/simulation-enhancements
 setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, celestialObjects);
 =======
 setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI);
+main
 main
 
 // --- Shadow Toggle ---
@@ -405,6 +463,29 @@ shadowToggle.addEventListener('change', updateShadowUI);
 // Initial UI setup
 updateShadowUI();
 
+feat/desktop-experience-improvements
+// --- Performance Preset Handling ---
+let currentPreset = DOM.performancePreset.value;
+setPerformancePreset(currentPreset);
+
+DOM.performancePreset.addEventListener('change', (e) => {
+    currentPreset = e.target.value;
+    setPerformancePreset(e.target.value);
+});
+
+
+// --- Debug HUD ---
+function updateDebugHUD(avg) {
+    if (!DOM.debugHUD || DOM.debugHUD.classList.contains('hidden')) {
+        return;
+    }
+    DOM.debugPreset.textContent = currentPreset;
+    DOM.debugDPR.textContent = renderer.getPixelRatio().toFixed(2);
+    DOM.debugAvgMs.textContent = avg ? avg.toFixed(1) : '...';
+    DOM.debugScale.textContent = perfState.dynamicScale.toFixed(2);
+}
+
+=======
 function updatePauseButtonUI() {
     DOM.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
 }
@@ -441,6 +522,7 @@ window.addEventListener('focus', () => {
         updatePauseButtonUI();
     }
 });
+main
 
 
 // --- Animation Loop ---
@@ -472,10 +554,16 @@ function animate() {
             applyDPR();
             // console.log('perf: raised scale =>', perfState.dynamicScale, 'avg ms', avg.toFixed(1));
         }
+        updateDebugHUD(avg);
     }
 
     if (!simulation.isPaused) {
         simulation.time += (dt / 1000) * simulation.speed;
+        if (simulation.singleStep) {
+            simulation.isPaused = true;
+            simulation.singleStep = false;
+            DOM.pauseButton.textContent = 'Resume';
+        }
     }
 
     celestialObjects.forEach(p => {

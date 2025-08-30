@@ -32,26 +32,43 @@
             <div id="info-panel-resize-handle"></div>
         </div>
         <div id="controls-panel" class="panel">
-            <label for="speed-slider">Speed: <span id="speed-value">1x</span></label>
-            <input type="range" id="speed-slider" min="0" max="8" value="1" step="1" list="speed-markers">
-            <datalist id="speed-markers">
-                <option value="0"></option>
-                <option value="1"></option>
-                <option value="2"></option>
-                <option value="3"></option>
-                <option value="4"></option>
-                <option value="5"></option>
-                <option value="6"></option>
-                <option value="7"></option>
-                <option value="8"></option>
-            </datalist>
-            <button id="pause-btn" class="control-btn">Pause</button>
             <button id="reset-btn" class="control-btn">Reset</button>
             <div class="control-group tooltip">
                 <input type="checkbox" id="shadow-toggle" checked>
                 <label for="shadow-toggle" id="shadow-label">Shadows</label>
                 <span id="shadow-icon">☀️</span>
                 <span class="tooltip-text">Toggle realistic planet shadows. This may affect performance.</span>
+            </div>
+            <div class="control-group">
+                <label for="performance-preset">Quality:</label>
+                <select id="performance-preset" class="control-btn">
+                    <option value="auto">Auto</option>
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+        </div>
+        <div id="time-controls" class="panel">
+            <div class="control-group">
+                <label>Time Scale:</label>
+                <span id="time-scale-value">1x</span>
+            </div>
+            <div class="control-group">
+                <button id="pause-btn" class="control-btn">Pause</button>
+                <button id="time-step-backward" class="control-btn">&lt;&lt;</button>
+                <input type="range" id="time-scale-slider" min="0" max="3" value="0" step="0.01" style="width: 120px;">
+                <button id="time-step-forward" class="control-btn">&gt;&gt;</button>
+            </div>
+            <div class="control-group">
+                <button class="control-btn time-preset" data-speed="1">1x</button>
+                <button class="control-btn time-preset" data-speed="10">10x</button>
+                <button class="control-btn time-preset" data-speed="100">100x</button>
+                <button class="control-btn time-preset" data-speed="1000">1000x</button>
+            </div>
+            <div class="control-group">
+                <label for="time-scale-input">Exact:</label>
+                <input type="text" id="time-scale-input" class="control-btn" size="6">
             </div>
         </div>
         <div id="selection-panel" class="panel">
@@ -64,6 +81,30 @@
             <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
         </div>
 
+feat/desktop-experience-improvements
+        <div id="debug-hud" class="panel hidden">
+            <h4>Debug Info</h4>
+            <div>Preset: <span id="debug-preset"></span></div>
+            <div>DPR: <span id="debug-dpr"></span></div>
+            <div>Avg. ms: <span id="debug-avg-ms"></span></div>
+            <div>Scale: <span id="debug-scale"></span></div>
+        </div>
+
+        <div id="help-overlay" class="panel hidden">
+            <h3>Keyboard Shortcuts</h3>
+            <ul>
+                <li><kbd>Space</kbd><span>Play/Pause Simulation</span></li>
+                <li><kbd>R</kbd><span>Reset Simulation</span></li>
+                <li><kbd>S</kbd><span>Toggle Shadows</span></li>
+                <li><kbd>T</kbd><span>Toggle Orbit Trails</span></li>
+                <li><kbd>F</kbd><span>Frame Selected Body</span></li>
+                <li><kbd>~</kbd><span>Toggle Debug HUD</span></li>
+                <li><kbd>H</kbd><span>Toggle This Help Menu</span></li>
+                <li><kbd>1-9</kbd><span>Quick Select Planet</span></li>
+                <li><kbd>+</kbd>/<kbd>-</kbd><span>Increase/Decrease Speed</span></li>
+            </ul>
+            <button id="help-overlay-close" class="control-btn">Close</button>
+=======
         <div id="small-info-card" class="panel hidden" role="region" aria-label="Selected body summary">
             <img id="card-thumb" src="" alt="Selected body thumbnail" />
             <div class="card-body">
@@ -75,6 +116,7 @@
                     <button id="btn-orbit">Orbit</button>
                 </div>
             </div>
+main
         </div>
     </div>
 

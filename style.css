@@ -365,6 +365,107 @@ canvas {
     opacity: 1;
 }
 
+feat/desktop-experience-improvements
+/* --- Debug HUD --- */
+#debug-hud {
+    top: 80px;
+    right: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#debug-hud.hidden {
+    display: none;
+}
+
+#debug-hud h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+    font-weight: 600;
+}
+
+#debug-hud div {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 5px;
+}
+
+/* --- Help Overlay --- */
+#help-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    max-width: 90vw;
+    z-index: 200;
+}
+
+#help-overlay.hidden {
+    display: none;
+}
+
+#help-overlay h3 {
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 1px solid #555;
+    padding-bottom: 10px;
+    font-weight: 600;
+}
+
+#help-overlay ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#help-overlay li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#help-overlay li:last-child {
+    border-bottom: none;
+}
+
+#help-overlay kbd {
+    background-color: #2a2a3a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+}
+
+#help-overlay-close {
+    margin-top: 20px;
+    width: 100%;
+}
+
+/* --- Time Controls --- */
+#time-controls {
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+#time-controls .control-group {
+    gap: 8px;
+}
+
+#time-scale-input {
+    width: 70px;
+    text-align: center;
+=======
 /* --- Small Info Card --- */
 #small-info-card {
     top: 80px;
@@ -431,4 +532,5 @@ canvas {
     background: #4d90fe;
     border-color: #4d90fe;
     color: white;
+main
 }
