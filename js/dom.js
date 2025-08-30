@@ -7,10 +7,9 @@ export const infoBasicStats = document.getElementById('info-basic-stats');
 export const infoAdvancedDetails = document.getElementById('info-advanced-details');
 export const advancedDetailsToggle = document.getElementById('advanced-details-toggle');
 export const advancedDetailsContent = document.getElementById('advanced-details-content');
-export const speedSlider = document.getElementById('speed-slider');
-export const speedValue = document.getElementById('speed-value');
 export const pauseButton = document.getElementById('pause-btn');
 export const resetButton = document.getElementById('reset-btn');
+export const shadowToggle = document.getElementById('shadow-toggle');
 export const canvas = document.querySelector('#bg');
 
 export const controlsPanel = document.getElementById('controls-panel');
@@ -19,6 +18,23 @@ export const celestialSelector = document.getElementById('celestial-selector');
 export const celestialSelectorToggle = document.getElementById('celestial-selector-toggle');
 export const celestialSelectorMenu = document.getElementById('celestial-selector-menu');
 export const freeCameraButton = document.getElementById('free-camera-btn');
+export const performancePreset = document.getElementById('performance-preset');
+
+export const debugHUD = document.getElementById('debug-hud');
+export const debugPreset = document.getElementById('debug-preset');
+export const debugDPR = document.getElementById('debug-dpr');
+export const debugAvgMs = document.getElementById('debug-avg-ms');
+export const debugScale = document.getElementById('debug-scale');
+
+export const helpOverlay = document.getElementById('help-overlay');
+export const helpOverlayClose = document.getElementById('help-overlay-close');
+
+export const timeScaleValue = document.getElementById('time-scale-value');
+export const timeStepBackward = document.getElementById('time-step-backward');
+export const timeScaleSlider = document.getElementById('time-scale-slider');
+export const timeStepForward = document.getElementById('time-step-forward');
+export const timePresetButtons = document.querySelectorAll('.time-preset');
+export const timeScaleInput = document.getElementById('time-scale-input');
 
 export function createCelestialBodySelector(planetData, onSelect) {
     const list = document.createElement('ul');
