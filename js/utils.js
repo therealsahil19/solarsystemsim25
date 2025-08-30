@@ -39,3 +39,19 @@ export function scaleBodyRadius(radius) {
 export function scaleRingRadius(radiusKm) {
     return radiusKm / 8000;
 }
+
+const MU_SUN = 1.32712440018e20; // m^3 / s^2
+export const AU_TO_M = 1.496e11;
+
+export function instantaneousOrbitalSpeed({ a_m, r_m, mu = MU_SUN }) {
+  // a_m: semi-major axis in meters
+  // r_m: current radius (distance from Sun) in meters
+  return Math.sqrt(mu * (2 / r_m - 1 / a_m)); // m/s
+}
+
+export function speedDisplayKmPerS(speed_m_s) {
+  if (typeof speed_m_s !== 'number' || !isFinite(speed_m_s)) {
+    return 'N/A';
+  }
+  return (speed_m_s / 1000).toFixed(2) + ' km/s';
+}
