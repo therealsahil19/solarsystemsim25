@@ -365,7 +365,6 @@ canvas {
     opacity: 1;
 }
 
-feat/desktop-experience-improvements
 /* --- Debug HUD --- */
 #debug-hud {
     top: 80px;
@@ -442,6 +441,40 @@ feat/desktop-experience-improvements
     font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
 }
 
+.help-search-container {
+    margin-bottom: 15px;
+}
+
+#help-search-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.shortcuts-grid {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px 15px;
+    align-items: center;
+}
+
+.shortcuts-grid .action-label {
+    text-align: left;
+}
+
+.shortcuts-grid .key-binding {
+    background-color: #2a2a3a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+    justify-self: end;
+}
+
+.shortcuts-grid .remap-button {
+    padding: 4px 8px;
+    font-size: 0.9em;
+}
+
 #help-overlay-close {
     margin-top: 20px;
     width: 100%;
@@ -465,7 +498,8 @@ feat/desktop-experience-improvements
 #time-scale-input {
     width: 70px;
     text-align: center;
-=======
+}
+
 /* --- Small Info Card --- */
 #small-info-card {
     top: 80px;
@@ -532,5 +566,16 @@ feat/desktop-experience-improvements
     background: #4d90fe;
     border-color: #4d90fe;
     color: white;
-main
+}
+
+.help-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 1.5em;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    padding: 0;
 }

@@ -14,6 +14,7 @@ import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { AU_TO_M } from './utils/misc';
+import { renderShortcutsList } from './ui/shortcuts-panel';
 
 const CAMERA_FOCUS_DEFAULT_MS = 700;
 
@@ -567,3 +568,11 @@ const animate: Animate = (time) => {
 }
 
 animate(0);
+
+dom.helpButton.addEventListener('click', () => {
+    renderShortcutsList();
+    dom.helpOverlay.classList.toggle('hidden');
+});
+
+// Initial render of the shortcuts list
+renderShortcutsList();
