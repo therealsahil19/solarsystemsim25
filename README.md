@@ -1,6 +1,30 @@
 # Solar System Sim 25
 
+[![CI](https://github.com/therealsahil19/solarsystemsim25/actions/workflows/ci.yml/badge.svg)](https://github.com/therealsahil19/solarsystemsim25/actions)
+[![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://therealsahil19.github.io/solarsystemsim25/)
+[![Codecov](https://codecov.io/gh/therealsahil19/solarsystemsim25/branch/main/graph/badge.svg)](https://codecov.io/gh/therealsahil19/solarsystemsim25)
+![type-coverage](https://img.shields.io/badge/type%20coverage-XX%25-brightgreen)
+
 A 3D interactive solar system simulator built with JavaScript and Three.js. This project provides a dynamic visualization of our solar system, allowing users to explore the planets, their moons, and other celestial phenomena.
+
+## Getting Started
+
+To run the simulation locally, follow these steps:
+
+1.  Clone the repository:
+    ```sh
+    git clone https://github.com/therealsahil19/solarsystemsim25.git
+    cd solarsystemsim25
+    ```
+2.  Install the dependencies:
+    ```sh
+    npm install
+    ```
+3.  Start the development server:
+    ```sh
+    npm run dev
+    ```
+This will open the simulation in your default browser.
 
 ## Features
 
