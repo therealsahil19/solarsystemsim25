@@ -81,7 +81,6 @@
             <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
         </div>
 
-feat/desktop-experience-improvements
         <div id="debug-hud" class="panel hidden">
             <h4>Debug Info</h4>
             <div>Preset: <span id="debug-preset"></span></div>
@@ -92,19 +91,15 @@ feat/desktop-experience-improvements
 
         <div id="help-overlay" class="panel hidden">
             <h3>Keyboard Shortcuts</h3>
-            <ul>
-                <li><kbd>Space</kbd><span>Play/Pause Simulation</span></li>
-                <li><kbd>R</kbd><span>Reset Simulation</span></li>
-                <li><kbd>S</kbd><span>Toggle Shadows</span></li>
-                <li><kbd>T</kbd><span>Toggle Orbit Trails</span></li>
-                <li><kbd>F</kbd><span>Frame Selected Body</span></li>
-                <li><kbd>~</kbd><span>Toggle Debug HUD</span></li>
-                <li><kbd>H</kbd><span>Toggle This Help Menu</span></li>
-                <li><kbd>1-9</kbd><span>Quick Select Planet</span></li>
-                <li><kbd>+</kbd>/<kbd>-</kbd><span>Increase/Decrease Speed</span></li>
-            </ul>
-            <button id="help-overlay-close" class="control-btn">Close</button>
-=======
+            <div class="help-search-container">
+                <input type="text" id="help-search-input" class="control-btn" placeholder="Search actions...">
+            </div>
+            <div id="shortcuts-list" class="shortcuts-grid">
+                <!-- Shortcut rows will be populated by JS -->
+            </div>
+            <button id="help-overlay-close" class="control-btn" style="margin-top: 15px;">Close</button>
+        </div>
+
         <div id="small-info-card" class="panel hidden" role="region" aria-label="Selected body summary">
             <img id="card-thumb" src="" alt="Selected body thumbnail" />
             <div class="card-body">
@@ -116,8 +111,9 @@ feat/desktop-experience-improvements
                     <button id="btn-orbit">Orbit</button>
                 </div>
             </div>
-main
         </div>
+
+        <button id="help-button" class="control-btn help-btn">?</button>
     </div>
 
     <script type="module" src="src/main.ts"></script>

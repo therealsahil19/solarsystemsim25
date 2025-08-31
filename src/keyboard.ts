@@ -3,6 +3,8 @@ import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
 import { planetData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { getShortcuts, ShortcutAction } from './state/shortcuts';
+import { renderShortcutsList } from './ui/shortcuts-panel';
 
 type Simulation = {
     selectedObject: THREE.Object3D | null;
@@ -18,31 +20,6 @@ export function setupKeyboardShortcuts(
     camera: THREE.PerspectiveCamera,
     controls: OrbitControls,
 ) {
-    const keyActionMap: { [key: string]: string } = {
-        'Space': 'toggle-pause',
-        'Backquote': 'toggle-debug-hud',
-        'KeyR': 'reset-time',
-        'KeyS': 'toggle-shadows',
-        'Equal': 'increase-speed',
-        'NumpadAdd': 'increase-speed',
-        'Minus': 'decrease-speed',
-        'NumpadSubtract': 'decrease-speed',
-        'KeyT': 'toggle-trails',
-        'Digit1': 'select-body-1',
-        'Digit2': 'select-body-2',
-        'Digit3': 'select-body-3',
-        'Digit4': 'select-body-4',
-        'Digit5': 'select-body-5',
-        'Digit6': 'select-body-6',
-        'Digit7': 'select-body-7',
-        'Digit8': 'select-body-8',
-        'Digit9': 'select-body-9',
-        'KeyF': 'frame-selected',
-        'KeyH': 'toggle-help',
-        'Escape': 'close-modals',
-        'Period': 'frame-advance',
-    };
-
     function frameObject(bodyMesh: THREE.Object3D | null) {
         if (!bodyMesh) return;
         const sphere = new THREE.Box3().setFromObject(bodyMesh).getBoundingSphere(new THREE.Sphere());
@@ -57,7 +34,7 @@ export function setupKeyboardShortcuts(
             .start();
     }
 
-    const handleKeyAction = (action: string) => {
+    const handleKeyAction = (action: ShortcutAction) => {
         if (action.startsWith('select-body-')) {
             const index = parseInt(action.split('-')[2], 10) - 1;
             if (planetData[index]) {
@@ -89,7 +66,10 @@ export function setupKeyboardShortcuts(
             }
             case 'toggle-trails': orbits.forEach(o => o.visible = !o.visible); break;
             case 'frame-selected': frameObject(simulation.selectedObject); break;
-            case 'toggle-help': dom.helpOverlay.classList.toggle('hidden'); break;
+            case 'toggle-help':
+                renderShortcutsList();
+                dom.helpOverlay.classList.toggle('hidden');
+                break;
             case 'close-modals': dom.helpOverlay.classList.add('hidden'); break;
             case 'frame-advance':
                 simulation.singleStep = true;
@@ -110,18 +90,28 @@ export function setupKeyboardShortcuts(
             return;
         }
 
-        let action;
-        if (event.shiftKey && event.code === 'ArrowRight') {
-            action = 'fine-step-forward';
-        } else if (event.shiftKey && event.code === 'ArrowLeft') {
-            action = 'fine-step-backward';
-        } else {
-            action = keyActionMap[event.code];
+        const shortcuts = getShortcuts();
+        let actionToPerform: ShortcutAction | null = null;
+
+        for (const action in shortcuts) {
+            const binding = shortcuts[action as ShortcutAction];
+            if (binding) {
+                const eventMatch =
+                    event.code === binding.code &&
+                    !!event.shiftKey === !!binding.shiftKey &&
+                    !!event.ctrlKey === !!binding.ctrlKey &&
+                    !!event.altKey === !!binding.altKey;
+
+                if (eventMatch) {
+                    actionToPerform = action as ShortcutAction;
+                    break;
+                }
+            }
         }
 
-        if (action) {
+        if (actionToPerform) {
             event.preventDefault();
-            handleKeyAction(action);
+            handleKeyAction(actionToPerform);
         }
     });
 }
