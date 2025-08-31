@@ -14,7 +14,11 @@ import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { AU_TO_M } from './utils/misc';
+feat/ts-strict
 import { renderShortcutsList } from './ui/shortcuts-panel';
+=======
+import { renderShortcutsList, initShortcutsPanel } from './ui/shortcuts-panel';
+main
 
 const CAMERA_FOCUS_DEFAULT_MS = 700;
 
@@ -576,3 +580,7 @@ dom.helpButton.addEventListener('click', () => {
 
 // Initial render of the shortcuts list
 renderShortcutsList();
+feat/ts-strict
+=======
+initShortcutsPanel();
+main
