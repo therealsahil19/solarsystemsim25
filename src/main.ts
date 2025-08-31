@@ -9,7 +9,7 @@ import { createCelestialBodySelector } from './ui/celestial-selector';
 import { setupInteractions } from './interactions';
 import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
 import { OrbitManager } from './orbits/OrbitManager';
-import { useStore } from './state/store';
+import { store } from './state/store';
 import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
@@ -269,7 +269,7 @@ function onBodySelected(name: string) {
     const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
     if (!selectedObject) return;
 
-    useStore.getState().setSelectedBodyId(name);
+    store.getState().setSelectedBodyId(name);
     simulation.focusTarget = selectedObject;
     frameObject(selectedObject);
 
@@ -367,10 +367,10 @@ initInfoPanel();
 function resetSimulation() {
     simulation.time = 0;
     simulation.focusTarget = sun!;
-    useStore.getState().setSelectedBodyId('Sun');
+    store.getState().setSelectedBodyId('Sun');
     camera.position.set(0, 150, 400);
     controls.target.set(0, 0, 0);
-    useStore.getState().setPaused(false);
+    store.getState().setPaused(false);
     onBodySelected('Sun');
     dom.smallInfoCard.classList.add('hidden');
 }
@@ -414,20 +414,20 @@ function updateDebugHUD(avg: number) {
 }
 
 function updatePauseButtonUI() {
-    dom.pauseButton.textContent = useStore.getState().isPaused ? 'Resume' : 'Pause';
+    dom.pauseButton.textContent = store.getState().isPaused ? 'Resume' : 'Pause';
 }
 
 let visibilityPaused = false;
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        if (!useStore.getState().isPaused) {
+        if (!store.getState().isPaused) {
             visibilityPaused = true;
-            useStore.getState().setPaused(true);
+            store.getState().setPaused(true);
             updatePauseButtonUI();
         }
     } else {
         if (visibilityPaused) {
-            useStore.getState().setPaused(false);
+            store.getState().setPaused(false);
             visibilityPaused = false;
             updatePauseButtonUI();
         }
@@ -435,22 +435,22 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener('blur', () => {
-    if (!useStore.getState().isPaused) {
+    if (!store.getState().isPaused) {
         visibilityPaused = true;
-        useStore.getState().setPaused(true);
+        store.getState().setPaused(true);
         updatePauseButtonUI();
     }
 });
 
 window.addEventListener('focus', () => {
     if (visibilityPaused) {
-        useStore.getState().setPaused(false);
+        store.getState().setPaused(false);
         visibilityPaused = false;
         updatePauseButtonUI();
     }
 });
 
-useStore.subscribe((state) => {
+store.subscribe((state) => {
     const selectedBody = celestialObjects.find(c => c.name === state.selectedBodyId);
     if (selectedBody) {
         simulation.focusTarget = selectedBody.mesh;
@@ -489,10 +489,10 @@ const animate: Animate = (time) => {
         updateDebugHUD(avg);
     }
 
-    if (!useStore.getState().isPaused) {
-        simulation.time += (dt / 1000) * useStore.getState().timeScale;
+    if (!store.getState().isPaused) {
+        simulation.time += (dt / 1000) * store.getState().timeScale;
         if (simulation.singleStep) {
-            useStore.getState().setPaused(true);
+            store.getState().setPaused(true);
             simulation.singleStep = false;
             updatePauseButtonUI();
         }
@@ -542,8 +542,8 @@ const animate: Animate = (time) => {
         controls.target.lerp(targetPosition, simulation.followSmoothing);
     }
 
-    if (useStore.getState().selectedBodyId) {
-        const selectedBody = celestialObjects.find(c => c.name === useStore.getState().selectedBodyId);
+    if (store.getState().selectedBodyId) {
+        const selectedBody = celestialObjects.find(c => c.name === store.getState().selectedBodyId);
         if (selectedBody && selectedBody.name !== 'Sun') {
             const planetAngle = (2 * Math.PI * simulation.time) / selectedBody.orbitalPeriod;
             const a_au = selectedBody.semiMajorAxis;
