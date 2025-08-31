@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
-import { useStore } from './state/store';
+import { store } from './state/store';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 type Simulation = {
@@ -67,7 +67,7 @@ export function setupInteractions(
     });
 
     function updateTimeScaleUI() {
-        const speed = useStore.getState().timeScale;
+        const speed = store.getState().timeScale;
         dom.timeScaleValue.textContent = `${speed.toFixed(speed < 10 ? 1 : 0)}x`;
         dom.timeScaleInput.value = speed.toFixed(speed < 10 ? 2 : 0);
 
@@ -80,8 +80,8 @@ export function setupInteractions(
     if (dom.timeScaleSlider) {
         dom.timeScaleSlider.addEventListener('input', (event) => {
             const exponent = parseFloat((event.target as HTMLInputElement).value);
-            useStore.getState().setTimeScale(Math.pow(10, exponent));
-            useStore.getState().setPaused(false);
+            store.getState().setTimeScale(Math.pow(10, exponent));
+            store.getState().setPaused(false);
             updateTimeScaleUI();
         });
     }
@@ -90,8 +90,8 @@ export function setupInteractions(
         dom.timePresetButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const speed = parseFloat(button.dataset.speed!);
-                useStore.getState().setTimeScale(speed);
-                useStore.getState().setPaused(false);
+                store.getState().setTimeScale(speed);
+                store.getState().setPaused(false);
                 updateTimeScaleUI();
             });
         });
@@ -101,15 +101,15 @@ export function setupInteractions(
         dom.timeScaleInput.addEventListener('change', (event) => {
             const speed = parseFloat((event.target as HTMLInputElement).value);
             if (!isNaN(speed) && speed > 0) {
-                useStore.getState().setTimeScale(speed);
-                useStore.getState().setPaused(false);
+                store.getState().setTimeScale(speed);
+                store.getState().setPaused(false);
             }
             updateTimeScaleUI();
         });
     }
 
     function getStepDelta() {
-        const speed = useStore.getState().timeScale;
+        const speed = store.getState().timeScale;
         if (speed >= 1000) return 30;
         if (speed >= 100) return 10;
         if (speed >= 10) return 1;
@@ -139,7 +139,7 @@ export function setupInteractions(
     updateTimeScaleUI();
 
     dom.pauseButton.addEventListener('click', () => {
-        useStore.getState().setPaused(!useStore.getState().isPaused);
+        store.getState().setPaused(!store.getState().isPaused);
     });
 
     dom.resetButton.addEventListener('click', () => {

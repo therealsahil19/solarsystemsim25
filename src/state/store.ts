@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 
 interface AppState {
   selectedBodyId: string | null;
@@ -13,7 +13,7 @@ interface AppState {
   setFollowingId: (id: string | null) => void;
 }
 
-export const useStore = create<AppState>((set) => ({
+export const store = createStore<AppState>((set) => ({
   selectedBodyId: null,
   setSelectedBodyId: (id) => set({ selectedBodyId: id }),
   isPaused: false,
