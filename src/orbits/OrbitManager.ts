@@ -1,8 +1,28 @@
 import * as THREE from 'three';
-import { scaleDistance } from './utils.js';
+import { CelestialBody } from '../data';
+import { scaleDistance } from '../utils/misc';
+
+interface OrbitData {
+    line: THREE.Line;
+    geometries: {
+        high: THREE.BufferGeometry;
+        low: THREE.BufferGeometry;
+    };
+    currentLOD: 'high' | 'low';
+}
 
 export class OrbitManager {
-    constructor(celestialObjects, { segmentsHigh = 512, segmentsLow = 64, color = 0xaaaaaa, opacity = 0.5 } = {}) {
+    private celestialObjects: CelestialBody[];
+    private segmentsHigh: number;
+    private segmentsLow: number;
+    private color: number;
+    private opacity: number;
+    private orbits: Map<string, OrbitData>;
+
+    constructor(
+        celestialObjects: CelestialBody[],
+        { segmentsHigh = 512, segmentsLow = 64, color = 0xaaaaaa, opacity = 0.5 } = {}
+    ) {
         this.celestialObjects = celestialObjects;
         this.segmentsHigh = segmentsHigh;
         this.segmentsLow = segmentsLow;
@@ -11,11 +31,11 @@ export class OrbitManager {
         this.orbits = new Map();
     }
 
-    createGeometries(body) {
+    private createGeometries(body: CelestialBody): { high: THREE.BufferGeometry; low: THREE.BufferGeometry } {
         const a = scaleDistance(body.semiMajorAxis);
         const e = body.eccentricity;
         const b = a * Math.sqrt(1 - e * e);
-        const c = a * e; // distance from center to focus
+        const c = a * e;
 
         const path = new THREE.Path().absellipse(-c, 0, a, b, 0, 2 * Math.PI, false, 0);
 
@@ -28,7 +48,7 @@ export class OrbitManager {
         return { high: highResGeom, low: lowResGeom };
     }
 
-    init(scene) {
+    public init(scene: THREE.Scene): void {
         const material = new THREE.LineBasicMaterial({
             color: this.color,
             opacity: this.opacity,
@@ -39,9 +59,9 @@ export class OrbitManager {
             if (body.semiMajorAxis > 0) {
                 const geometries = this.createGeometries(body);
 
-                // Start with low-res geometry
                 const line = new THREE.Line(geometries.low, material);
                 line.rotation.x = Math.PI / 2;
+                line.userData.name = body.name;
 
                 scene.add(line);
 
@@ -51,22 +71,21 @@ export class OrbitManager {
                     currentLOD: 'low'
                 });
 
-                // Also attach the orbit line to the celestial object for easy access
                 body.orbit = line;
             }
         });
     }
 
-    setLOD(bodyName, lod) {
+    public setLOD(bodyName: string, lod: 'high' | 'low'): void {
         const orbit = this.orbits.get(bodyName);
         if (orbit && orbit.currentLOD !== lod) {
-            orbit.line.geometry.dispose(); // Dispose of the old geometry
+            orbit.line.geometry.dispose();
             orbit.line.geometry = orbit.geometries[lod];
             orbit.currentLOD = lod;
         }
     }
 
-    updateLODs(camera, threshold) {
+    public updateLODs(camera: THREE.PerspectiveCamera, threshold: number): void {
         this.orbits.forEach((orbit, name) => {
             const body = this.celestialObjects.find(c => c.name === name);
             if (body && body.group) {

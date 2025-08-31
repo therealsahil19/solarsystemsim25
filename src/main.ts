@@ -1,84 +1,62 @@
 import * as THREE from 'three';
-import * as DOM from './js/dom.js';
-import { setupScene } from './js/scene.js';
-import { planetData } from './js/data.js';
-import { scaleDistance, scaleBodyRadius, instantaneousOrbitalSpeed, speedDisplayKmPerS, AU_TO_M } from './js/utils.js';
-import { createPlanetRings } from './js/rings.js';
-import { createMoons } from './js/moons.js';
-import { createCelestialBodySelector } from './js/dom.js';
-import { setupInteractions } from './js/interactions.js';
-import { initInfoPanel, updateInfoPanelColor } from './js/info-panel.js';
-import { OrbitManager } from './js/OrbitManager.js';
 import * as TWEEN from '@tweenjs/tween.js';
+import { setupScene } from './scene';
+import { planetData, CelestialBody } from './data';
+import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS } from './utils/misc';
+import { createPlanetRings } from './bodies/rings';
+import { createMoons } from './bodies/moons';
+import { createCelestialBodySelector } from './ui/celestial-selector';
+import { setupInteractions } from './interactions';
+import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
+import { OrbitManager } from './orbits/OrbitManager';
+import { useStore } from './state/store';
+import { setupKeyboardShortcuts } from './keyboard';
+import * as dom from './ui/dom';
+import { instantaneousOrbitalSpeed } from './orbits/kepler';
+import { AU_TO_M } from './utils/misc';
 
-// --- Config ---
 const CAMERA_FOCUS_DEFAULT_MS = 700;
 
-// --- Setup ---
-const { scene, camera, renderer, controls, pointLight } = setupScene(DOM.canvas);
+const { scene, camera, renderer, controls, pointLight } = setupScene(dom.canvas);
 const textureLoader = new THREE.TextureLoader();
 
-// --- State ---
-const celestialObjects = [];
-const selectableObjects = [];
-const orbits = [];
-let sun;
-export const MAX_ZOOM_OUT = 1700;
+const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Mesh })[] = [];
+const selectableObjects: THREE.Object3D[] = [];
+let sun: THREE.Object3D | undefined;
 
 const simulation = {
-    speed: 1,
-    isPaused: false,
-    selectedObject: null,
-    focusTarget: null,
-    followTarget: null,
+    focusTarget: null as THREE.Object3D | null,
+    followTarget: null as THREE.Object3D | null,
     followOffset: new THREE.Vector3(),
     followSmoothing: 0.05,
     time: 0,
-    lastSpeed: 1,
     isUserInteracting: false,
     isTweening: false,
     singleStep: false,
 };
-let visibilityPaused = false;
 
-// ===== perfState (module scope) =====
 const perfState = {
-  MAX_DPR: 1.75,      // clamp for devicePixelRatio
-  MIN_SCALE: 0.5,     // lowest dynamicScale
-  dynamicScale: 1.0,  // current scale multiplier (0.5..1.0)
-  frameTimes: [],     // circular buffer of recent frame durations (ms)
-  evalInterval: 1000, // ms between evaluations
+  MAX_DPR: 1.75,
+  MIN_SCALE: 0.5,
+  dynamicScale: 1.0,
+  frameTimes: [] as number[],
+  evalInterval: 1000,
   lastEval: performance.now(),
-  evalWindow: 60,     // number of samples to average (~1s at 60fps)
-  upperMs: 22,        // if avg > upperMs -> step down
-  lowerMs: 13,        // if avg < lowerMs -> step up
-  step: 0.1,          // change step for dynamicScale
+  evalWindow: 60,
+  upperMs: 22,
+  lowerMs: 13,
+  step: 0.1,
 };
 
-// ===== Performance Presets =====
 const performancePresets = {
-    low: {
-        MAX_DPR: 1.0,
-        dynamicScale: 0.75,
-        shadowMapSize: 512,
-    },
-    medium: {
-        MAX_DPR: 1.5,
-        dynamicScale: 0.9,
-        shadowMapSize: 1024,
-    },
-    high: {
-        MAX_DPR: 2.0,
-        dynamicScale: 1.0,
-        shadowMapSize: 4096,
-    },
+    low: { MAX_DPR: 1.0, dynamicScale: 0.75, shadowMapSize: 512 },
+    medium: { MAX_DPR: 1.5, dynamicScale: 0.9, shadowMapSize: 1024 },
+    high: { MAX_DPR: 2.0, dynamicScale: 1.0, shadowMapSize: 4096 },
 };
 
-function setPerformancePreset(presetName) {
+function setPerformancePreset(presetName: 'auto' | 'low' | 'medium' | 'high') {
     if (presetName === 'auto') {
-        // Restore adaptive behavior defaults
         perfState.MAX_DPR = 1.75;
-        // Let the adaptive logic control dynamicScale.
     } else {
         const preset = performancePresets[presetName];
         if (!preset) return;
@@ -98,21 +76,18 @@ function setPerformancePreset(presetName) {
     applyDPR();
 }
 
-// Apply DPR + resize (call whenever dynamicScale or DPR clamp changes)
 function applyDPR() {
   const dpr = Math.min(window.devicePixelRatio || 1, perfState.MAX_DPR) * perfState.dynamicScale;
   renderer.setPixelRatio(dpr);
-  renderer.setSize(window.innerWidth, window.innerHeight, false); // false -> don't change style
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 }
 
-// Call once at init to set initial DPR
 applyDPR();
 
 window.addEventListener('resize', applyDPR);
 
-// --- Object Creation ---
 planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
     scene.add(planetGroup);
@@ -154,17 +129,6 @@ planetData.forEach(p_data => {
     const celestialObject = { ...p_data, group: planetGroup, mesh: planet };
     celestialObjects.push(celestialObject);
 
-feat/desktop-experience-improvements
-    const scaledDistance = scaleDistance(p_data.semiMajorAxis);
-    const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-        new THREE.Path().absellipse(0, 0, scaledDistance, scaledDistance, 0, 2 * Math.PI, false, 0).getSpacedPoints(200)
-    ), new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.5, transparent: true }));
-    orbit.rotation.x = Math.PI / 2;
-    scene.add(orbit);
-    orbits.push(orbit);
-
-=======
-main
     createPlanetRings(p_data, planetGroup, textureLoader);
     createMoons(p_data, planetGroup, selectableObjects);
 });
@@ -189,7 +153,7 @@ function createStarryBackground() {
 
 function createAsteroidBelt() {
     const count = 5000;
-    const geom = new THREE.SphereGeometry(0.05, 6, 6); // Low-poly spheres
+    const geom = new THREE.SphereGeometry(0.05, 6, 6);
     const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
     const inst = new THREE.InstancedMesh(geom, mat, count);
 
@@ -205,7 +169,7 @@ function createAsteroidBelt() {
         const y = THREE.MathUtils.randFloat(-0.5, 0.5);
 
         dummy.position.set(x, y, z);
-        dummy.scale.setScalar(Math.random() * 0.5 + 0.5); // Random size
+        dummy.scale.setScalar(Math.random() * 0.5 + 0.5);
         dummy.updateMatrix();
         inst.setMatrixAt(i, dummy.matrix);
     }
@@ -241,16 +205,15 @@ createStarryBackground();
 createAsteroidBelt();
 createOortCloud();
 
-function clampZoomForBody(bodyMesh) {
+function clampZoomForBody(bodyMesh: THREE.Object3D) {
     const box = new THREE.Box3().setFromObject(bodyMesh);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     const min = Math.max(sphere.radius * 1.2, 1);
-    const max = Math.max(sphere.radius * 100, 1e6); // adjust for system scale
+    const max = Math.max(sphere.radius * 100, 1e6);
 
     controls.minDistance = min;
     controls.maxDistance = max;
 
-    // Also tighten camera near/far for depth precision
     camera.near = Math.max(sphere.radius * 0.001, 0.01);
     camera.far = Math.max(sphere.radius * 2000, 1e7);
     camera.updateProjectionMatrix();
@@ -263,7 +226,7 @@ function cancelActiveCameraTween() {
     }
 }
 
-function frameObject(object3D, opts = {}) {
+function frameObject(object3D: THREE.Object3D, opts: { duration?: number; fitOffset?: number } = {}) {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const DEFAULT = { duration: CAMERA_FOCUS_DEFAULT_MS, fitOffset: 1.2 };
     const { duration, fitOffset } = { ...DEFAULT, ...opts };
@@ -298,30 +261,26 @@ function frameObject(object3D, opts = {}) {
     window._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
 }
 
-function onBodySelected(name) {
+function onBodySelected(name: string) {
     const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
     if (!selectedObject) return;
 
-    simulation.selectedObject = selectedObject;
+    useStore.getState().setSelectedBodyId(name);
     simulation.focusTarget = selectedObject;
     frameObject(selectedObject);
 
     const { data, type } = selectedObject.userData;
 
-    // --- Update Small Info Card ---
-    DOM.smallInfoCard.classList.remove('hidden');
-    DOM.cardTitle.textContent = data.name;
-    DOM.cardThumb.src = data.texture || ''; // Use texture if available
-    DOM.cardThumb.alt = `${data.name} thumbnail`;
+    dom.smallInfoCard.classList.remove('hidden');
+    dom.cardTitle.textContent = data.name;
+    dom.cardThumb.src = data.texture || '';
+    dom.cardThumb.alt = `${data.name} thumbnail`;
 
-
-    // --- Update Header and Color ---
-    DOM.infoName.textContent = data.name;
-    const color = `#${selectedObject.material.color.getHexString()}`;
+    dom.infoName.textContent = data.name;
+    const color = `#${(selectedObject as THREE.Mesh).material.color.getHexString()}`;
     updateInfoPanelColor(color);
 
-    // --- Create and Display Placeholder Image ---
-    DOM.infoImageContainer.innerHTML = ''; // Clear previous image
+    dom.infoImageContainer.innerHTML = '';
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("width", "100%");
@@ -331,11 +290,10 @@ function onBodySelected(name) {
     rect.setAttribute("height", "100%");
     rect.setAttribute("fill", color);
     svg.appendChild(rect);
-    DOM.infoImageContainer.appendChild(svg);
+    dom.infoImageContainer.appendChild(svg);
 
-    // --- Populate Basic Stats ---
-    DOM.infoBasicStats.innerHTML = '';
-    const stats = {
+    dom.infoBasicStats.innerHTML = '';
+    const stats: { [key: string]: { value: string; tooltip?: string | null } } = {
         'Radius': { value: `${data.radius.toLocaleString()} km` },
         'Distance': {
             value: type === 'moon' ? `${Math.round(data.semiMajorAxisKm).toLocaleString()} km` : `${data.semiMajorAxis} AU`,
@@ -365,12 +323,11 @@ function onBodySelected(name) {
             span.appendChild(tooltipSpan);
         }
 
-        DOM.infoBasicStats.appendChild(strong);
-        DOM.infoBasicStats.appendChild(span);
+        dom.infoBasicStats.appendChild(strong);
+        dom.infoBasicStats.appendChild(span);
     }
 
-    // --- Populate Advanced Details ---
-    const advancedStats = {};
+    const advancedStats: { [key: string]: string } = {};
     if (data.axialTilt) {
         advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
     }
@@ -379,26 +336,23 @@ function onBodySelected(name) {
     }
 
     if (Object.keys(advancedStats).length > 0) {
-        DOM.infoAdvancedDetails.classList.remove('hidden');
-        DOM.advancedDetailsContent.innerHTML = '';
+        dom.infoAdvancedDetails.classList.remove('hidden');
+        dom.advancedDetailsContent.innerHTML = '';
         for (const [key, value] of Object.entries(advancedStats)) {
             const strong = document.createElement('strong');
             strong.textContent = `${key}:`;
             const span = document.createElement('span');
             span.textContent = value;
-            DOM.advancedDetailsContent.appendChild(strong);
-            DOM.advancedDetailsContent.appendChild(span);
+            dom.advancedDetailsContent.appendChild(strong);
+            dom.advancedDetailsContent.appendChild(span);
         }
     } else {
-        DOM.infoAdvancedDetails.classList.add('hidden');
+        dom.infoAdvancedDetails.classList.add('hidden');
     }
 
+    dom.infoPanel.classList.remove('hidden');
+    dom.freeCameraButton.classList.remove('hidden');
 
-    // --- Show Panel and Buttons ---
-    DOM.infoPanel.classList.remove('hidden');
-    DOM.freeCameraButton.classList.remove('hidden');
-
-    // --- Adjust Camera ---
     clampZoomForBody(selectedObject);
 }
 
@@ -407,100 +361,68 @@ initInfoPanel();
 
 function resetSimulation() {
     simulation.time = 0;
-    simulation.focusTarget = sun;
-    simulation.selectedObject = sun;
-    camera.position.set(0, 150, 400); // Reset camera position
+    simulation.focusTarget = sun!;
+    useStore.getState().setSelectedBodyId('Sun');
+    camera.position.set(0, 150, 400);
     controls.target.set(0, 0, 0);
-    if (simulation.isPaused) {
-        simulation.isPaused = false;
-        DOM.pauseButton.textContent = 'Pause';
-    }
+    useStore.getState().setPaused(false);
     onBodySelected('Sun');
-    DOM.smallInfoCard.classList.add('hidden');
+    dom.smallInfoCard.classList.add('hidden');
 }
 
-feat/desktop-experience-improvements
-setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, orbits, planetData);
-=======
-feat/simulation-enhancements
-setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, celestialObjects);
-=======
-setupInteractions(camera, selectableObjects, sun, DOM, simulation, onBodySelected, controls, resetSimulation, updatePauseButtonUI);
-main
-main
-
-// --- Shadow Toggle ---
-const shadowToggle = document.getElementById('shadow-toggle');
-const shadowLabel = document.getElementById('shadow-label');
-const shadowIcon = document.getElementById('shadow-icon');
-const tooltipText = document.querySelector('.tooltip .tooltip-text');
+setupInteractions(camera, selectableObjects, sun!, simulation, onBodySelected, controls, resetSimulation, []);
+setupKeyboardShortcuts(simulation, [], onBodySelected, camera, controls);
 
 function updateShadowUI() {
-    const isEnabled = shadowToggle.checked;
-
-    // Update Icon and Label
-    shadowIcon.textContent = isEnabled ? '○' : '●';
-    shadowLabel.textContent = isEnabled ? 'Shadows: On' : 'Shadows: Off';
-
-    // Update Tooltip
-    if (isEnabled) {
-        tooltipText.textContent = 'Shadows are enabled, providing realistic shading. This may impact performance.';
-    } else {
-        tooltipText.textContent = 'Shadows are disabled for better performance. Enable for more realism.';
-    }
-
-    // Update Renderer
+    const isEnabled = dom.shadowToggle.checked;
+    (document.getElementById('shadow-icon') as HTMLSpanElement).textContent = isEnabled ? '○' : '●';
+    (document.getElementById('shadow-label') as HTMLLabelElement).textContent = isEnabled ? 'Shadows: On' : 'Shadows: Off';
+    (document.querySelector('.tooltip .tooltip-text') as HTMLSpanElement).textContent = isEnabled
+        ? 'Shadows are enabled, providing realistic shading. This may impact performance.'
+        : 'Shadows are disabled for better performance. Enable for more realism.';
     renderer.shadowMap.enabled = isEnabled;
     scene.traverse((object) => {
-        if (object.material) {
-            object.material.needsUpdate = true;
+        if ((object as THREE.Mesh).material) {
+            ((object as THREE.Mesh).material as THREE.Material).needsUpdate = true;
         }
     });
 }
 
-shadowToggle.addEventListener('change', updateShadowUI);
-
-// Initial UI setup
+dom.shadowToggle.addEventListener('change', updateShadowUI);
 updateShadowUI();
 
-feat/desktop-experience-improvements
-// --- Performance Preset Handling ---
-let currentPreset = DOM.performancePreset.value;
+let currentPreset = dom.performancePreset.value as 'auto' | 'low' | 'medium' | 'high';
+dom.performancePreset.addEventListener('change', (e) => {
+    currentPreset = (e.target as HTMLSelectElement).value as 'auto' | 'low' | 'medium' | 'high';
+    setPerformancePreset(currentPreset);
+});
 setPerformancePreset(currentPreset);
 
-DOM.performancePreset.addEventListener('change', (e) => {
-    currentPreset = e.target.value;
-    setPerformancePreset(e.target.value);
-});
-
-
-// --- Debug HUD ---
-function updateDebugHUD(avg) {
-    if (!DOM.debugHUD || DOM.debugHUD.classList.contains('hidden')) {
+function updateDebugHUD(avg: number) {
+    if (!dom.debugHUD || dom.debugHUD.classList.contains('hidden')) {
         return;
     }
-    DOM.debugPreset.textContent = currentPreset;
-    DOM.debugDPR.textContent = renderer.getPixelRatio().toFixed(2);
-    DOM.debugAvgMs.textContent = avg ? avg.toFixed(1) : '...';
-    DOM.debugScale.textContent = perfState.dynamicScale.toFixed(2);
+    dom.debugPreset.textContent = currentPreset;
+    dom.debugDPR.textContent = renderer.getPixelRatio().toFixed(2);
+    dom.debugAvgMs.textContent = avg ? avg.toFixed(1) : '...';
+    dom.debugScale.textContent = perfState.dynamicScale.toFixed(2);
 }
 
-=======
 function updatePauseButtonUI() {
-    DOM.pauseButton.textContent = simulation.isPaused ? 'Resume' : 'Pause';
+    dom.pauseButton.textContent = useStore.getState().isPaused ? 'Resume' : 'Pause';
 }
 
-// --- Visibility API for Pausing ---
+let visibilityPaused = false;
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        if (!simulation.isPaused) {
+        if (!useStore.getState().isPaused) {
             visibilityPaused = true;
-            simulation.isPaused = true;
+            useStore.getState().setPaused(true);
             updatePauseButtonUI();
         }
     } else {
         if (visibilityPaused) {
-            simulation.isPaused = false;
+            useStore.getState().setPaused(false);
             visibilityPaused = false;
             updatePauseButtonUI();
         }
@@ -508,39 +430,46 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener('blur', () => {
-    if (!simulation.isPaused) {
+    if (!useStore.getState().isPaused) {
         visibilityPaused = true;
-        simulation.isPaused = true;
+        useStore.getState().setPaused(true);
         updatePauseButtonUI();
     }
 });
 
 window.addEventListener('focus', () => {
     if (visibilityPaused) {
-        simulation.isPaused = false;
+        useStore.getState().setPaused(false);
         visibilityPaused = false;
         updatePauseButtonUI();
     }
 });
-main
 
+useStore.subscribe((state) => {
+    const selectedBody = celestialObjects.find(c => c.name === state.selectedBodyId);
+    if (selectedBody) {
+        simulation.focusTarget = selectedBody.mesh;
+    }
+    updatePauseButtonUI();
+});
 
-// --- Animation Loop ---
 const cameraTarget = new THREE.Vector3();
 
-function animate() {
+interface Animate extends FrameRequestCallback {
+    _lastTime?: number;
+}
+
+const animate: Animate = () => {
     requestAnimationFrame(animate);
 
     const now = performance.now();
     const dt = now - (animate._lastTime || now);
     animate._lastTime = now;
 
-    // store dt (ms) in circular buffer
     const buf = perfState.frameTimes;
     buf.push(dt);
     if (buf.length > perfState.evalWindow) buf.shift();
 
-    // Evaluate every perfState.evalInterval ms
     if (now - perfState.lastEval >= perfState.evalInterval && buf.length > 3) {
         perfState.lastEval = now;
         const avg = buf.reduce((s, v) => s + v, 0) / buf.length;
@@ -548,26 +477,24 @@ function animate() {
         if (avg > perfState.upperMs && perfState.dynamicScale > perfState.MIN_SCALE) {
             perfState.dynamicScale = Math.max(perfState.MIN_SCALE, +(perfState.dynamicScale - perfState.step).toFixed(2));
             applyDPR();
-            // console.log('perf: lowered scale =>', perfState.dynamicScale, 'avg ms', avg.toFixed(1));
         } else if (avg < perfState.lowerMs && perfState.dynamicScale < 1.0) {
             perfState.dynamicScale = Math.min(1.0, +(perfState.dynamicScale + perfState.step).toFixed(2));
             applyDPR();
-            // console.log('perf: raised scale =>', perfState.dynamicScale, 'avg ms', avg.toFixed(1));
         }
         updateDebugHUD(avg);
     }
 
-    if (!simulation.isPaused) {
-        simulation.time += (dt / 1000) * simulation.speed;
+    if (!useStore.getState().isPaused) {
+        simulation.time += (dt / 1000) * useStore.getState().timeScale;
         if (simulation.singleStep) {
-            simulation.isPaused = true;
+            useStore.getState().setPaused(true);
             simulation.singleStep = false;
-            DOM.pauseButton.textContent = 'Resume';
+            updatePauseButtonUI();
         }
     }
 
     celestialObjects.forEach(p => {
-        if (p.name === 'Sun') return; // Sun doesn't orbit
+        if (p.name === 'Sun') return;
 
         const a = scaleDistance(p.semiMajorAxis);
         const e = p.eccentricity;
@@ -580,29 +507,28 @@ function animate() {
 
         if (p.moons) {
             p.moons.forEach(m => {
-                const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
-                const moonAngle = (2 * Math.PI * simulation.time) / m.orbitalPeriod;
-                m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
-                m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
+                if (m.mesh) {
+                    const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
+                    const moonAngle = (2 * Math.PI * simulation.time) / m.orbitalPeriod;
+                    m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
+                    m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
+                }
             });
         }
     });
 
     if (simulation.focusTarget) {
-        // If there's a focus target, move the camera towards it.
         if (simulation.focusTarget === sun) {
             cameraTarget.set(0, 0, 0);
         } else {
             simulation.focusTarget.getWorldPosition(cameraTarget);
         }
 
-        // When an object is focused, the camera's target should smoothly follow it.
         if (!simulation.isTweening) {
             controls.target.lerp(cameraTarget, 0.05);
         }
     }
 
-    // --- Handle Following Camera ---
     if (simulation.followTarget) {
         const targetPosition = new THREE.Vector3();
         simulation.followTarget.getWorldPosition(targetPosition);
@@ -611,31 +537,23 @@ function animate() {
         controls.target.lerp(targetPosition, simulation.followSmoothing);
     }
 
-    // --- Update Small Info Card Stats ---
-    if (simulation.selectedObject && simulation.selectedObject.userData.data) {
-        const selectedBody = celestialObjects.find(c => c.name === simulation.selectedObject.userData.name);
+    if (useStore.getState().selectedBodyId) {
+        const selectedBody = celestialObjects.find(c => c.name === useStore.getState().selectedBodyId);
         if (selectedBody && selectedBody.name !== 'Sun') {
-            // The sun is at a focus of the ellipse, which is at the origin of the scene.
-            // The planet's position is already relative to the sun.
-            const r_scaled = selectedBody.group.position.length();
-
-            // To get the unscaled distance, we need to know the current angle, which we can derive from the simulation time.
             const planetAngle = (2 * Math.PI * simulation.time) / selectedBody.orbitalPeriod;
             const a_au = selectedBody.semiMajorAxis;
             const e = selectedBody.eccentricity;
-            // Unscaled distance r from the focus (sun)
             const r_au = a_au * (1 - e * e) / (1 + e * Math.cos(planetAngle));
 
             const r_m = r_au * AU_TO_M;
             const a_m = a_au * AU_TO_M;
             const speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m });
-            DOM.cardStats.textContent = `Dist: ${r_au.toFixed(2)} AU • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
+            dom.cardStats.textContent = `Dist: ${r_au.toFixed(2)} AU • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
         } else if (selectedBody) {
-            DOM.cardStats.textContent = 'At the center of the solar system';
+            dom.cardStats.textContent = 'At the center of the solar system';
         }
     }
 
-    // --- Update Orbit LODs ---
     orbitManager.updateLODs(camera, 800);
 
     TWEEN.update();

@@ -1,14 +1,15 @@
-export function initInfoPanel() {
-    const infoPanel = document.getElementById('info-panel');
-    const header = document.getElementById('info-panel-header');
-    const closeButton = document.getElementById('info-panel-close');
-    const resizeHandle = document.getElementById('info-panel-resize-handle');
+import { infoPanel, advancedDetailsToggle, advancedDetailsContent } from './dom';
+
+export function initInfoPanel(): void {
+    const header = document.getElementById('info-panel-header') as HTMLDivElement;
+    const closeButton = document.getElementById('info-panel-close') as HTMLButtonElement;
+    const resizeHandle = document.getElementById('info-panel-resize-handle') as HTMLDivElement;
 
     // --- Draggable ---
     let isDragging = false;
-    let dragStartX, dragStartY, panelStartX, panelStartY;
+    let dragStartX: number, dragStartY: number, panelStartX: number, panelStartY: number;
 
-    header.addEventListener('mousedown', (e) => {
+    header.addEventListener('mousedown', (e: MouseEvent) => {
         isDragging = true;
         dragStartX = e.clientX;
         dragStartY = e.clientY;
@@ -18,7 +19,7 @@ export function initInfoPanel() {
         document.addEventListener('mouseup', onDragEnd);
     });
 
-    function onDrag(e) {
+    function onDrag(e: MouseEvent) {
         if (!isDragging) return;
         const dx = e.clientX - dragStartX;
         const dy = e.clientY - dragStartY;
@@ -34,9 +35,9 @@ export function initInfoPanel() {
 
     // --- Resizable ---
     let isResizing = false;
-    let resizeStartX, resizeStartY, panelStartWidth, panelStartHeight;
+    let resizeStartX: number, resizeStartY: number, panelStartWidth: number, panelStartHeight: number;
 
-    resizeHandle.addEventListener('mousedown', (e) => {
+    resizeHandle.addEventListener('mousedown', (e: MouseEvent) => {
         isResizing = true;
         resizeStartX = e.clientX;
         resizeStartY = e.clientY;
@@ -47,7 +48,7 @@ export function initInfoPanel() {
         e.stopPropagation(); // Prevent dragging while resizing
     });
 
-    function onResize(e) {
+    function onResize(e: MouseEvent) {
         if (!isResizing) return;
         const dx = e.clientX - resizeStartX;
         const dy = e.clientY - resizeStartY;
@@ -67,15 +68,11 @@ export function initInfoPanel() {
     });
 
     // --- Collapsible Advanced Details ---
-    const advancedToggle = document.getElementById('advanced-details-toggle');
-    const advancedContent = document.getElementById('advanced-details-content');
-
-    advancedToggle.addEventListener('click', () => {
-        advancedContent.classList.toggle('hidden');
+    advancedDetailsToggle.addEventListener('click', () => {
+        advancedDetailsContent.classList.toggle('hidden');
     });
 }
 
-export function updateInfoPanelColor(color) {
-    const infoPanel = document.getElementById('info-panel');
+export function updateInfoPanelColor(color: string): void {
     infoPanel.style.borderTopColor = color;
 }
