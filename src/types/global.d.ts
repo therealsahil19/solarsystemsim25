@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    _activeCameraTween?: { stop?: () => void };
+    _activeCameraTween?: { stop?: () => void } | null;
     // other custom globals
   }
 }

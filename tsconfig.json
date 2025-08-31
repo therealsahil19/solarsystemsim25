@@ -18,7 +18,8 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": { "~/*": ["src/*"] }
+    "paths": { "~/*": ["src/*"] },
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "include": ["src"]
 }
