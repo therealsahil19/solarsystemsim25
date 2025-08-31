@@ -566,6 +566,7 @@ canvas {
     background: #4d90fe;
     border-color: #4d90fe;
     color: white;
+feat/ts-strict
 }
 
 .help-btn {
@@ -578,4 +579,6 @@ canvas {
     border-radius: 50%;
     text-align: center;
     padding: 0;
+=======
+main
 }
