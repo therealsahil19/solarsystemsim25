@@ -25,11 +25,15 @@ const selectableObjects: THREE.Object3D[] = [];
 let sun: THREE.Object3D | undefined;
 
 const simulation = {
+    speed: 1,
+    isPaused: false,
+    selectedObject: null as THREE.Object3D | null,
     focusTarget: null as THREE.Object3D | null,
     followTarget: null as THREE.Object3D | null,
     followOffset: new THREE.Vector3(),
     followSmoothing: 0.05,
     time: 0,
+    lastSpeed: 1,
     isUserInteracting: false,
     isTweening: false,
     singleStep: false,
@@ -277,7 +281,8 @@ function onBodySelected(name: string) {
     dom.cardThumb.alt = `${data.name} thumbnail`;
 
     dom.infoName.textContent = data.name;
-    const color = `#${(selectedObject as THREE.Mesh).material.color.getHexString()}`;
+    const material = (selectedObject as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    const color = `#${material.color.getHexString()}`;
     updateInfoPanelColor(color);
 
     dom.infoImageContainer.innerHTML = '';
@@ -459,10 +464,10 @@ interface Animate extends FrameRequestCallback {
     _lastTime?: number;
 }
 
-const animate: Animate = () => {
+const animate: Animate = (time) => {
     requestAnimationFrame(animate);
 
-    const now = performance.now();
+    const now = time || performance.now();
     const dt = now - (animate._lastTime || now);
     animate._lastTime = now;
 
@@ -561,4 +566,4 @@ const animate: Animate = () => {
     renderer.render(scene, camera);
 }
 
-animate();
+animate(0);

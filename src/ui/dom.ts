@@ -33,6 +33,7 @@ export const timeScaleSlider = document.getElementById('time-scale-slider') as H
 export const timeStepForward = document.getElementById('time-step-forward') as HTMLButtonElement;
 export const timePresetButtons = document.querySelectorAll('.time-preset') as NodeListOf<HTMLButtonElement>;
 export const timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
+export const timeControls = document.getElementById('time-controls') as HTMLDivElement;
 
 // Small Info Card
 export const smallInfoCard = document.getElementById('small-info-card') as HTMLDivElement;
