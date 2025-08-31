@@ -26,6 +26,7 @@ export const debugScale = document.getElementById('debug-scale') as HTMLSpanElem
 
 export const helpOverlay = document.getElementById('help-overlay') as HTMLDivElement;
 export const helpOverlayClose = document.getElementById('help-overlay-close') as HTMLButtonElement;
+export const helpButton = document.getElementById('help-button') as HTMLButtonElement;
 
 export const timeScaleValue = document.getElementById('time-scale-value') as HTMLSpanElement;
 export const timeStepBackward = document.getElementById('time-step-backward') as HTMLButtonElement;
