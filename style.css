@@ -365,7 +365,6 @@ canvas {
     opacity: 1;
 }
 
-feat/desktop-experience-improvements
 /* --- Debug HUD --- */
 #debug-hud {
     top: 80px;
@@ -465,7 +464,8 @@ feat/desktop-experience-improvements
 #time-scale-input {
     width: 70px;
     text-align: center;
-=======
+}
+
 /* --- Small Info Card --- */
 #small-info-card {
     top: 80px;
@@ -532,5 +532,4 @@ feat/desktop-experience-improvements
     background: #4d90fe;
     border-color: #4d90fe;
     color: white;
-main
 }
