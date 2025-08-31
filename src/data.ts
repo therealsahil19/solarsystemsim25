@@ -1,4 +1,53 @@
-export const planetData = [
+import * as THREE from 'three';
+
+export interface Moon {
+  name: string;
+  radius: number;
+  color: number;
+  semiMajorAxis: number;
+  orbitalPeriod: number;
+  semiMajorAxisKm: number;
+  mesh?: THREE.Mesh;
+}
+
+export interface RingBand {
+  innerRadius: number;
+  outerRadius: number;
+  type?: string;
+}
+
+export interface RingArc {
+  innerRadius: number;
+  outerRadius: number;
+  thetaStart: number;
+  thetaLength: number;
+}
+
+export interface Rings {
+  type: string;
+  color: number | string;
+  bands: RingBand[];
+  texture?: string;
+  arcs?: RingArc[];
+}
+
+export interface CelestialBody {
+  name: string;
+  radius: number;
+  color: number;
+  semiMajorAxis: number;
+  orbitalPeriod: number;
+  eccentricity: number;
+  texture?: string;
+  moons?: Moon[];
+  rings?: Rings;
+  axialTilt?: number;
+  group?: THREE.Group;
+  mesh?: THREE.Mesh;
+  orbit?: THREE.Line;
+}
+
+export const planetData: CelestialBody[] = [
     { name: 'Sun', radius: 696340, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1, eccentricity: 0 },
     { name: 'Mercury', radius: 2440, color: 0x888888, semiMajorAxis: 0.387, orbitalPeriod: 88.0, eccentricity: 0.206, texture: 'assets/8k_mercury.jpg' },
     { name: 'Venus', radius: 6052, color: 0xeeeeaa, semiMajorAxis: 0.723, orbitalPeriod: 224.7, eccentricity: 0.007, texture: 'assets/4k_venus_atmosphere.jpg' },

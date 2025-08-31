@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { scaleBodyRadius } from './utils.js';
+import { CelestialBody } from '../data';
+import { scaleBodyRadius } from '../utils/misc';
 
-export function createMoons(p_data, planetGroup, selectableObjects) {
+export function createMoons(p_data: CelestialBody, planetGroup: THREE.Group, selectableObjects: THREE.Object3D[]): void {
     if (!p_data.moons) return;
 
     p_data.moons.forEach(m_data => {

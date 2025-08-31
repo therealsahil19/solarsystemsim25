@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { scaleRingRadius } from './utils.js';
+import { CelestialBody } from '../data';
+import { scaleRingRadius } from '../utils/misc';
 
-function createJupiterRings(p_data, planetGroup) {
-    const ringData = p_data.rings;
+function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
+    const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
-    // Apply tilt to the whole group
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
@@ -17,8 +17,7 @@ function createJupiterRings(p_data, planetGroup) {
     const haloRingData = ringData.bands.find(b => b.type === 'halo');
     const gossamerRingsData = ringData.bands.filter(b => b.type === 'gossamer');
 
-    // Function to create a particle-based ring
-    const createParticleRing = (innerRadiusKm, outerRadiusKm, particleCount, color, size, opacity) => {
+    const createParticleRing = (innerRadiusKm: number, outerRadiusKm: number, particleCount: number, color: string | number, size: number, opacity: number) => {
         const innerRadius = scaleRingRadius(innerRadiusKm);
         const outerRadius = scaleRingRadius(outerRadiusKm);
         const vertices = [];
@@ -27,7 +26,6 @@ function createJupiterRings(p_data, planetGroup) {
             const radius = THREE.MathUtils.randFloat(innerRadius, outerRadius);
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            // Add a small vertical displacement for a "wispy" effect
             const z = (Math.random() - 0.5) * 0.05;
             vertices.push(x, y, z);
         }
@@ -40,27 +38,25 @@ function createJupiterRings(p_data, planetGroup) {
             size: size,
             transparent: true,
             opacity: opacity,
-            blending: THREE.AdditiveBlending, // Gives a nice "glow" for faint rings
+            blending: THREE.AdditiveBlending,
         });
 
         const points = new THREE.Points(geometry, material);
         return points;
     };
 
-    // Main Ring - Denser
     if (mainRingData) {
         const mainRing = createParticleRing(
             mainRingData.innerRadius,
             mainRingData.outerRadius,
-            20000, // More particles for a denser look
+            20000,
             ringData.color,
             0.02,
-            0.05 // Faint but visible
+            0.05
         );
         ringGroup.add(mainRing);
     }
 
-    // Halo Ring - Fainter, more diffuse
     if (haloRingData) {
         const haloRing = createParticleRing(
             haloRingData.innerRadius,
@@ -73,7 +69,6 @@ function createJupiterRings(p_data, planetGroup) {
         ringGroup.add(haloRing);
     }
 
-    // Gossamer Rings - Faintest
     gossamerRingsData.forEach(gossamerData => {
         const gossamerRing = createParticleRing(
             gossamerData.innerRadius,
@@ -81,18 +76,17 @@ function createJupiterRings(p_data, planetGroup) {
             15000,
             ringData.color,
             0.015,
-            0.01 // Barely visible
+            0.01
         );
         ringGroup.add(gossamerRing);
     });
 }
 
-function createSaturnRings(p_data, planetGroup, textureLoader) {
-    const ringData = p_data.rings;
+function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, textureLoader: THREE.TextureLoader) {
+    const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
-    // Apply tilt to the whole group
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
@@ -118,9 +112,8 @@ function createSaturnRings(p_data, planetGroup, textureLoader) {
     };
 
     textureLoader.load(
-        ringData.texture,
+        ringData.texture!,
         (ringTexture) => {
-            // Success
             ringTexture.colorSpace = THREE.SRGBColorSpace;
             const ringMaterial = new THREE.MeshStandardMaterial({
                 map: ringTexture,
@@ -134,34 +127,31 @@ function createSaturnRings(p_data, planetGroup, textureLoader) {
             const rings = new THREE.Mesh(ringGeometry, ringMaterial);
             ringGroup.add(rings);
         },
-        undefined, // onProgress callback
+        undefined,
         () => {
-            // onError callback
             createFallbackRing();
         }
     );
 }
 
-function createUranusRings(p_data, planetGroup) {
-    const ringData = p_data.rings;
+function createUranusRings(p_data: CelestialBody, planetGroup: THREE.Group) {
+    const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
-    // Apply tilt to the whole group
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
         ringGroup.rotation.z = tiltInRadians;
     }
 
-    // Create a subtle noise texture for the alpha map to make rings look less perfect
     const noiseCanvas = document.createElement('canvas');
-    const noiseContext = noiseCanvas.getContext('2d');
+    const noiseContext = noiseCanvas.getContext('2d')!;
     noiseCanvas.width = 128;
     noiseCanvas.height = 1;
     const imageData = noiseContext.createImageData(128, 1);
     for (let i = 0; i < imageData.data.length; i += 4) {
-        const value = Math.random() * 100 + 155; // Mostly opaque with some transparency
+        const value = Math.random() * 100 + 155;
         imageData.data[i] = value;
         imageData.data[i+1] = value;
         imageData.data[i+2] = value;
@@ -191,26 +181,24 @@ function createUranusRings(p_data, planetGroup) {
     });
 }
 
-function createNeptuneRings(p_data, planetGroup) {
-    const ringData = p_data.rings;
+function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
+    const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
-    // Apply tilt to the whole group
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
         ringGroup.rotation.z = tiltInRadians;
     }
 
-    // Create a patchy noise texture for the main rings
     const noiseCanvas = document.createElement('canvas');
-    const noiseContext = noiseCanvas.getContext('2d');
+    const noiseContext = noiseCanvas.getContext('2d')!;
     noiseCanvas.width = 256;
     noiseCanvas.height = 1;
     const imageData = noiseContext.createImageData(256, 1);
     for (let i = 0; i < imageData.data.length; i += 4) {
-        const value = Math.random() > 0.6 ? Math.random() * 80 + 20 : 0; // Create a clumpy/patchy effect
+        const value = Math.random() > 0.6 ? Math.random() * 80 + 20 : 0;
         imageData.data[i] = value;
         imageData.data[i+1] = value;
         imageData.data[i+2] = value;
@@ -221,7 +209,6 @@ function createNeptuneRings(p_data, planetGroup) {
     noiseTexture.wrapS = THREE.RepeatWrapping;
     noiseTexture.repeat.x = 32;
 
-    // Material for the main, continuous parts of the rings
     const ringMaterial = new THREE.MeshStandardMaterial({
         color: ringData.color,
         side: THREE.DoubleSide,
@@ -240,9 +227,8 @@ function createNeptuneRings(p_data, planetGroup) {
         ringGroup.add(ring);
     });
 
-    // Material for the brighter arcs
     const arcMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(ringData.color).multiplyScalar(1.8), // Brighter blue
+        color: new THREE.Color(ringData.color).multiplyScalar(1.8),
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 1.0,
@@ -250,7 +236,7 @@ function createNeptuneRings(p_data, planetGroup) {
         metalness: 0.2,
     });
 
-    ringData.arcs.forEach(arc => {
+    ringData.arcs!.forEach(arc => {
         const innerRadius = scaleRingRadius(arc.innerRadius);
         const outerRadius = scaleRingRadius(arc.outerRadius);
         const arcGeometry = new THREE.RingGeometry(
@@ -266,7 +252,7 @@ function createNeptuneRings(p_data, planetGroup) {
     });
 }
 
-export function createPlanetRings(p_data, planetGroup, textureLoader) {
+export function createPlanetRings(p_data: CelestialBody, planetGroup: THREE.Group, textureLoader: THREE.TextureLoader) {
     if (!p_data.rings) return;
 
     switch (p_data.rings.type) {

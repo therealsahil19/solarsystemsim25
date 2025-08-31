@@ -1,4 +1,4 @@
-export function scaleDistance(au) {
+export function scaleDistance(au: number): number {
     if (au === 0) return 0; // Sun is at the center
 
     // Inner planets (Mercury, Venus, Earth, Mars) - up to 1.8 AU
@@ -28,7 +28,7 @@ export function scaleDistance(au) {
     return outerStart + (au - 3.5) * 30;
 }
 
-export function scaleBodyRadius(radius) {
+export function scaleBodyRadius(radius: number): number {
     const scale = 0.018;
     return scale * Math.sqrt(radius);
 }
@@ -36,20 +36,13 @@ export function scaleBodyRadius(radius) {
 // This is a placeholder for a more sophisticated ring scaling function.
 // The values are divided by a constant to bring them into a similar
 // scale as the planet radii in the simulation.
-export function scaleRingRadius(radiusKm) {
+export function scaleRingRadius(radiusKm: number): number {
     return radiusKm / 8000;
 }
 
-const MU_SUN = 1.32712440018e20; // m^3 / s^2
 export const AU_TO_M = 1.496e11;
 
-export function instantaneousOrbitalSpeed({ a_m, r_m, mu = MU_SUN }) {
-  // a_m: semi-major axis in meters
-  // r_m: current radius (distance from Sun) in meters
-  return Math.sqrt(mu * (2 / r_m - 1 / a_m)); // m/s
-}
-
-export function speedDisplayKmPerS(speed_m_s) {
+export function speedDisplayKmPerS(speed_m_s: number): string {
   if (typeof speed_m_s !== 'number' || !isFinite(speed_m_s)) {
     return 'N/A';
   }
