@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
+import { LOD } from 'three/examples/jsm/objects/LOD.js';
 import { setupScene } from './scene';
 import { planetData, CelestialBody } from './data';
 import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS } from './utils/misc';
@@ -25,7 +26,7 @@ const CAMERA_FOCUS_DEFAULT_MS = 700;
 const { scene, camera, renderer, controls, pointLight } = setupScene(dom.canvas);
 const textureLoader = new THREE.TextureLoader();
 
-const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Mesh })[] = [];
+const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D })[] = [];
 const selectableObjects: THREE.Object3D[] = [];
 let sun: THREE.Object3D | undefined;
 
@@ -42,6 +43,7 @@ const simulation = {
     isUserInteracting: false,
     isTweening: false,
     singleStep: false,
+    asteroidMaterialUniforms: null as { u_time: { value: number } } | null,
 };
 
 const perfState = {
@@ -101,10 +103,8 @@ planetData.forEach(p_data => {
     const planetGroup = new THREE.Group();
     scene.add(planetGroup);
 
-    const planetGeometry = new THREE.SphereGeometry(scaleBodyRadius(p_data.radius), 64, 64);
     let planetMaterial;
-    let planet;
-
+    // The sun is special, it's emissive and has a light
     if (p_data.name === 'Sun') {
         planetMaterial = new THREE.MeshStandardMaterial({
             emissive: 0xffff00,
@@ -116,19 +116,35 @@ planetData.forEach(p_data => {
             planetMaterial.map = sunTexture;
             planetMaterial.emissiveMap = sunTexture;
         }
-        planet = new THREE.Mesh(planetGeometry, planetMaterial);
-        sun = planet;
-        sun.add(pointLight);
-        sun.castShadow = true;
-        sun.receiveShadow = false;
     } else {
         planetMaterial = new THREE.MeshStandardMaterial({ color: p_data.color || 0xffffff });
         if (p_data.texture) {
             planetMaterial.map = textureLoader.load(p_data.texture);
         }
-        planet = new THREE.Mesh(planetGeometry, planetMaterial);
-        planet.castShadow = true;
-        planet.receiveShadow = true;
+    }
+
+    const lod = new LOD();
+    const bodyRadius = scaleBodyRadius(p_data.radius);
+
+    const lodLevels = [
+        { segments: 64, distance: 0 },
+        { segments: 32, distance: bodyRadius * 15 },
+        { segments: 16, distance: bodyRadius * 50 },
+    ];
+
+    for (const level of lodLevels) {
+        const geometry = new THREE.SphereGeometry(bodyRadius, level.segments, level.segments);
+        const mesh = new THREE.Mesh(geometry, planetMaterial);
+        mesh.castShadow = p_data.name !== 'Sun';
+        mesh.receiveShadow = p_data.name !== 'Sun';
+        lod.addLevel(mesh, level.distance);
+    }
+
+    const planet = lod;
+
+    if (p_data.name === 'Sun') {
+        sun = planet;
+        sun.add(pointLight);
     }
 
     planet.userData = { name: p_data.name, type: 'planet', data: p_data };
@@ -144,6 +160,37 @@ planetData.forEach(p_data => {
 
 const orbitManager = new OrbitManager(celestialObjects);
 orbitManager.init(scene);
+
+const physicsWorker = new Worker(new URL('./physics.worker.ts', import.meta.url), { type: 'module' });
+
+const physicsBodies = celestialObjects.map(obj => ({
+    name: obj.name,
+    semiMajorAxis: scaleDistance(obj.semiMajorAxis),
+    eccentricity: obj.eccentricity,
+    orbitalPeriod: obj.orbitalPeriod,
+}));
+
+physicsWorker.postMessage({
+    command: 'init',
+    payload: {
+        bodies: physicsBodies,
+    }
+});
+
+physicsWorker.onmessage = (e: MessageEvent) => {
+    if (e.data.type === 'update') {
+        const positions = new Float32Array(e.data.positions);
+        celestialObjects.forEach((obj, i) => {
+            if (obj.name !== 'Sun') {
+                obj.group.position.set(
+                    positions[i * 3 + 0],
+                    positions[i * 3 + 1],
+                    positions[i * 3 + 2]
+                );
+            }
+        });
+    }
+};
 
 function createStarryBackground() {
     const starVertices = [];
@@ -163,27 +210,68 @@ function createStarryBackground() {
 function createAsteroidBelt() {
     const count = 5000;
     const geom = new THREE.SphereGeometry(0.05, 6, 6);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
-    const inst = new THREE.InstancedMesh(geom, mat, count);
 
-    const dummy = new THREE.Object3D();
+    const material = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+
+    const uniforms = { u_time: { value: 0 } };
+
+    material.onBeforeCompile = shader => {
+        shader.uniforms.u_time = uniforms.u_time;
+        shader.vertexShader = `
+            uniform float u_time;
+            attribute vec4 instanceParams;
+            attribute float instanceYOffset;
+        ` + shader.vertexShader;
+
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            `
+            #include <begin_vertex>
+
+            float angle = u_time * instanceParams.y + instanceParams.z;
+            transformed.x += cos(angle) * instanceParams.x;
+            transformed.z += sin(angle) * instanceParams.x;
+            transformed.y += instanceYOffset;
+            transformed *= instanceParams.w;
+            `
+        );
+    };
+
+
+    const inst = new THREE.InstancedMesh(geom, material, count);
+    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
     const beltMin = scaleDistance(2.2);
     const beltMax = scaleDistance(3.2);
 
-    for (let i = 0; i < count; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = THREE.MathUtils.randFloat(beltMin, beltMax);
-        const x = radius * Math.cos(angle);
-        const z = radius * Math.sin(angle);
-        const y = THREE.MathUtils.randFloat(-0.5, 0.5);
+    const instanceParams = new Float32Array(count * 4); // radius, speed, phase, scale
+    const instanceYOffsets = new Float32Array(count);
 
-        dummy.position.set(x, y, z);
-        dummy.scale.setScalar(Math.random() * 0.5 + 0.5);
-        dummy.updateMatrix();
-        inst.setMatrixAt(i, dummy.matrix);
+    for (let i = 0; i < count; i++) {
+        const radius = THREE.MathUtils.randFloat(beltMin, beltMax);
+        const speed = (Math.random() * 0.2 + 0.05) * (Math.random() > 0.5 ? 1 : -1);
+        const phase = Math.random() * Math.PI * 2;
+        const scale = Math.random() * 0.5 + 0.5;
+        const yOffset = THREE.MathUtils.randFloat(-0.5, 0.5);
+
+        instanceParams[i * 4 + 0] = radius;
+        instanceParams[i * 4 + 1] = speed;
+        instanceParams[i * 4 + 2] = phase;
+        instanceParams[i * 4 + 3] = scale;
+
+        instanceYOffsets[i] = yOffset;
     }
-    inst.instanceMatrix.needsUpdate = true;
+
+    geom.setAttribute('instanceParams', new THREE.InstancedBufferAttribute(instanceParams, 4).setUsage(THREE.DynamicDrawUsage));
+    geom.setAttribute('instanceYOffset', new THREE.InstancedBufferAttribute(instanceYOffsets, 1).setUsage(THREE.DynamicDrawUsage));
+
+    // No need to set matrix per instance anymore, shader handles it.
+    // We can set instanceMatrix to identity if we want, but it's not strictly necessary if the shader overrides the transform.
+    inst.instanceMatrix.needsUpdate = false;
     scene.add(inst);
+
+    // Add a reference to the material's uniforms to the simulation object to update it in the animate loop
+    simulation.asteroidMaterialUniforms = uniforms;
 }
 
 function createOortCloud() {
@@ -286,7 +374,12 @@ function onBodySelected(name: string) {
     dom.cardThumb.alt = `${data.name} thumbnail`;
 
     dom.infoName.textContent = data.name;
-    const material = (selectedObject as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    let material;
+    if (selectedObject instanceof LOD) {
+        material = ((selectedObject as LOD).levels[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    } else {
+        material = (selectedObject as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    }
     const color = `#${material.color.getHexString()}`;
     updateInfoPanelColor(color);
 
@@ -437,6 +530,7 @@ document.addEventListener('visibilitychange', () => {
             updatePauseButtonUI();
         }
     }
+
 });
 
 window.addEventListener('blur', () => {
@@ -494,38 +588,43 @@ const animate: Animate = (time) => {
         updateDebugHUD(avg);
     }
 
-    if (!store.getState().isPaused) {
-        simulation.time += (dt / 1000) * store.getState().timeScale;
-        if (simulation.singleStep) {
-            store.getState().setPaused(true);
-            simulation.singleStep = false;
-            updatePauseButtonUI();
+    const timeScale = store.getState().timeScale;
+    const isPaused = store.getState().isPaused;
+
+    if (!isPaused) {
+        const deltaTime = (dt / 1000) * timeScale;
+
+        // Send time delta to the physics worker
+        physicsWorker.postMessage({
+            command: 'update',
+            payload: { deltaTime }
+        });
+
+        // Also update simulation time for asteroid belt shader
+        simulation.time += deltaTime;
+        if (simulation.asteroidMaterialUniforms) {
+            simulation.asteroidMaterialUniforms.u_time.value = simulation.time;
         }
+
+        // Handle moon animations on the main thread for now
+        celestialObjects.forEach(p => {
+            if (p.moons) {
+                p.moons.forEach(m => {
+                    if (m.mesh) {
+                        const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
+                        const moonAngle = (2 * Math.PI * simulation.time) / m.orbitalPeriod;
+                        m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
+                        m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
+                    }
+                });
+            }
+        });
     }
 
-    celestialObjects.forEach(p => {
-        if (p.name === 'Sun') return;
-
-        const a = scaleDistance(p.semiMajorAxis);
-        const e = p.eccentricity;
-        const b = a * Math.sqrt(1 - e * e);
-        const c = a * e;
-
-        const planetAngle = (2 * Math.PI * simulation.time) / p.orbitalPeriod;
-        p.group.position.x = a * Math.cos(planetAngle) - c;
-        p.group.position.z = b * Math.sin(planetAngle);
-
-        if (p.moons) {
-            p.moons.forEach(m => {
-                if (m.mesh) {
-                    const moonScaledDistance = scaleBodyRadius(p.radius) + m.semiMajorAxis * 200;
-                    const moonAngle = (2 * Math.PI * simulation.time) / m.orbitalPeriod;
-                    m.mesh.position.x = moonScaledDistance * Math.cos(moonAngle);
-                    m.mesh.position.z = moonScaledDistance * Math.sin(moonAngle);
-                }
-            });
-        }
-    });
+    if (store.getState().isPaused && simulation.singleStep) {
+        simulation.singleStep = false;
+        // Handle single step if needed, might require more complex worker communication
+    }
 
     if (simulation.focusTarget) {
         if (simulation.focusTarget === sun) {
@@ -565,6 +664,12 @@ const animate: Animate = (time) => {
     }
 
     orbitManager.updateLODs(camera, 800);
+
+    celestialObjects.forEach(p => {
+        if (p.mesh instanceof LOD) {
+            p.mesh.update(camera);
+        }
+    });
 
     TWEEN.update();
     controls.update();

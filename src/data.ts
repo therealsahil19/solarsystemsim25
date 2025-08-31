@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 
 export interface Moon {
-  name: string;
+  name:string;
   radius: number;
   color: number;
   semiMajorAxis: number;
   orbitalPeriod: number;
   semiMajorAxisKm: number;
-  mesh?: THREE.Mesh;
+  mesh?: THREE.Object3D;
 }
 
 export interface RingBand {
@@ -43,7 +43,7 @@ export interface CelestialBody {
   rings?: Rings;
   axialTilt?: number;
   group?: THREE.Group;
-  mesh?: THREE.Mesh;
+  mesh?: THREE.Object3D;
   orbit?: THREE.Line;
 }
 
