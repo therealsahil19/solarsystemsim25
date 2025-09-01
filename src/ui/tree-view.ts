@@ -1,5 +1,7 @@
 import { CelestialBody } from "../data";
 
+export type CelestialBodyType = 'star' | 'planet' | 'moon';
+
 export interface TreeNode {
   id: string;
   name: string;
@@ -10,12 +12,22 @@ export interface TreeNode {
   expanded: boolean;
   visible: boolean;
   element: HTMLLIElement | null;
+  type: CelestialBodyType;
 }
 
 export function buildTree(specs: CelestialBody[]): TreeNode[] {
   const map = new Map<string, TreeNode>();
 
   specs.forEach(s => {
+    let type: CelestialBodyType;
+    if (!s.parentId) {
+      type = 'star';
+    } else if (s.parentId === 'sun') {
+      type = 'planet';
+    } else {
+      type = 'moon';
+    }
+
     map.set(s.id, {
       id: s.id,
       name: s.name,
@@ -23,9 +35,10 @@ export function buildTree(specs: CelestialBody[]): TreeNode[] {
       children: [],
       parent: null,
       depth: 0,
-      expanded: true, // Start with everything expanded
+      expanded: false, // Default to collapsed
       visible: true,
       element: null,
+      type: type,
     });
   });
 
