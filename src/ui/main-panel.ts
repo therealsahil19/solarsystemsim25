@@ -26,30 +26,9 @@ function formatTimestamp(simTime: number): string {
 }
 
 export function initMainPanel() {
-    const tabs = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const target = document.querySelector(tab.getAttribute('data-tab')!)!;
-
-            tabContents.forEach(tc => {
-                (tc as HTMLElement).style.display = 'none';
-            });
-            tabs.forEach(t => {
-                t.classList.remove('active');
-            });
-
-            (target as HTMLElement).style.display = 'block';
-            tab.classList.add('active');
-        });
-    });
-
-    // Activate the first tab by default
-    if (tabs.length > 0) {
-        (tabs[0] as HTMLButtonElement).click();
-    }
-
+    // The tab logic has been removed.
+    // The init functions for the controls are still called from main.ts,
+    // but the container setup is no longer needed here.
     initTimeControls();
     initVisualsPanel();
     initGlobalControls();
