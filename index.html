@@ -4,10 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Simulator</title>
-  <script type="module" crossorigin src="/solarsystemsim25/assets/index-CTfCzJaJ.js"></script>
-  <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-yR6yckzH.css">
+  <script type="module" crossorigin src="/solarsystemsim25/assets/index-LhqRMafR.js"></script>
+  <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-CFMwGMD5.css">
 </head>
 <body>
+    <header id="top-bar">
+        <div class="top-bar-section" id="top-bar-left">
+            <h1 id="app-title">Solar System Simulator</h1>
+        </div>
+        <div class="top-bar-section" id="top-bar-center">
+            <div id="time-controls">
+                <div id="timestamp-display" style="text-align: center; font-size: 1.2em; margin-bottom: 10px;"></div>
+                <div id="time-slider-group" class="control-group" style="margin-bottom: 5px;">
+                    <button id="time-step-backward" class="control-btn" title="Step Backward">|◀</button>
+                    <button id="play-pause-btn" class="control-btn" title="Play/Pause">❚❚</button>
+                    <button id="time-step-forward" class="control-btn" title="Step Forward">▶|</button>
+                    <input type="range" id="time-scale-slider" min="0" max="1" value="0.2" step="0.001" style="flex-grow: 1;">
+                    <span id="time-scale-label" style="min-width: 80px; text-align: right;">1.00x</span>
+                </div>
+                <div id="time-presets-group" class="control-group">
+                    <button class="control-btn time-preset" data-speed="1">1x</button>
+                    <button class="control-btn time-preset" data-speed="100">100x</button>
+                    <button class="control-btn time-preset" data-speed="86400">1d/s</button>
+                    <button class="control-btn time-preset" data-speed="31557600">1y/s</button>
+                </div>
+            </div>
+        </div>
+        <div class="top-bar-section" id="top-bar-right">
+            <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
+            <button id="settings-toggle-btn" class="control-btn">Settings</button>
+            <a id="github-link" href="https://github.com/therealsahil19/solarsystemsim25" target="_blank" rel="noopener noreferrer" title="View project on GitHub">
+                GitHub
+            </a>
+            <div id="more-menu-container">
+                <button id="more-menu-toggle" class="control-btn hidden">⋮</button>
+                <div id="more-menu-content" class="panel hidden">
+                    <!-- This container is now populated by top-bar.ts -->
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div id="app" class="app">
         <aside id="infoPanel" class="panel dock-left pinned hidden" aria-label="Info Panel">
             <header id="panelHeader" class="panel-header draggable">
@@ -55,74 +92,50 @@
         <main id="canvasArea" class="canvas-area">
             <canvas id="bg"></canvas>
             <div id="ui-container">
-                <!-- The info-panel is now outside this container. All other UI elements remain. -->
-                <div id="main-controls-panel" class="panel">
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="#time-tab">Time</button>
-                        <button class="tab-btn" data-tab="#visuals-tab">Visuals</button>
-                        <button class="tab-btn" data-tab="#settings-tab">Settings</button>
+                <!-- Pop-out panels for Visuals and Settings -->
+                <div id="visuals-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
+                    <div class="control-group">
+                        <input type="checkbox" id="trails-enabled-toggle" checked>
+                        <label for="trails-enabled-toggle">Trails</label>
                     </div>
-
-                    <div id="time-tab" class="tab-content">
-                        <div id="timestamp-display" style="text-align: center; font-size: 1.2em; margin-bottom: 10px;"></div>
-                        <div class="control-group" style="margin-bottom: 5px;">
-                            <button id="time-step-backward" class="control-btn" title="Step Backward">|◀</button>
-                            <button id="play-pause-btn" class="control-btn" title="Play/Pause">❚❚</button>
-                            <button id="time-step-forward" class="control-btn" title="Step Forward">▶|</button>
-                            <input type="range" id="time-scale-slider" min="0" max="1" value="0.2" step="0.001" style="flex-grow: 1;">
-                            <span id="time-scale-label" style="min-width: 80px; text-align: right;">1.00x</span>
-                        </div>
                         <div class="control-group">
-                            <button class="control-btn time-preset" data-speed="1">1x</button>
-                            <button class="control-btn time-preset" data-speed="100">100x</button>
-                            <button class="control-btn time-preset" data-speed="86400">1d/s</button>
-                            <button class="control-btn time-preset" data-speed="31557600">1y/s</button>
-                        </div>
+                        <label for="trail-length-slider">Length:</label>
+                        <input type="range" id="trail-length-slider" min="1" max="3650" value="365" step="1">
                     </div>
-
-                    <div id="visuals-tab" class="tab-content" style="display: none;">
-                        <div class="control-group">
-                            <input type="checkbox" id="trails-enabled-toggle" checked>
-                            <label for="trails-enabled-toggle">Trails</label>
-                        </div>
-                         <div class="control-group">
-                            <label for="trail-length-slider">Length:</label>
-                            <input type="range" id="trail-length-slider" min="1" max="3650" value="365" step="1">
-                        </div>
-                        <div class="control-group">
-                            <label for="distance-unit-select">Units:</label>
-                            <select id="distance-unit-select" class="control-btn">
-                                <option value="au">AU</option>
-                                <option value="km">km</option>
-                                <option value="earthR">Earth Radii</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
-                            <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
-                        </div>
+                    <div class="control-group">
+                        <label for="distance-unit-select">Units:</label>
+                        <select id="distance-unit-select" class="control-btn">
+                            <option value="au">AU</option>
+                            <option value="km">km</option>
+                            <option value="earthR">Earth Radii</option>
+                        </select>
                     </div>
-
-                    <div id="settings-tab" class="tab-content" style="display: none;">
-                        <div class="control-group tooltip">
-                            <input type="checkbox" id="shadow-toggle" checked>
-                            <label for="shadow-toggle" id="shadow-label">Shadows</label>
-                            <span id="shadow-icon">☀️</span>
-                            <span class="tooltip-text">Toggle realistic planet shadows. This may affect performance.</span>
-                        </div>
-                        <div class="control-group">
-                            <label for="performance-preset">Quality:</label>
-                            <select id="performance-preset" class="control-btn">
-                                <option value="auto">Auto</option>
-                                <option value="low">Low</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                        <button id="reset-btn" class="control-btn">Reset</button>
-                        <button id="manage-presets-btn" class="control-btn">Presets</button>
+                    <div class="control-group">
+                        <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
+                        <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
                     </div>
                 </div>
+
+                <div id="settings-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
+                    <div class="control-group tooltip">
+                        <input type="checkbox" id="shadow-toggle" checked>
+                        <label for="shadow-toggle" id="shadow-label">Shadows</label>
+                        <span id="shadow-icon">☀️</span>
+                        <span class="tooltip-text">Toggle realistic planet shadows. This may affect performance.</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="performance-preset">Quality:</label>
+                        <select id="performance-preset" class="control-btn">
+                            <option value="auto">Auto</option>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <button id="reset-btn" class="control-btn">Reset</button>
+                    <button id="manage-presets-btn" class="control-btn">Presets</button>
+                </div>
+
                 <div id="selection-panel" class="panel">
                     <button id="open-celestial-selector-btn" class="control-btn">Select Body</button>
                     <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
@@ -188,19 +201,19 @@
 
                 <button id="help-button" class="control-btn help-btn">?</button>
 
-        <div id="presets-modal" class="panel hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; width: 500px; max-width: 90vw;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
-                <h3>Manage Layout Presets</h3>
-                <button id="close-presets-modal-btn" class="control-btn">&times;</button>
-            </div>
-            <div id="presets-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;">
-                <!-- Preset items will be populated here -->
-            </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <input type="text" id="new-preset-name" class="control-btn" placeholder="New preset name..." style="flex-grow: 1;">
-                <button id="save-current-preset-btn" class="control-btn">Save Current</button>
-            </div>
-        </div>
+                <div id="presets-modal" class="panel hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; width: 500px; max-width: 90vw;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h3>Manage Layout Presets</h3>
+                        <button id="close-presets-modal-btn" class="control-btn">&times;</button>
+                    </div>
+                    <div id="presets-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;">
+                        <!-- Preset items will be populated here -->
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <input type="text" id="new-preset-name" class="control-btn" placeholder="New preset name..." style="flex-grow: 1;">
+                        <button id="save-current-preset-btn" class="control-btn">Save Current</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
