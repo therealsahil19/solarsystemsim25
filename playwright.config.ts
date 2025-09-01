@@ -72,9 +72,9 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run test:e2e',
     url: 'http://localhost:3000/solarsystemsim25/',
-    timeout: 120000,
+    timeout: 300000,
     reuseExistingServer: !process.env.CI,
   },
 });

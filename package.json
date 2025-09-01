@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx,js}' --fix",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "test:e2e": "vite build && vite preview --port 3000"
   },
   "repository": {
     "type": "git",
