@@ -12,6 +12,9 @@ type Simulation = {
     followSmoothing: number;
     isUserInteracting: boolean;
     isTweening: boolean;
+    time: number;
+    isPaused: boolean;
+    singleStep: boolean;
 };
 
 export function setupInteractions(
