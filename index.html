@@ -140,14 +140,11 @@
                                     <label style="cursor: pointer;"><input type="radio" name="selector-view" value="type"> By Type</label>
                                 </div>
                             </div>
-                            <div class="search-container" style="display: flex; gap: 5px; margin-bottom: 5px;">
-                                <input type="text" id="selector-search-input" class="control-btn" placeholder="Search..." style="flex-grow: 1; box-sizing: border-box;">
-                                <select id="selector-type-filter" class="control-btn" title="Filter by type">
-                                    <option value="all">All Types</option>
-                                    <option value="star">Star</option>
-                                    <option value="planet">Planet</option>
-                                    <option value="moon">Moon</option>
-                                </select>
+                            <div class="search-container" style="margin-bottom: 10px;">
+                                <input type="text" id="selector-search-input" class="control-btn" placeholder="Search by name..." style="width: 100%; box-sizing: border-box;">
+                            </div>
+                            <div id="category-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <!-- Tabs will be dynamically inserted here -->
                             </div>
                             <div id="celestial-selector-menu" class="dropdown-menu">
                                 <!-- Tree view will be populated by JS -->
