@@ -1,16 +1,15 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
-import { planetData } from './data';
+import { celestialBodyData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
 import { renderShortcutsList } from './ui/shortcuts-panel';
+import { store } from './state/store';
 
+// This type is now much simpler as state is handled in the store or the main simulation object
 type Simulation = {
     selectedObject: THREE.Object3D | null;
-    time: number;
-    isPaused: boolean;
-    singleStep: boolean;
 };
 
 export function setupKeyboardShortcuts(
@@ -37,34 +36,32 @@ export function setupKeyboardShortcuts(
     const handleKeyAction = (action: ShortcutAction) => {
         if (action.startsWith('select-body-')) {
             const index = parseInt(action.split('-')[2], 10) - 1;
-            if (planetData[index]) {
-                onBodySelected(planetData[index].name);
+            if (celestialBodyData[index]) {
+                onBodySelected(celestialBodyData[index].name);
             }
             return;
         }
 
+        const { timeScale, setTimeScale, isPaused, setPaused, setSimTime, simTime } = store.getState();
+
         switch (action) {
-            case 'toggle-pause': dom.pauseButton.click(); break;
+            case 'toggle-pause': setPaused(!isPaused); break;
             case 'toggle-debug-hud': dom.debugHUD.classList.toggle('hidden'); break;
             case 'reset-time': dom.resetButton.click(); break;
-            case 'toggle-shadows': dom.shadowToggle.click(); break;
+            case 'toggle-shadows': (dom.shadowToggle as HTMLInputElement).click(); break;
             case 'increase-speed': {
-                const slider = dom.timeScaleSlider;
-                let currentValue = parseFloat(slider.value);
-                currentValue = Math.min(Number(slider.max), currentValue + 0.1);
-                slider.value = String(currentValue);
-                slider.dispatchEvent(new Event('input'));
+                setTimeScale(timeScale * 1.5);
                 break;
             }
             case 'decrease-speed': {
-                const slider = dom.timeScaleSlider;
-                let currentValue = parseFloat(slider.value);
-                currentValue = Math.max(Number(slider.min), currentValue - 0.1);
-                slider.value = String(currentValue);
-                slider.dispatchEvent(new Event('input'));
+                setTimeScale(timeScale / 1.5);
                 break;
             }
-            case 'toggle-trails': orbits.forEach(o => o.visible = !o.visible); break;
+            case 'toggle-trails':
+                // This will be handled by the visuals panel logic later
+                const toggle = document.getElementById('trails-enabled-toggle') as HTMLInputElement;
+                if(toggle) toggle.click();
+                break;
             case 'frame-selected': frameObject(simulation.selectedObject); break;
             case 'toggle-help':
                 renderShortcutsList();
@@ -72,12 +69,17 @@ export function setupKeyboardShortcuts(
                 break;
             case 'close-modals': dom.helpOverlay.classList.add('hidden'); break;
             case 'frame-advance':
-                simulation.singleStep = true;
-                simulation.isPaused = false;
-                dom.pauseButton.textContent = 'Pause';
+                if(!isPaused) setPaused(true);
+                setSimTime(simTime + 86400); // Step 1 day
                 break;
-            case 'fine-step-forward': simulation.time += 1 / (24 * 60); if (simulation.isPaused) { simulation.singleStep = true; simulation.isPaused = false; } break;
-            case 'fine-step-backward': simulation.time -= 1 / (24 * 60); if (simulation.isPaused) { simulation.singleStep = true; simulation.isPaused = false; } break;
+            case 'fine-step-forward':
+                if(!isPaused) setPaused(true);
+                setSimTime(simTime + 3600); // Step 1 hour
+                break;
+            case 'fine-step-backward':
+                if(!isPaused) setPaused(true);
+                setSimTime(simTime - 3600); // Step 1 hour back
+                break;
         }
     };
 

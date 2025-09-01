@@ -1,22 +1,17 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
-import { store } from './state/store';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+// The simulation object is now simpler, as most state is in the store.
 type Simulation = {
-    speed: number;
-    isPaused: boolean;
     selectedObject: THREE.Object3D | null;
     focusTarget: THREE.Object3D | null;
     followTarget: THREE.Object3D | null;
     followOffset: THREE.Vector3;
     followSmoothing: number;
-    time: number;
-    lastSpeed: number;
     isUserInteracting: boolean;
     isTweening: boolean;
-    singleStep: boolean;
 };
 
 export function setupInteractions(
@@ -31,8 +26,33 @@ export function setupInteractions(
 ) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    const tooltipElement = document.getElementById('body-tooltip')!;
+    let hoverTimeout: number | undefined;
+
+    window.addEventListener('pointermove', (event: MouseEvent) => {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = window.setTimeout(() => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(selectableObjects);
+
+            if (intersects.length > 0) {
+                const hovered = intersects[0].object;
+                const { name, radius } = hovered.userData.data;
+
+                tooltipElement.innerHTML = `<strong>${name}</strong><br>Radius: ${radius.toLocaleString()} km`;
+                tooltipElement.style.left = `${event.clientX + 15}px`;
+                tooltipElement.style.top = `${event.clientY + 15}px`;
+                tooltipElement.classList.remove('hidden');
+            } else {
+                tooltipElement.classList.add('hidden');
+            }
+        }, 100);
+    });
 
     window.addEventListener('click', (event) => {
+        tooltipElement.classList.add('hidden');
         const clickedOnUI = [
             dom.celestialSelector,
             dom.controlsPanel,
@@ -64,82 +84,6 @@ export function setupInteractions(
                 .easing(TWEEN.Easing.Cubic.Out)
                 .start();
         }
-    });
-
-    function updateTimeScaleUI() {
-        const speed = store.getState().timeScale;
-        dom.timeScaleValue.textContent = `${speed.toFixed(speed < 10 ? 1 : 0)}x`;
-        dom.timeScaleInput.value = speed.toFixed(speed < 10 ? 2 : 0);
-
-        const logSpeed = Math.log10(speed);
-        if (dom.timeScaleSlider) {
-            dom.timeScaleSlider.value = String(Math.max(Number(dom.timeScaleSlider.min), Math.min(Number(dom.timeScaleSlider.max), logSpeed)));
-        }
-    }
-
-    if (dom.timeScaleSlider) {
-        dom.timeScaleSlider.addEventListener('input', (event) => {
-            const exponent = parseFloat((event.target as HTMLInputElement).value);
-            store.getState().setTimeScale(Math.pow(10, exponent));
-            store.getState().setPaused(false);
-            updateTimeScaleUI();
-        });
-    }
-
-    if (dom.timePresetButtons) {
-        dom.timePresetButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const speed = parseFloat(button.dataset.speed!);
-                store.getState().setTimeScale(speed);
-                store.getState().setPaused(false);
-                updateTimeScaleUI();
-            });
-        });
-    }
-
-    if (dom.timeScaleInput) {
-        dom.timeScaleInput.addEventListener('change', (event) => {
-            const speed = parseFloat((event.target as HTMLInputElement).value);
-            if (!isNaN(speed) && speed > 0) {
-                store.getState().setTimeScale(speed);
-                store.getState().setPaused(false);
-            }
-            updateTimeScaleUI();
-        });
-    }
-
-    function getStepDelta() {
-        const speed = store.getState().timeScale;
-        if (speed >= 1000) return 30;
-        if (speed >= 100) return 10;
-        if (speed >= 10) return 1;
-        return 1 / 24;
-    }
-
-    if (dom.timeStepForward) {
-        dom.timeStepForward.addEventListener('click', () => {
-            simulation.time += getStepDelta();
-            if (simulation.isPaused) {
-                simulation.singleStep = true;
-                simulation.isPaused = false;
-            }
-        });
-    }
-
-    if (dom.timeStepBackward) {
-        dom.timeStepBackward.addEventListener('click', () => {
-            simulation.time -= getStepDelta();
-            if (simulation.isPaused) {
-                simulation.singleStep = true;
-                simulation.isPaused = false;
-            }
-        });
-    }
-
-    updateTimeScaleUI();
-
-    dom.pauseButton.addEventListener('click', () => {
-        store.getState().setPaused(!store.getState().isPaused);
     });
 
     dom.resetButton.addEventListener('click', () => {

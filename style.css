@@ -1,3 +1,30 @@
+/* --- Main App Layout --- */
+.app {
+    display: grid;
+    grid-template-columns: auto 1fr; /* Default to left dock */
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app.dock-right {
+    grid-template-columns: 1fr auto;
+}
+
+.canvas-area {
+    position: relative;
+    background: #000;
+}
+
+#bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+
 /* --- General Body and Font Styles --- */
 body {
     margin: 0;
@@ -11,24 +38,24 @@ canvas {
     display: block; /* Remove bottom space */
 }
 
-/* --- UI Container --- */
+/* --- UI Container (for floating elements) --- */
 #ui-container {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     pointer-events: none; /* Allow clicks to pass through */
     color: white;
     z-index: 100;
 }
 
-#ui-container > div {
+#ui-container > * {
     pointer-events: auto; /* Re-enable pointer events for children */
     position: absolute;
 }
 
-/* --- Panel Styling (shared) --- */
+/* --- Panel Styling (shared for floating panels) --- */
 .panel {
     background-color: rgba(20, 20, 30, 0.7);
     backdrop-filter: blur(10px);
@@ -39,53 +66,126 @@ canvas {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* --- Info Panel --- */
-#info-panel {
-    top: 10px;
-    right: 10px;
-    width: 320px;
-    min-width: 250px;
-    min-height: 150px;
+/* --- Dockable Info Panel --- */
+#infoPanel {
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Hide content that overflows during resize */
+    background: rgba(12, 12, 18, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    transition: width 0.2s ease-in-out;
+    width: 320px; /* Default width */
+    min-width: 40px;
+    max-width: 80vw;
+    position: relative;
+    z-index: 10;
+    padding: 0;
+    border: none;
+    box-shadow: none;
 }
 
-#info-panel-header {
+#infoPanel.dock-right {
+    order: 1;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#infoPanel.dock-left {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#infoPanel.collapsed {
+    width: 40px;
+    cursor: pointer;
+}
+
+#infoPanel.collapsed > #panelBody,
+#infoPanel.collapsed > #resizer {
+    display: none;
+}
+
+#infoPanel.collapsed #panelHeader h2,
+#infoPanel.collapsed #panelHeader #pinBtn {
+    display: none;
+}
+
+#infoPanel.hidden {
+    display: none;
+}
+
+#panelHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: move;
-    padding-bottom: 10px;
+    padding: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
-#info-panel-header h2 {
+#panelHeader.draggable {
+    cursor: grab;
+}
+#panelHeader.dragging {
+    cursor: grabbing;
+}
+
+#panelHeader h2 {
     margin: 0;
     font-size: 1.4em;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-#info-panel-close {
+#panelHeader .panel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+#panelHeader button {
     background: none;
     border: none;
     color: white;
-    font-size: 1.5em;
+    font-size: 1.2em;
     cursor: pointer;
     transition: color 0.2s;
+    padding: 0;
 }
-
-#info-panel-close:hover {
+#panelHeader button:hover {
     color: #aaa;
 }
 
-#info-panel-content {
-    padding-top: 15px;
+#panelBody {
+    padding: 15px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    overflow-y: auto;
 }
+
+.resizer {
+    width: 5px;
+    cursor: ew-resize;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+.resizer:hover {
+    background-color: rgba(77, 144, 254, 0.5);
+}
+
+#infoPanel.dock-left .resizer {
+    right: -2.5px;
+}
+
+#infoPanel.dock-right .resizer {
+    left: -2.5px;
+}
+
 
 #info-image-container {
     width: 100%;
@@ -96,6 +196,7 @@ canvas {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 #info-image-container img {
@@ -151,82 +252,16 @@ canvas {
     display: none;
 }
 
-#info-panel-resize-handle {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 12px;
-    height: 12px;
-    cursor: se-resize;
-}
-
-#info-panel.hidden {
-    display: none;
-}
-
 /* --- Controls Panel --- */
 #controls-panel {
     top: 10px;
     left: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .control-group {
     display: flex;
     align-items: center;
     gap: 5px;
-}
-
-#controls-panel label {
-    font-weight: 500;
-}
-
-#speed-slider {
-    width: 200px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-#speed-slider::-webkit-slider-runnable-track {
-    background: #2a2a3a;
-    height: 6px;
-    border-radius: 3px;
-}
-
-#speed-slider::-moz-range-track {
-    background: #2a2a3a;
-    height: 6px;
-    border-radius: 3px;
-}
-
-#speed-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    margin-top: -5px; /* Centers thumb on track */
-    background-color: #fff;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    border: 2px solid #333;
-}
-
-#speed-slider::-moz-range-thumb {
-    background-color: #fff;
-    height: 12px;
-    width: 12px;
-    border-radius: 50%;
-    border: 2px solid #333;
-}
-
-#speed-markers {
-    display: flex;
-    justify-content: space-between;
-    padding: 0 10px;
-    color: #fff;
 }
 
 /* --- Simulation Control Buttons --- */
@@ -256,7 +291,7 @@ canvas {
 
 /* --- Selection Panel --- */
 #selection-panel {
-    top: 80px; /* Adjusted position */
+    top: 80px;
     left: 10px;
 }
 
@@ -314,30 +349,40 @@ canvas {
     background-color: #33333c;
 }
 
-.dropdown-menu .moon-list {
-    list-style-type: none;
-    padding-left: 20px;
+/* --- Tree View for Selector --- */
+.tree-root {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
-
-.dropdown-menu .moon-list.hidden {
-    display: none;
-}
-
-.dropdown-menu .has-moons > span {
-    display: inline-block;
-    width: 10px;
+.tree-node-content {
+    display: flex;
+    align-items: center;
+    padding: 5px;
     cursor: pointer;
+    border-radius: 4px;
+}
+.tree-node-content:hover, .tree-node.focused > .tree-node-content {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.tree-node .chevron {
+    width: 20px;
+    text-align: center;
+    font-size: 0.8em;
+}
+.tree-node .node-name {
+    flex-grow: 1;
+}
+.tree-level {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 /* --- Tooltip Styles --- */
 .tooltip {
     position: relative;
     display: inline-block;
-}
-
-#shadow-icon {
-    margin-left: 8px;
-    font-size: 1.2em;
 }
 
 .tooltip .tooltip-text {
@@ -357,7 +402,7 @@ canvas {
     transition: opacity 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    pointer-events: none; /* So it doesn't interfere with mouse events */
+    pointer-events: none;
 }
 
 .tooltip:hover .tooltip-text {
@@ -369,36 +414,17 @@ canvas {
 #debug-hud {
     top: 80px;
     right: 10px;
-    font-size: 12px;
-    line-height: 1.5;
 }
 
 #debug-hud.hidden {
     display: none;
 }
 
-#debug-hud h4 {
-    margin-top: 0;
-    margin-bottom: 5px;
-    border-bottom: 1px solid #555;
-    padding-bottom: 5px;
-    font-weight: 600;
-}
-
-#debug-hud div {
-    display: grid;
-    grid-template-columns: 70px 1fr;
-    gap: 5px;
-}
-
 /* --- Help Overlay --- */
 #help-overlay {
-    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 400px;
-    max-width: 90vw;
     z-index: 200;
 }
 
@@ -406,98 +432,11 @@ canvas {
     display: none;
 }
 
-#help-overlay h3 {
-    margin-top: 0;
-    text-align: center;
-    border-bottom: 1px solid #555;
-    padding-bottom: 10px;
-    font-weight: 600;
-}
-
-#help-overlay ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#help-overlay li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#help-overlay li:last-child {
-    border-bottom: none;
-}
-
-#help-overlay kbd {
-    background-color: #2a2a3a;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 0.9em;
-    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
-}
-
-.help-search-container {
-    margin-bottom: 15px;
-}
-
-#help-search-input {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.shortcuts-grid {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 10px 15px;
-    align-items: center;
-}
-
-.shortcuts-grid .action-label {
-    text-align: left;
-}
-
-.shortcuts-grid .key-binding {
-    background-color: #2a2a3a;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
-    justify-self: end;
-}
-
-.shortcuts-grid .remap-button {
-    padding: 4px 8px;
-    font-size: 0.9em;
-}
-
-#help-overlay-close {
-    margin-top: 20px;
-    width: 100%;
-}
-
 /* --- Time Controls --- */
 #time-controls {
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-#time-controls .control-group {
-    gap: 8px;
-}
-
-#time-scale-input {
-    width: 70px;
-    text-align: center;
 }
 
 /* --- Small Info Card --- */
@@ -507,7 +446,6 @@ canvas {
     width: 280px;
     display: flex;
     padding: 10px;
-    /* Inherits .panel styles, so we just add specifics */
 }
 
 #card-thumb {
@@ -517,59 +455,7 @@ canvas {
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.5);
     flex-shrink: 0;
-    background-color: #111; /* Placeholder */
-}
-
-#small-info-card .card-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 12px;
-    flex-grow: 1;
-}
-
-#small-info-card .card-title {
-    font-size: 1.2em;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-    white-space: nowrap;
-}
-
-#small-info-card .card-stats {
-    font-size: 0.85em;
-    color: #ccc;
-    margin-bottom: 8px;
-}
-
-#small-info-card .card-buttons {
-    display: flex;
-    gap: 6px;
-}
-
-#small-info-card .card-buttons button {
-    background: rgba(80, 80, 90, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #eee;
-    padding: 5px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8em;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-#small-info-card .card-buttons button:hover {
-    background: rgba(100, 100, 110, 0.9);
-}
-
-#small-info-card .card-buttons button[aria-pressed="true"] {
-    background: #4d90fe;
-    border-color: #4d90fe;
-    color: white;
-feat/ts-strict
-=======
-feat/ts-strict
-main
+    background-color: #111;
 }
 
 .help-btn {
@@ -582,9 +468,85 @@ main
     border-radius: 50%;
     text-align: center;
     padding: 0;
-feat/ts-strict
-=======
-=======
-main
-main
+}
+
+/* --- Body Tooltip --- */
+#body-tooltip {
+    position: absolute;
+    background: rgba(20,20,20,0.95);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    max-width: 220px;
+    pointer-events: none; /* Tooltip should not be interactive */
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    transition: opacity 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#body-tooltip.hidden {
+    display: none;
+    opacity: 0;
+}
+
+/* --- Presets Modal --- */
+#presets-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    width: 500px;
+    max-width: 90vw;
+}
+
+#presets-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+#presets-modal h3 {
+    margin: 0;
+}
+
+#presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 10px; /* For scrollbar */
+}
+
+.preset-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.preset-item .preset-name {
+    font-weight: 500;
+}
+
+.preset-item .preset-actions button {
+    margin-left: 5px;
+}
+
+.preset-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+#new-preset-name {
+    flex-grow: 1;
 }
