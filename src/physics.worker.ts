@@ -63,5 +63,5 @@ function postPositions() {
         positions[i * 3 + 2] = z;
     });
 
-    self.postMessage({ type: 'update', positions: positions.buffer }, [positions.buffer]);
+    self.postMessage({ type: 'update', positions: positions.buffer });
 }

@@ -100,7 +100,7 @@ export function setShortcut(action: ShortcutAction, binding: ShortcutBinding) {
             !!existingBinding.ctrlKey === !!binding.ctrlKey &&
             !!existingBinding.altKey === !!binding.altKey
         ) {
-            currentShortcuts[act as ShortcutAction] = undefined;
+            delete currentShortcuts[act as ShortcutAction];
         }
     }
 

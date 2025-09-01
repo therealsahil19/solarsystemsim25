@@ -1,161 +1,153 @@
 import * as dom from './dom';
 
+type PanelState = {
+    side: 'left' | 'right';
+    isPinned: boolean;
+    width: number;
+    isCollapsed: boolean;
+};
+
+const PANEL_STATE_KEY = 'solarsim.panel.v1';
+
+function savePanelState(state: PanelState) {
+    try {
+        localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.error("Failed to save panel state:", e);
+    }
+}
+
+function loadPanelState(): PanelState | null {
+    const stored = localStorage.getItem(PANEL_STATE_KEY);
+    if (stored) {
+        try {
+            // Add validation to ensure the stored state is valid
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed === 'object' && 'side' in parsed && 'isPinned' in parsed && 'width' in parsed) {
+                return parsed;
+            }
+        } catch (e) {
+            console.error("Failed to parse panel state:", e);
+            localStorage.removeItem(PANEL_STATE_KEY);
+        }
+    }
+    return null;
+}
+
 export function initInfoPanel(): void {
-    const header = document.getElementById('info-panel-header') as HTMLDivElement;
-    const closeButton = document.getElementById('info-panel-close') as HTMLButtonElement;
-    const resizeHandle = document.getElementById('info-panel-resize-handle') as HTMLDivElement;
+    const app = document.getElementById('app')!;
+    const panel = document.getElementById('infoPanel') as HTMLElement;
+    const header = document.getElementById('panelHeader') as HTMLElement;
+    const resizer = document.getElementById('resizer') as HTMLElement;
+    const pinBtn = document.getElementById('pinBtn') as HTMLButtonElement;
+    const closeBtn = document.getElementById('info-panel-close') as HTMLButtonElement;
 
-    // --- Draggable ---
-    let isDragging = false;
-    let dragStartX: number, dragStartY: number, panelStartX: number, panelStartY: number;
+    let state: PanelState = loadPanelState() || {
+        side: 'left',
+        isPinned: true,
+        width: 320,
+        isCollapsed: false, // isCollapsed is derived from !isPinned
+    };
 
-    header.addEventListener('mousedown', (e: MouseEvent) => {
-        isDragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        panelStartX = dom.infoPanel.offsetLeft;
-        panelStartY = dom.infoPanel.offsetTop;
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('mouseup', onDragEnd);
+    function applyState() {
+        // Apply classes for docking
+        app.classList.toggle('dock-right', state.side === 'right');
+        panel.classList.toggle('dock-left', state.side === 'left');
+        panel.classList.toggle('dock-right', state.side === 'right');
+        resizer.classList.toggle('dock-left', state.side === 'left');
+        resizer.classList.toggle('dock-right', state.side === 'right');
+
+        // Pinning implies the panel is not collapsed by default
+        const isCurrentlyCollapsed = !state.isPinned;
+        panel.classList.toggle('collapsed', isCurrentlyCollapsed);
+
+        // Apply width only if not collapsed
+        if (!isCurrentlyCollapsed) {
+            panel.style.width = `${state.width}px`;
+        } else {
+            panel.style.width = ''; // Let CSS handle collapsed width
+        }
+
+        pinBtn.setAttribute('aria-pressed', String(state.isPinned));
+        pinBtn.textContent = state.isPinned ? '📌' : '➡️';
+    }
+
+    applyState();
+
+    header.addEventListener('pointerdown', (e: PointerEvent) => {
+        if (!header.classList.contains('draggable') || (e.target as HTMLElement).closest('button')) {
+            return;
+        }
+
+        header.classList.add('dragging');
+        document.body.style.cursor = 'grabbing';
+
+        const onPointerUp = (e: PointerEvent) => {
+            header.classList.remove('dragging');
+            document.body.style.cursor = '';
+
+            const dropX = e.clientX;
+            const targetSide = (dropX < window.innerWidth / 2) ? 'left' : 'right';
+
+            if (targetSide !== state.side) {
+                state.side = targetSide;
+                applyState();
+                savePanelState(state);
+            }
+
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+        };
+
+        const onPointerMove = (e: PointerEvent) => {
+            // This can be used to show a ghost panel if desired
+        };
+
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp, { once: true });
     });
 
-    function onDrag(e: MouseEvent) {
-        if (!isDragging) return;
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        dom.infoPanel.style.left = `${panelStartX + dx}px`;
-        dom.infoPanel.style.top = `${panelStartY + dy}px`;
-    }
+    pinBtn.addEventListener('click', () => {
+        state.isPinned = !state.isPinned;
+        applyState();
+        savePanelState(state);
+    });
 
-    function onDragEnd() {
-        isDragging = false;
-        document.removeEventListener('mousemove', onDrag);
-        document.removeEventListener('mouseup', onDragEnd);
-    }
-
-    // --- Resizable ---
-    let isResizing = false;
-    let resizeStartX: number, resizeStartY: number, panelStartWidth: number, panelStartHeight: number;
-
-    resizeHandle.addEventListener('mousedown', (e: MouseEvent) => {
+    resizer.addEventListener('pointerdown', (e: PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
         isResizing = true;
-        resizeStartX = e.clientX;
-        resizeStartY = e.clientY;
-        panelStartWidth = dom.infoPanel.offsetWidth;
-        panelStartHeight = dom.infoPanel.offsetHeight;
-        document.addEventListener('mousemove', onResize);
-        document.addEventListener('mouseup', onResizeEnd);
-        e.stopPropagation(); // Prevent dragging while resizing
+        document.body.style.cursor = 'ew-resize';
+
+        const onPointerMove = (e: PointerEvent) => {
+            if (!isResizing) return;
+            let newWidth = state.side === 'left' ? e.clientX : window.innerWidth - e.clientX;
+            newWidth = Math.max(280, Math.min(newWidth, window.innerWidth * 0.6));
+            state.width = newWidth;
+            panel.style.width = `${state.width}px`;
+        };
+
+        const onPointerUp = () => {
+            isResizing = false;
+            document.body.style.cursor = '';
+            savePanelState(state);
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+        };
+
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp, { once: true });
     });
+    let isResizing = false;
 
-    function onResize(e: MouseEvent) {
-        if (!isResizing) return;
-        const dx = e.clientX - resizeStartX;
-        const dy = e.clientY - resizeStartY;
-        dom.infoPanel.style.width = `${panelStartWidth + dx}px`;
-        dom.infoPanel.style.height = `${panelStartHeight + dy}px`;
-    }
-
-    function onResizeEnd() {
-        isResizing = false;
-        document.removeEventListener('mousemove', onResize);
-        document.removeEventListener('mouseup', onResizeEnd);
-    }
-
-    // --- Closable ---
-    closeButton.addEventListener('click', () => {
-        dom.infoPanel.classList.add('hidden');
-    });
-
-    // --- Collapsible Advanced Details ---
-    dom.advancedDetailsToggle.addEventListener('click', () => {
-        dom.advancedDetailsContent.classList.toggle('hidden');
+    closeBtn.addEventListener('click', () => {
+        panel.classList.add('hidden');
     });
 }
 
 export function updateInfoPanelColor(color: string): void {
-    dom.infoPanel.style.borderTopColor = color;
-}
-
-export function updateInfoPanelForBody(data: any, type: string, color: string): void {
-    dom.smallInfoCard.classList.remove('hidden');
-    dom.cardTitle.textContent = data.name;
-    dom.cardThumb.src = data.texture || '';
-    dom.cardThumb.alt = `${data.name} thumbnail`;
-
-    dom.infoName.textContent = data.name;
-    updateInfoPanelColor(color);
-
-    dom.infoImageContainer.innerHTML = '';
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", "100%");
-    const rect = document.createElementNS(svgNS, "rect");
-    rect.setAttribute("width", "100%");
-    rect.setAttribute("height", "100%");
-    rect.setAttribute("fill", color);
-    svg.appendChild(rect);
-    dom.infoImageContainer.appendChild(svg);
-
-    dom.infoBasicStats.innerHTML = '';
-    const stats: { [key: string]: { value: string; tooltip?: string | null } } = {
-        'Radius': { value: `${data.radius.toLocaleString()} km` },
-        'Distance': {
-            value: type === 'moon' ? `${Math.round(data.semiMajorAxisKm).toLocaleString()} km` : `${data.semiMajorAxis} AU`,
-            tooltip: type !== 'moon' ? 'Astronomical Unit: the average distance from Earth to the Sun.' : null
-        },
-        'Orbital Period': {
-            value: `${data.orbitalPeriod} days`,
-            tooltip: 'The time it takes for the object to complete one orbit around its parent body.'
-        }
-    };
-
-    for (const [key, { value, tooltip }] of Object.entries(stats)) {
-        const strong = document.createElement('strong');
-        strong.textContent = `${key}:`;
-
-        const span = document.createElement('span');
-        span.textContent = value;
-
-        if (tooltip) {
-            const tooltipSpan = document.createElement('span');
-            tooltipSpan.className = 'tooltip';
-            tooltipSpan.textContent = '(?)';
-            const tooltipText = document.createElement('span');
-            tooltipText.className = 'tooltip-text';
-            tooltipText.textContent = tooltip;
-            tooltipSpan.appendChild(tooltipText);
-            span.appendChild(tooltipSpan);
-        }
-
-        dom.infoBasicStats.appendChild(strong);
-        dom.infoBasicStats.appendChild(span);
+    const header = document.getElementById('panelHeader');
+    if(header) {
+        header.style.borderBottomColor = color;
     }
-
-    const advancedStats: { [key: string]: string } = {};
-    if (data.axialTilt) {
-        advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
-    }
-    if (data.rings) {
-        advancedStats['Rings'] = `${data.rings.bands.length} main bands`;
-    }
-
-    if (Object.keys(advancedStats).length > 0) {
-        dom.infoAdvancedDetails.classList.remove('hidden');
-        dom.advancedDetailsContent.innerHTML = '';
-        for (const [key, value] of Object.entries(advancedStats)) {
-            const strong = document.createElement('strong');
-            strong.textContent = `${key}:`;
-            const span = document.createElement('span');
-            span.textContent = value;
-            dom.advancedDetailsContent.appendChild(strong);
-            dom.advancedDetailsContent.appendChild(span);
-        }
-    } else {
-        dom.infoAdvancedDetails.classList.add('hidden');
-    }
-
-    dom.infoPanel.classList.remove('hidden');
-    dom.freeCameraButton.classList.remove('hidden');
 }

@@ -1,81 +1,208 @@
-import * as THREE from 'three';
 import { CelestialBody } from '../data';
-import { celestialSelector, celestialSelectorMenu, celestialSelectorToggle } from './dom';
+import { celestialSelectorMenu } from './dom';
+import { buildTree, TreeNode } from './tree-view';
+import Fuse from 'fuse.js';
 
-export function createCelestialBodySelector(planetData: CelestialBody[], onSelect: (name: string) => void): void {
-    const list = document.createElement('ul');
-    list.className = 'dropdown-menu-list';
+let treeNodes: TreeNode[] = [];
+let flatNodeMap = new Map<string, TreeNode>();
+let fuse: Fuse<CelestialBody>;
+let activeNodeId: string | null = null;
 
-    planetData.forEach(body => {
-        const listItem = document.createElement('li');
+function renderNode(node: TreeNode): HTMLLIElement {
+    const li = document.createElement('li');
+    li.dataset.id = node.id;
+    li.className = 'tree-node';
+    li.style.paddingLeft = `${node.depth * 18}px`;
+    li.setAttribute('role', 'treeitem');
+    li.setAttribute('aria-expanded', String(node.children.length > 0 ? node.expanded : false));
 
-        listItem.style.display = 'flex';
-        listItem.style.alignItems = 'center';
-        listItem.style.gap = '10px';
+    const content = document.createElement('div');
+    content.className = 'tree-node-content';
 
-        const colorCircle = document.createElement('div');
-        colorCircle.style.width = '15px';
-        colorCircle.style.height = '15px';
-        colorCircle.style.borderRadius = '50%';
-        colorCircle.style.backgroundColor = `#${new THREE.Color(body.color).getHexString()}`;
-        listItem.appendChild(colorCircle);
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron';
+    if (node.children.length > 0) {
+        chevron.textContent = node.expanded ? '▼' : '▶';
+    }
+    content.appendChild(chevron);
 
-        const bodyName = document.createElement('div');
-        bodyName.textContent = body.name;
-        listItem.appendChild(bodyName);
+    const name = document.createElement('span');
+    name.className = 'node-name';
+    name.textContent = node.name;
+    content.appendChild(name);
 
-        listItem.dataset.name = body.name;
+    li.appendChild(content);
 
-        if (body.moons && body.moons.length > 0) {
-            listItem.classList.add('has-moons');
-            const toggle = document.createElement('span');
-            toggle.textContent = '>';
-            listItem.prepend(toggle);
+    if (node.children.length > 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'tree-level';
+        ul.setAttribute('role', 'group');
+        ul.style.display = node.expanded ? 'block' : 'none';
+        node.children.forEach(child => {
+            const childEl = renderNode(child);
+            child.element = childEl;
+            ul.appendChild(childEl);
+        });
+        li.appendChild(ul);
+    }
 
-            const moonList = document.createElement('ul');
-            moonList.className = 'moon-list hidden';
-            body.moons.forEach(moon => {
-                const moonListItem = document.createElement('li');
-                moonListItem.textContent = moon.name;
-                moonListItem.dataset.name = moon.name;
-                moonListItem.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    onSelect(moon.name);
-                    celestialSelectorMenu.classList.add('hidden');
-                });
-                moonList.appendChild(moonListItem);
-            });
-            listItem.appendChild(moonList);
+    node.element = li;
+    return li;
+}
 
-            listItem.addEventListener('click', () => {
-                moonList.classList.toggle('hidden');
-            });
-
-            bodyName.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onSelect(body.name);
-            });
-        } else {
-            bodyName.addEventListener('click', () => {
-                onSelect(body.name);
-                celestialSelectorMenu.classList.add('hidden');
-            });
+function updateDomVisibility() {
+    flatNodeMap.forEach(node => {
+        if (node.element) {
+            const isVisible = node.visible && (!node.parent || node.parent.expanded && node.parent.element?.style.display !== 'none');
+            node.element.style.display = isVisible ? '' : 'none';
+            if (node.children.length > 0) {
+                const ul = node.element.querySelector('ul');
+                if (ul) ul.style.display = node.expanded ? 'block' : 'none';
+                const chevron = node.element.querySelector('.chevron');
+                if (chevron) {
+                    chevron.textContent = node.expanded ? '▼' : '▶';
+                    node.element.setAttribute('aria-expanded', String(node.expanded));
+                }
+            }
         }
+    });
+}
 
-        list.appendChild(listItem);
+function filterTree(query: string) {
+    if (!query) {
+        flatNodeMap.forEach(node => {
+            node.visible = true;
+            node.expanded = true;
+        });
+        updateDomVisibility();
+        return;
+    }
+
+    const results = fuse.search(query);
+    const visibleIds = new Set(results.map(r => r.item.id));
+
+    flatNodeMap.forEach(node => node.visible = false);
+
+    visibleIds.forEach(id => {
+        let current = flatNodeMap.get(id);
+        while(current) {
+            current.visible = true;
+            current.expanded = true;
+            current = current.parent || undefined;
+        }
     });
 
-    celestialSelectorMenu.appendChild(list);
+    updateDomVisibility();
+}
 
-    celestialSelectorToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        celestialSelectorMenu.classList.toggle('hidden');
+function getVisibleNodes(): TreeNode[] {
+    const visible: TreeNode[] = [];
+    function traverse(nodes: TreeNode[]) {
+        for (const node of nodes) {
+            if (node.visible) {
+                visible.push(node);
+                if (node.expanded && node.children.length > 0) {
+                    traverse(node.children);
+                }
+            }
+        }
+    }
+    traverse(treeNodes);
+    return visible;
+}
+
+function setActiveNode(nodeId: string | null) {
+    if (activeNodeId) {
+        flatNodeMap.get(activeNodeId)?.element?.classList.remove('focused');
+    }
+    activeNodeId = nodeId;
+    if (activeNodeId) {
+        const node = flatNodeMap.get(activeNodeId);
+        if (node?.element) {
+            node.element.classList.add('focused');
+            node.element.scrollIntoView({ block: 'nearest' });
+        }
+    }
+}
+
+export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id: string) => void): void {
+    treeNodes = buildTree(bodies);
+    treeNodes.forEach(root => {
+        function walk(node: TreeNode) {
+            flatNodeMap.set(node.id, node);
+            node.children.forEach(walk);
+        }
+        walk(root);
     });
 
-    // Hide dropdown if clicked outside
-    window.addEventListener('click', (event) => {
-        if (!celestialSelector.contains(event.target as Node)) {
-            celestialSelectorMenu.classList.add('hidden');
+    fuse = new Fuse(bodies, { keys: ['name'], threshold: 0.4 });
+
+    celestialSelectorMenu.innerHTML = '';
+    const ul = document.createElement('ul');
+    ul.className = 'tree-root';
+    ul.setAttribute('role', 'tree');
+    treeNodes.forEach(node => ul.appendChild(renderNode(node)));
+    celestialSelectorMenu.appendChild(ul);
+
+    ul.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const nodeEl = target.closest('.tree-node');
+        if (!nodeEl || !(nodeEl instanceof HTMLLIElement)) return;
+        const nodeId = nodeEl.dataset.id!;
+        const node = flatNodeMap.get(nodeId)!;
+
+        if (target.classList.contains('chevron')) {
+            node.expanded = !node.expanded;
+            updateDomVisibility();
+        } else {
+            onSelect(node.id);
+        }
+    });
+
+    const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
+    searchInput.addEventListener('input', () => filterTree(searchInput.value));
+
+    searchInput.addEventListener('keydown', (e: KeyboardEvent) => {
+        const visibleNodes = getVisibleNodes();
+        if (visibleNodes.length === 0) return;
+
+        let currentIndex = activeNodeId ? visibleNodes.findIndex(n => n.id === activeNodeId) : -1;
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                currentIndex = Math.min(currentIndex + 1, visibleNodes.length - 1);
+                setActiveNode(visibleNodes[currentIndex].id);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (currentIndex === -1) currentIndex = 1;
+                currentIndex = Math.max(currentIndex - 1, 0);
+                setActiveNode(visibleNodes[currentIndex].id);
+                break;
+            case 'Enter':
+                if (activeNodeId) {
+                    onSelect(activeNodeId);
+                }
+                break;
+            case 'ArrowRight': {
+                const node = activeNodeId ? flatNodeMap.get(activeNodeId) : null;
+                if (node && node.children.length > 0 && !node.expanded) {
+                    node.expanded = true;
+                    updateDomVisibility();
+                }
+                break;
+            }
+            case 'ArrowLeft': {
+                const node = activeNodeId ? flatNodeMap.get(activeNodeId) : null;
+                if (node && node.children.length > 0 && node.expanded) {
+                    node.expanded = false;
+                    updateDomVisibility();
+                } else if (node?.parent) {
+                    setActiveNode(node.parent.id);
+                }
+                break;
+            }
         }
     });
 }
