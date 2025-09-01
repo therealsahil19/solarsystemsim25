@@ -1,50 +1,49 @@
-feat/pause-and-auto-frame
 from playwright.sync_api import sync_playwright, expect
 
-def run():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto("http://localhost:3000/solarsystemsim25/")
-
-        # Wait for the canvas to be ready
-        page.wait_for_selector('canvas')
-
-        # Take a screenshot of the initial state
-        page.screenshot(path="jules-scratch/verification/initial_state.png")
-
-        # Open the celestial body selector
-        page.click('#celestial-selector-toggle')
-
-        # Add a small delay to allow the dropdown to appear
-        page.wait_for_timeout(500)
-
-        # Click on Mars
-        mars_selector = 'li[data-name="Mars"] div:nth-child(2)'
-        page.wait_for_selector(mars_selector)
-        page.click(mars_selector)
-
-        # Wait for the animation to complete
-        page.wait_for_timeout(1500)
-
-        # Take a screenshot of the scene with Mars focused
-        page.screenshot(path="jules-scratch/verification/verification.png")
-
-        browser.close()
-
-if __name__ == "__main__":
-    run()
-=======
-from playwright.sync_api import sync_playwright
-
 def run(playwright):
-    browser = playwright.chromium.launch()
+    browser = playwright.chromium.launch(headless=True)
     page = browser.new_page()
+
+    # Listen for all console logs
+    page.on("console", lambda msg: print(f"BROWSER LOG: {msg.text}"))
+
     page.goto("http://localhost:3000/solarsystemsim25/")
-    page.wait_for_selector('#bg')
-    page.screenshot(path="jules-scratch/verification/verification.png")
+
+    # Give the page time to load
+    page.wait_for_selector("#main-controls-panel")
+
+    # Screenshot of the initial state
+    page.screenshot(path="jules-scratch/verification/01_initial_state.png")
+
+    # Click on the "Visuals" tab
+    page.get_by_role("button", name="Visuals").click()
+    page.screenshot(path="jules-scratch/verification/02_visuals_tab.png")
+
+    # Click on the "Controls" tab to go back
+    page.get_by_role("button", name="Controls").click()
+
+    # Click on the "Select Body..." button
+    page.get_by_role("button", name="Select Body...").click()
+
+    # Wait for the modal to appear
+    modal = page.locator("#celestial-selector-modal")
+    expect(modal).to_be_visible()
+
+    page.screenshot(path="jules-scratch/verification/03_modal_open.png")
+
+    # Select Mars
+    page.get_by_role("treeitem", name="🪐 Mars").click()
+
+    # Wait for a moment to let the UI update
+    page.wait_for_timeout(1000)
+
+    # Verify that Mars is selected and modal is closed
+    expect(page.locator("#info-name")).to_have_text("Mars")
+    expect(page.locator("#celestial-selector-modal")).to_be_hidden()
+
+    page.screenshot(path="jules-scratch/verification/04_mars_selected.png")
+
     browser.close()
 
 with sync_playwright() as playwright:
     run(playwright)
-main

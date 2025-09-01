@@ -19,12 +19,35 @@ function renderNode(node: TreeNode): HTMLLIElement {
     const content = document.createElement('div');
     content.className = 'tree-node-content';
 
+    // Determine type and set tooltip and icon
+    let type: 'Star' | 'Planet' | 'Moon';
+    let iconContent: string;
+    if (node.spec.parentId === null) {
+        type = 'Star';
+        iconContent = '⭐';
+    } else if (node.spec.parentId === 'sun') {
+        type = 'Planet';
+        iconContent = '🪐';
+    } else {
+        type = 'Moon';
+        iconContent = '🌕';
+    }
+
+    const distance = type === 'Planet' ? `${node.spec.semiMajorAxis.toFixed(2)} AU` : `${(node.spec.semiMajorAxisKm || 0).toLocaleString()} km`;
+    const orbiting = node.spec.parentId || 'N/A';
+    content.title = `Type: ${type}\nRadius: ${node.spec.radius.toLocaleString()} km\nOrbiting: ${orbiting}\nDistance: ${distance}`;
+
     const chevron = document.createElement('span');
     chevron.className = 'chevron';
     if (node.children.length > 0) {
         chevron.textContent = node.expanded ? '▼' : '▶';
     }
     content.appendChild(chevron);
+
+    const icon = document.createElement('span');
+    icon.className = 'node-icon';
+    icon.textContent = iconContent;
+    content.appendChild(icon);
 
     const name = document.createElement('span');
     name.className = 'node-name';
@@ -125,7 +148,7 @@ function setActiveNode(nodeId: string | null) {
     }
 }
 
-export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id: string) => void): void {
+export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (name: string) => void): void {
     treeNodes = buildTree(bodies);
     treeNodes.forEach(root => {
         function walk(node: TreeNode) {
@@ -155,7 +178,7 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
             node.expanded = !node.expanded;
             updateDomVisibility();
         } else {
-            onSelect(node.id);
+            onSelect(node.name);
         }
     });
 
@@ -182,7 +205,8 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
                 break;
             case 'Enter':
                 if (activeNodeId) {
-                    onSelect(activeNodeId);
+                    const node = flatNodeMap.get(activeNodeId);
+                    if (node) onSelect(node.name);
                 }
                 break;
             case 'ArrowRight': {

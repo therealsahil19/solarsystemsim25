@@ -79,6 +79,7 @@ function renderPresetsList() {
 
 export function initPresetsPanel() {
     const modal = document.getElementById('presets-modal')!;
+    modal.classList.add('hidden');
     const openBtn = document.getElementById('manage-presets-btn')!;
     const closeBtn = document.getElementById('close-presets-modal-btn')!;
     const saveBtn = document.getElementById('save-current-preset-btn')!;

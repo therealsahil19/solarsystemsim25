@@ -252,16 +252,67 @@ canvas {
     display: none;
 }
 
-/* --- Controls Panel --- */
-#controls-panel {
+/* --- Main Controls Panel --- */
+#main-controls-panel {
     top: 10px;
     left: 10px;
+    width: 320px;
+    padding: 0;
+}
+
+#main-controls-panel .control-group {
+    padding: 0 15px;
+}
+
+#main-controls-panel .control-group:last-child {
+    padding-bottom: 15px;
+}
+
+.tab-bar {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* margin: -15px -15px 15px -15px; */
+    padding: 0 5px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    color: #aaa;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.tab-button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.active {
+    color: white;
+    border-bottom-color: #4d90fe;
+}
+
+.tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    padding-top: 15px;
+}
+
+.tab-content.active {
+    display: flex;
 }
 
 .control-group {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
 }
 
 /* --- Simulation Control Buttons --- */
@@ -287,12 +338,6 @@ canvas {
 
 .control-btn.hidden {
     display: none;
-}
-
-/* --- Selection Panel --- */
-#selection-panel {
-    top: 80px;
-    left: 10px;
 }
 
 .dropdown {
@@ -369,6 +414,11 @@ canvas {
     width: 20px;
     text-align: center;
     font-size: 0.8em;
+}
+.node-icon {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
 }
 .tree-node .node-name {
     flex-grow: 1;
@@ -549,4 +599,56 @@ canvas {
 
 #new-preset-name {
     flex-grow: 1;
+}
+
+/* --- Celestial Selector Modal --- */
+#celestial-selector-modal {
+    /* Uses .panel styles */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0; /* Override .panel padding */
+}
+
+#celestial-selector-modal.hidden {
+    display: none;
+}
+
+#celestial-selector-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 15px;
+    flex-shrink: 0;
+}
+
+#celestial-selector-modal .modal-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+#celestial-selector-modal .modal-body {
+    padding: 15px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+#celestial-selector-modal .dropdown-menu {
+    position: static;
+    width: 100%;
+    box-shadow: none;
+    max-height: none;
+    overflow-y: visible;
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 10px 0 0 0;
 }

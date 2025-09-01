@@ -17,7 +17,7 @@ import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
-import { initGlobalControls } from './ui/global-controls';
+import { initMainPanel } from './ui/main-panel';
 import { initTimeControls } from './ui/time-controls';
 import { TrailManager } from './orbits/TrailManager';
 
@@ -484,7 +484,13 @@ function onBodySelected(name: string) {
     clampZoomForBody(selectedObject);
 }
 
-createCelestialBodySelector(celestialBodyData, onBodySelected);
+createCelestialBodySelector(celestialBodyData, (name) => {
+    onBodySelected(name);
+    const celestialSelectorModal = document.getElementById('celestial-selector-modal');
+    console.log('Modal classes before hide:', celestialSelectorModal?.className);
+    celestialSelectorModal?.classList.add('hidden');
+    console.log('Modal classes after hide:', celestialSelectorModal?.className);
+});
 initInfoPanel();
 
 function resetSimulation() {
@@ -683,5 +689,5 @@ animate(0);
 
 initShortcutsPanel();
 initPresetsPanel();
-initGlobalControls();
+initMainPanel();
 initTimeControls();
