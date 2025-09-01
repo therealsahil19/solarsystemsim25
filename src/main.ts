@@ -17,8 +17,7 @@ import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
-import { initGlobalControls } from './ui/global-controls';
-import { initTimeControls } from './ui/time-controls';
+import { initMainPanel } from './ui/main-panel';
 import { TrailManager } from './orbits/TrailManager';
 
 const CAMERA_FOCUS_DEFAULT_MS = 700;
@@ -346,141 +345,13 @@ function frameObject(object3D: THREE.Object3D, opts: { duration?: number; fitOff
     (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
 }
 
-function onBodySelected(name: string) {
-    const selectedObject = selectableObjects.find(obj => obj.userData.name === name);
+function onBodySelected(id: string) {
+    const selectedObject = selectableObjects.find(obj => obj.userData.id === id);
     if (!selectedObject) return;
-    store.getState().setSelectedBodyId(name);
+
+    store.getState().setSelectedBodyId(id);
     simulation.focusTarget = selectedObject;
     frameObject(selectedObject);
-    const { data, type } = selectedObject.userData;
-    dom.smallInfoCard.classList.remove('hidden');
-    dom.cardTitle.textContent = data.name;
-    dom.cardThumb.src = data.texture || '';
-    dom.cardThumb.alt = `${data.name} thumbnail`;
-    dom.infoName.textContent = data.name;
-    let material;
-    if (selectedObject instanceof LOD) {
-        material = ((selectedObject as LOD).levels[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
-    } else {
-        material = (selectedObject as THREE.Mesh).material as THREE.MeshStandardMaterial;
-    }
-    const color = `#${material.color.getHexString()}`;
-    updateInfoPanelColor(color);
-    dom.infoImageContainer.innerHTML = '';
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", "100%");
-    const rect = document.createElementNS(svgNS, "rect");
-    rect.setAttribute("width", "100%");
-    rect.setAttribute("height", "100%");
-    rect.setAttribute("fill", color);
-    svg.appendChild(rect);
-    dom.infoImageContainer.appendChild(svg);
-    dom.infoBasicStats.innerHTML = '';
-
-    const distanceInKm = type === 'moon' ? (data.semiMajorAxisKm || 0) : data.semiMajorAxis * KM_PER_AU;
-    const distanceUnit = store.getState().distanceUnit;
-
-    const stats: { [key: string]: { value: string; tooltip?: string | null } } = {
-        'Radius': { value: `${data.radius.toLocaleString()} km` },
-        'Distance': {
-            value: formatDistance(distanceInKm, distanceUnit),
-            tooltip: type !== 'moon' ? 'Astronomical Unit: the average distance from Earth to the Sun.' : 'Distance from parent body.'
-        },
-        'Orbital Period': {
-            value: `${data.orbitalPeriod} days`,
-            tooltip: 'The time it takes for the object to complete one orbit around its parent body.'
-        }
-    };
-    for (const [key, { value, tooltip }] of Object.entries(stats)) {
-        const strong = document.createElement('strong');
-        strong.textContent = `${key}:`;
-        const span = document.createElement('span');
-        span.textContent = value;
-        if (tooltip) {
-            const tooltipSpan = document.createElement('span');
-            tooltipSpan.className = 'tooltip';
-            tooltipSpan.textContent = '(?)';
-            const tooltipText = document.createElement('span');
-            tooltipText.className = 'tooltip-text';
-            tooltipText.textContent = tooltip;
-            tooltipSpan.appendChild(tooltipText);
-            span.appendChild(tooltipSpan);
-        }
-        dom.infoBasicStats.appendChild(strong);
-        dom.infoBasicStats.appendChild(span);
-    }
-    const advancedStats: { [key: string]: string } = {};
-    if (data.axialTilt) {
-        advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
-    }
-    if (data.rings) {
-        advancedStats['Rings'] = `${data.rings.bands.length} main bands`;
-    }
-    if (Object.keys(advancedStats).length > 0) {
-        (dom.infoAdvancedDetails as HTMLElement).classList.remove('hidden');
-        (dom.advancedDetailsContent as HTMLElement).innerHTML = '';
-        for (const [key, value] of Object.entries(advancedStats)) {
-            const strong = document.createElement('strong');
-            strong.textContent = `${key}:`;
-            const span = document.createElement('span');
-            span.textContent = value;
-            dom.advancedDetailsContent.appendChild(strong);
-            dom.advancedDetailsContent.appendChild(span);
-        }
-    } else {
-        (dom.infoAdvancedDetails as HTMLElement).classList.add('hidden');
-    }
-
-    // Handle Educational Sidebar
-    const eduSection = document.getElementById('edu-section')!;
-    if (data.edu) {
-        (document.getElementById('edu-thumb') as HTMLImageElement).src = data.edu.thumbnail || '';
-        (document.getElementById('edu-short-desc') as HTMLParagraphElement).textContent = data.edu.shortDescription || '';
-        (document.getElementById('edu-link') as HTMLAnchorElement).href = data.edu.readMoreUrl || '#';
-        (document.getElementById('edu-source') as HTMLDivElement).textContent = `Source: ${data.edu.sourceName || 'N/A'}`;
-        eduSection.classList.remove('hidden');
-    } else {
-        eduSection.classList.add('hidden');
-    }
-
-    // Handle Exact Mode panel
-    const exactModeContainer = document.getElementById('info-exact-mode')!;
-    const exactModeToggle = document.getElementById('exact-mode-toggle')!;
-    const exactModeContent = document.getElementById('exact-mode-content')!;
-
-    if (data.orbitalElements) {
-        exactModeContainer.classList.remove('hidden');
-        exactModeContent.innerHTML = ''; // Clear previous content
-
-        const elements = {
-            'Semi-Major Axis': `${(data.orbitalElements.aKm / KM_PER_AU).toFixed(4)} AU`,
-            'Eccentricity': data.orbitalElements.e.toFixed(6),
-            'Inclination': `${data.orbitalElements.iDeg.toFixed(4)}°`,
-            'Lon. of Asc. Node (Ω)': `${data.orbitalElements.lanDeg.toFixed(4)}°`,
-            'Arg. of Periapsis (ω)': `${data.orbitalElements.argPeriDeg.toFixed(4)}°`,
-            'Mean Anomaly at Epoch': `${data.orbitalElements.meanAnomalyDeg.toFixed(4)}°`,
-            'Epoch': data.orbitalElements.epochISO.split('T')[0],
-        };
-
-        for (const [key, value] of Object.entries(elements)) {
-            const strong = document.createElement('strong');
-            strong.textContent = `${key}:`;
-            const span = document.createElement('span');
-            span.textContent = value;
-            exactModeContent.appendChild(strong);
-            exactModeContent.appendChild(span);
-        }
-
-        exactModeToggle.onclick = () => exactModeContent.classList.toggle('hidden');
-
-    } else {
-        exactModeContainer.classList.add('hidden');
-    }
-
-    (dom.infoPanel as HTMLElement).classList.remove('hidden');
-    (dom.freeCameraButton as HTMLElement).classList.remove('hidden');
     clampZoomForBody(selectedObject);
 }
 
@@ -551,6 +422,136 @@ store.subscribe((state) => {
     if (selectedBody) {
         simulation.focusTarget = selectedBody.mesh;
         simulation.selectedObject = selectedBody.mesh;
+
+        const { data, type } = selectedBody.mesh.userData;
+        dom.smallInfoCard.classList.remove('hidden');
+        dom.cardTitle.textContent = data.name;
+        dom.cardThumb.src = data.texture || '';
+        dom.cardThumb.alt = `${data.name} thumbnail`;
+        dom.infoName.textContent = data.name;
+        let material;
+        if (selectedBody.mesh instanceof LOD) {
+            material = ((selectedBody.mesh as LOD).levels[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+        } else {
+            material = (selectedBody.mesh as THREE.Mesh).material as THREE.MeshStandardMaterial;
+        }
+        const color = `#${material.color.getHexString()}`;
+        updateInfoPanelColor(color);
+        dom.infoImageContainer.innerHTML = '';
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        const rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("width", "100%");
+        rect.setAttribute("height", "100%");
+        rect.setAttribute("fill", color);
+        svg.appendChild(rect);
+        dom.infoImageContainer.appendChild(svg);
+        dom.infoBasicStats.innerHTML = '';
+
+        const distanceInKm = type === 'moon' ? (data.semiMajorAxisKm || 0) : data.semiMajorAxis * KM_PER_AU;
+        const distanceUnit = store.getState().distanceUnit;
+
+        const stats: { [key: string]: { value: string; tooltip?: string | null } } = {
+            'Radius': { value: `${data.radius.toLocaleString()} km` },
+            'Distance': {
+                value: formatDistance(distanceInKm, distanceUnit),
+                tooltip: type !== 'moon' ? 'Astronomical Unit: the average distance from Earth to the Sun.' : 'Distance from parent body.'
+            },
+            'Orbital Period': {
+                value: `${data.orbitalPeriod} days`,
+                tooltip: 'The time it takes for the object to complete one orbit around its parent body.'
+            }
+        };
+        for (const [key, { value, tooltip }] of Object.entries(stats)) {
+            const strong = document.createElement('strong');
+            strong.textContent = `${key}:`;
+            const span = document.createElement('span');
+            span.textContent = value;
+            if (tooltip) {
+                const tooltipSpan = document.createElement('span');
+                tooltipSpan.className = 'tooltip';
+                tooltipSpan.textContent = '(?)';
+                const tooltipText = document.createElement('span');
+                tooltipText.className = 'tooltip-text';
+                tooltipText.textContent = tooltip;
+                tooltipSpan.appendChild(tooltipText);
+                span.appendChild(tooltipSpan);
+            }
+            dom.infoBasicStats.appendChild(strong);
+            dom.infoBasicStats.appendChild(span);
+        }
+        const advancedStats: { [key: string]: string } = {};
+        if (data.axialTilt) {
+            advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
+        }
+        if (data.rings) {
+            advancedStats['Rings'] = `${data.rings.bands.length} main bands`;
+        }
+        if (Object.keys(advancedStats).length > 0) {
+            (dom.infoAdvancedDetails as HTMLElement).classList.remove('hidden');
+            (dom.advancedDetailsContent as HTMLElement).innerHTML = '';
+            for (const [key, value] of Object.entries(advancedStats)) {
+                const strong = document.createElement('strong');
+                strong.textContent = `${key}:`;
+                const span = document.createElement('span');
+                span.textContent = value;
+                dom.advancedDetailsContent.appendChild(strong);
+                dom.advancedDetailsContent.appendChild(span);
+            }
+        } else {
+            (dom.infoAdvancedDetails as HTMLElement).classList.add('hidden');
+        }
+
+        // Handle Educational Sidebar
+        const eduSection = document.getElementById('edu-section')!;
+        if (data.edu) {
+            (document.getElementById('edu-thumb') as HTMLImageElement).src = data.edu.thumbnail || '';
+            (document.getElementById('edu-short-desc') as HTMLParagraphElement).textContent = data.edu.shortDescription || '';
+            (document.getElementById('edu-link') as HTMLAnchorElement).href = data.edu.readMoreUrl || '#';
+            (document.getElementById('edu-source') as HTMLDivElement).textContent = `Source: ${data.edu.sourceName || 'N/A'}`;
+            eduSection.classList.remove('hidden');
+        } else {
+            eduSection.classList.add('hidden');
+        }
+
+        // Handle Exact Mode panel
+        const exactModeContainer = document.getElementById('info-exact-mode')!;
+        const exactModeToggle = document.getElementById('exact-mode-toggle')!;
+        const exactModeContent = document.getElementById('exact-mode-content')!;
+
+        if (data.orbitalElements) {
+            exactModeContainer.classList.remove('hidden');
+            exactModeContent.innerHTML = ''; // Clear previous content
+
+            const elements = {
+                'Semi-Major Axis': `${(data.orbitalElements.aKm / KM_PER_AU).toFixed(4)} AU`,
+                'Eccentricity': data.orbitalElements.e.toFixed(6),
+                'Inclination': `${data.orbitalElements.iDeg.toFixed(4)}°`,
+                'Lon. of Asc. Node (Ω)': `${data.orbitalElements.lanDeg.toFixed(4)}°`,
+                'Arg. of Periapsis (ω)': `${data.orbitalElements.argPeriDeg.toFixed(4)}°`,
+                'Mean Anomaly at Epoch': `${data.orbitalElements.meanAnomalyDeg.toFixed(4)}°`,
+                'Epoch': data.orbitalElements.epochISO.split('T')[0],
+            };
+
+            for (const [key, value] of Object.entries(elements)) {
+                const strong = document.createElement('strong');
+                strong.textContent = `${key}:`;
+                const span = document.createElement('span');
+                span.textContent = value;
+                exactModeContent.appendChild(strong);
+                exactModeContent.appendChild(span);
+            }
+
+            exactModeToggle.onclick = () => exactModeContent.classList.toggle('hidden');
+
+        } else {
+            exactModeContainer.classList.add('hidden');
+        }
+
+        (dom.infoPanel as HTMLElement).classList.remove('hidden');
+        (dom.freeCameraButton as HTMLElement).classList.remove('hidden');
     }
 });
 
@@ -683,5 +684,4 @@ animate(0);
 
 initShortcutsPanel();
 initPresetsPanel();
-initGlobalControls();
-initTimeControls();
+initMainPanel();
