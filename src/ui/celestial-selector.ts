@@ -2,6 +2,7 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse, { FuseResult } from 'fuse.js';
+import { PanelManager } from './panel-manager';
 
 type ViewMode = 'hierarchy' | 'type';
 type FuseDataItem = CelestialBody & { type: CelestialBodyType };
@@ -337,21 +338,39 @@ function debounce(func: (...args: any[]) => void, delay: number) {
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
-    const modal = document.getElementById('celestial-selector-modal')!;
+    const modalContainer = document.getElementById('celestial-selector-modal')!;
+    const modal = modalContainer.querySelector('.modal-content') as HTMLElement;
     const openBtn = document.getElementById('open-celestial-selector-btn')!;
     const closeBtn = document.getElementById('close-celestial-selector-btn')!;
+    const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
+    const header = modal.querySelector('.panel-header') as HTMLElement;
 
-    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    const panelManager = new PanelManager(modal);
+    panelManager.makeDraggable(header);
+    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+    panelManager.makeResizable();
+
+    const openModal = () => {
+        modalContainer.classList.remove('hidden');
+        PanelManager.showBackdrop();
+    };
+
+    const closeModal = () => {
+        modalContainer.classList.add('hidden');
+        PanelManager.hideBackdrop();
+    };
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
     window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
+        if (e.target === modalContainer) {
+            closeModal();
         }
     });
 
     onSelectCallback = (id) => {
         onSelect(id);
-        modal.classList.add('hidden');
+        closeModal();
     };
 
     treeNodes = buildTree(bodies);
