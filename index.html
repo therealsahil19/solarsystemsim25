@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Simulator</title>
-  <script type="module" crossorigin src="/solarsystemsim25/assets/index-Dkb8_uz5.js"></script>
-  <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-B5_RPlMz.css">
+  <script type="module" crossorigin src="/solarsystemsim25/assets/index-BWH0DNjV.js"></script>
+  <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-Bexse9jR.css">
 </head>
 <body>
     <div id="app" class="app">
@@ -116,7 +116,21 @@
                 </div>
                 <div id="selection-panel" class="panel">
                     <div id="celestial-selector" class="dropdown">
-                <input type="text" id="selector-search-input" class="control-btn" placeholder="Search..." style="width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+                <div class="selector-controls" style="padding: 5px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-bottom: 5px;">
+                    <div class="control-group" style="justify-content: space-around;">
+                        <label style="cursor: pointer;"><input type="radio" name="selector-view" value="hierarchy" checked> Hierarchy</label>
+                        <label style="cursor: pointer;"><input type="radio" name="selector-view" value="type"> By Type</label>
+                    </div>
+                </div>
+                <div class="search-container" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="selector-search-input" class="control-btn" placeholder="Search..." style="flex-grow: 1; box-sizing: border-box;">
+                    <select id="selector-type-filter" class="control-btn" title="Filter by type">
+                        <option value="all">All Types</option>
+                        <option value="star">Star</option>
+                        <option value="planet">Planet</option>
+                        <option value="moon">Moon</option>
+                    </select>
+                </div>
                 <div id="celestial-selector-menu" class="dropdown-menu">
                     <!-- Tree view will be populated by JS -->
                         </div>
