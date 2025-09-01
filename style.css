@@ -32,6 +32,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 16px; /* Base font size for improved scaling */
 }
 
 canvas {
@@ -131,8 +132,8 @@ canvas {
 
 #panelHeader h2 {
     margin: 0;
-    font-size: 1.4em;
-    font-weight: 600;
+    font-size: 1.5em; /* Increased size for panel titles */
+    font-weight: 700; /* Bolder panel titles */
     white-space: nowrap;
     overflow: hidden;
 }
@@ -261,19 +262,25 @@ canvas {
 .control-group {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px; /* Increased gap for better spacing */
+}
+
+.control-group label {
+    font-weight: 600; /* Bolder labels */
+    font-size: 1em; /* Larger label font size */
+    color: #ddd; /* Brighter label color for contrast */
 }
 
 /* --- Simulation Control Buttons --- */
 .control-btn {
     background-color: rgba(40, 40, 50, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Slightly more visible border */
     color: white;
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 500;
+    font-size: 1em; /* Larger button font size */
+    font-weight: 600; /* Bolder button text */
     transition: background-color 0.2s, transform 0.1s;
 }
 
@@ -372,6 +379,8 @@ canvas {
 }
 .tree-node .node-name {
     flex-grow: 1;
+    font-size: 1em; /* Larger font for celestial body names */
+    font-weight: 500; /* Medium weight for readability */
 }
 .tree-level {
     list-style: none;
@@ -414,6 +423,8 @@ canvas {
 #debug-hud {
     top: 80px;
     right: 10px;
+    font-size: 0.875em; /* Smaller font size */
+    color: #aaa; /* Lower contrast color */
 }
 
 #debug-hud.hidden {
