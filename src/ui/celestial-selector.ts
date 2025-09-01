@@ -290,8 +290,24 @@ function setActiveNode(nodeId: string | null) {
     }
 }
 
-export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id: string) => void): void {
-    onSelectCallback = onSelect;
+export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
+    const modal = document.getElementById('celestial-selector-modal')!;
+    const openBtn = document.getElementById('open-celestial-selector-btn')!;
+    const closeBtn = document.getElementById('close-celestial-selector-btn')!;
+
+    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+
+    onSelectCallback = (id) => {
+        onSelect(id);
+        modal.classList.add('hidden');
+    };
+
     treeNodes = buildTree(bodies);
     treeNodes.forEach(root => {
         function walk(node: TreeNode) {
