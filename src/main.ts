@@ -18,6 +18,7 @@ import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
 import { initMainPanel } from './ui/main-panel';
+import { initTopBar } from './ui/top-bar';
 import { TrailManager } from './orbits/TrailManager';
 
 const CAMERA_FOCUS_DEFAULT_MS = 700;
@@ -685,3 +686,4 @@ animate(0);
 initShortcutsPanel();
 initPresetsPanel();
 initMainPanel();
+initTopBar();
