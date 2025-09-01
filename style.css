@@ -58,13 +58,13 @@ canvas {
 
 /* --- Panel Styling (shared for floating panels) --- */
 .panel {
-    background-color: rgba(20, 20, 30, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(30, 32, 38, 0.68);
+    backdrop-filter: blur(8px) saturate(1.1);
+    -webkit-backdrop-filter: blur(8px) saturate(1.1);
+    border: 1.5px solid rgba(255,255,255, 0.11);
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 40px 0 rgba(0,0,0,0.32);
     padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* --- Dockable Info Panel --- */
@@ -608,4 +608,75 @@ canvas {
 
 #new-preset-name {
     flex-grow: 1;
+}
+
+/* --- Modal Backdrop --- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.52);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999; /* Below panels */
+    display: none;
+}
+
+.modal-open {
+    overflow: hidden;
+}
+
+/* --- Resizer Handles --- */
+.resizer-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.panel:hover .resizer-handle {
+    opacity: 1;
+}
+
+.resizer-handle.n { top: -8px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resizer-handle.s { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resizer-handle.e { right: -8px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+.resizer-handle.w { left: -8px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+.resizer-handle.ne { top: -8px; right: -8px; cursor: ne-resize; }
+.resizer-handle.nw { top: -8px; left: -8px; cursor: nw-resize; }
+.resizer-handle.se { bottom: -8px; right: -8px; cursor: se-resize; }
+.resizer-handle.sw { bottom: -8px; left: -8px; cursor: sw-resize; }
+
+/* --- Panel Header --- */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    cursor: grab;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.panel.minimized .panel-body, .panel.minimized .resizer-handle {
+    display: none;
+}
+
+.panel.minimized {
+    height: auto !important;
+}
+
+.resizer-handle {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
