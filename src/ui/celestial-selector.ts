@@ -1,12 +1,62 @@
 import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
-import { buildTree, TreeNode } from './tree-view';
-import Fuse from 'fuse.js';
+import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
+import Fuse, { FuseResult } from 'fuse.js';
+
+type ViewMode = 'hierarchy' | 'type';
+type FuseDataItem = CelestialBody & { type: CelestialBodyType };
 
 let treeNodes: TreeNode[] = [];
+let allNodes: TreeNode[] = [];
 let flatNodeMap = new Map<string, TreeNode>();
-let fuse: Fuse<CelestialBody>;
+let fuse: Fuse<FuseDataItem>;
 let activeNodeId: string | null = null;
+let currentView: ViewMode = 'hierarchy';
+let onSelectCallback: (id: string) => void;
+
+function renderListItem(node: TreeNode): HTMLLIElement {
+    const li = document.createElement('li');
+    li.dataset.id = node.id;
+    li.className = 'tree-node';
+    li.style.paddingLeft = '25px';
+    li.setAttribute('role', 'listitem');
+    if (node.spec.edu?.shortDescription) {
+        li.title = node.spec.edu.shortDescription;
+    }
+
+    const content = document.createElement('div');
+    content.className = 'tree-node-content';
+
+    const chevronPlaceholder = document.createElement('span');
+    chevronPlaceholder.className = 'chevron';
+    content.appendChild(chevronPlaceholder);
+
+    const colorDot = document.createElement('span');
+    colorDot.className = 'color-dot';
+    colorDot.style.backgroundColor = `#${node.spec.color.toString(16).padStart(6, '0')}`;
+    content.appendChild(colorDot);
+
+    const icon = document.createElement('img');
+    icon.className = 'icon';
+    icon.src = `assets/${node.type}.svg`;
+    icon.alt = `${node.type} icon`;
+    content.appendChild(icon);
+
+    const name = document.createElement('span');
+    name.className = 'node-name';
+    name.textContent = node.name;
+    content.appendChild(name);
+
+    const stats = document.createElement('span');
+    stats.className = 'node-stats';
+    stats.textContent = `${node.spec.radius.toLocaleString()} km`;
+    content.appendChild(stats);
+
+    li.appendChild(content);
+    node.element = li;
+    return li;
+}
+
 
 function renderNode(node: TreeNode): HTMLLIElement {
     const li = document.createElement('li');
@@ -15,6 +65,9 @@ function renderNode(node: TreeNode): HTMLLIElement {
     li.style.paddingLeft = `${node.depth * 18}px`;
     li.setAttribute('role', 'treeitem');
     li.setAttribute('aria-expanded', String(node.children.length > 0 ? node.expanded : false));
+    if (node.spec.edu?.shortDescription) {
+        li.title = node.spec.edu.shortDescription;
+    }
 
     const content = document.createElement('div');
     content.className = 'tree-node-content';
@@ -26,10 +79,26 @@ function renderNode(node: TreeNode): HTMLLIElement {
     }
     content.appendChild(chevron);
 
+    const colorDot = document.createElement('span');
+    colorDot.className = 'color-dot';
+    colorDot.style.backgroundColor = `#${node.spec.color.toString(16).padStart(6, '0')}`;
+    content.appendChild(colorDot);
+
+    const icon = document.createElement('img');
+    icon.className = 'icon';
+    icon.src = `assets/${node.type}.svg`;
+    icon.alt = `${node.type} icon`;
+    content.appendChild(icon);
+
     const name = document.createElement('span');
     name.className = 'node-name';
     name.textContent = node.name;
     content.appendChild(name);
+
+    const stats = document.createElement('span');
+    stats.className = 'node-stats';
+    stats.textContent = `${node.spec.radius.toLocaleString()} km`;
+    content.appendChild(stats);
 
     li.appendChild(content);
 
@@ -50,6 +119,64 @@ function renderNode(node: TreeNode): HTMLLIElement {
     return li;
 }
 
+function renderHierarchyView() {
+    const ul = document.createElement('ul');
+    ul.className = 'tree-root';
+    ul.setAttribute('role', 'tree');
+    treeNodes.forEach(node => ul.appendChild(renderNode(node)));
+    celestialSelectorMenu.appendChild(ul);
+}
+
+function renderByTypeView() {
+    const nodesByType = new Map<CelestialBodyType, TreeNode[]>();
+    allNodes.forEach(node => {
+        if (!nodesByType.has(node.type)) {
+            nodesByType.set(node.type, []);
+        }
+        nodesByType.get(node.type)!.push(node);
+    });
+
+    nodesByType.forEach(nodes => nodes.sort((a, b) => a.name.localeCompare(b.name)));
+
+    const ul = document.createElement('ul');
+    ul.className = 'list-root';
+    celestialSelectorMenu.appendChild(ul);
+
+    const typeOrder: CelestialBodyType[] = ['star', 'planet', 'moon'];
+
+    typeOrder.forEach(type => {
+        if (nodesByType.has(type)) {
+            const nodes = nodesByType.get(type)!;
+            const groupLi = document.createElement('li');
+            groupLi.className = 'list-group';
+
+            const header = document.createElement('div');
+            header.className = 'list-group-header';
+            const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+            header.innerHTML = `<span class="chevron">▼</span> ${typeName}s (${nodes.length})`;
+            groupLi.appendChild(header);
+
+            const childrenUl = document.createElement('ul');
+            childrenUl.className = 'list-group-children';
+            nodes.forEach(node => {
+                childrenUl.appendChild(renderListItem(node));
+            });
+            groupLi.appendChild(childrenUl);
+            ul.appendChild(groupLi);
+        }
+    });
+}
+
+function render() {
+    celestialSelectorMenu.innerHTML = '';
+    if (currentView === 'hierarchy') {
+        renderHierarchyView();
+    } else {
+        renderByTypeView();
+    }
+}
+
+
 function updateDomVisibility() {
     flatNodeMap.forEach(node => {
         if (node.element) {
@@ -68,38 +195,76 @@ function updateDomVisibility() {
     });
 }
 
-function filterTree(query: string) {
-    if (!query) {
-        flatNodeMap.forEach(node => {
+function filterTree() {
+    const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
+    const typeFilter = document.getElementById('selector-type-filter') as HTMLSelectElement;
+    const query = searchInput.value;
+    const selectedType = typeFilter.value;
+
+    if (!query && selectedType === 'all') {
+        allNodes.forEach(node => {
             node.visible = true;
-            node.expanded = true;
+            if (node.element) node.element.style.display = '';
         });
-        updateDomVisibility();
+
+        if (currentView === 'hierarchy') {
+            allNodes.forEach(n => n.expanded = false);
+            updateDomVisibility();
+        } else {
+            document.querySelectorAll('.list-group').forEach(el => (el as HTMLElement).style.display = '');
+            document.querySelectorAll('.list-group-children').forEach(el => (el as HTMLElement).style.display = 'block');
+            document.querySelectorAll('.list-group-header .chevron').forEach(el => el.textContent = '▼');
+        }
         return;
     }
 
-    const results = fuse.search(query);
+    const searchClauses: ({ [key: string]: string })[] = [];
+    if (query) {
+        searchClauses.push({ name: query });
+    }
+    if (selectedType !== 'all') {
+        searchClauses.push({ type: selectedType });
+    }
+
+    const results = searchClauses.length > 0
+        ? fuse.search({ $and: searchClauses })
+        : allNodes.map(node => ({ item: node.spec as FuseDataItem, score: 1 }));
     const visibleIds = new Set(results.map(r => r.item.id));
 
-    flatNodeMap.forEach(node => node.visible = false);
-
-    visibleIds.forEach(id => {
-        let current = flatNodeMap.get(id);
-        while(current) {
-            current.visible = true;
-            current.expanded = true;
-            current = current.parent || undefined;
-        }
-    });
-
-    updateDomVisibility();
+    if (currentView === 'hierarchy') {
+        allNodes.forEach(node => node.visible = false);
+        visibleIds.forEach(id => {
+            let current = flatNodeMap.get(id);
+            while(current) {
+                current.visible = true;
+                current.expanded = true;
+                current = current.parent || undefined;
+            }
+        });
+        updateDomVisibility();
+    } else {
+        allNodes.forEach(node => {
+            if (node.element) {
+                node.element.style.display = visibleIds.has(node.id) ? '' : 'none';
+            }
+        });
+        document.querySelectorAll('.list-group').forEach(group => {
+            const children = group.querySelector('.list-group-children');
+            const hasVisibleChild = Array.from(children?.querySelectorAll('.tree-node') || []).some(
+                child => (child as HTMLElement).style.display !== 'none'
+            );
+            (group as HTMLElement).style.display = hasVisibleChild ? '' : 'none';
+        });
+    }
 }
 
 function getVisibleNodes(): TreeNode[] {
+    if (currentView === 'type') return []; // Disable keyboard nav for type view for now
+
     const visible: TreeNode[] = [];
     function traverse(nodes: TreeNode[]) {
         for (const node of nodes) {
-            if (node.visible) {
+            if (node.visible && node.element && node.element.style.display !== 'none') {
                 visible.push(node);
                 if (node.expanded && node.children.length > 0) {
                     traverse(node.children);
@@ -126,41 +291,66 @@ function setActiveNode(nodeId: string | null) {
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id: string) => void): void {
+    onSelectCallback = onSelect;
     treeNodes = buildTree(bodies);
     treeNodes.forEach(root => {
         function walk(node: TreeNode) {
             flatNodeMap.set(node.id, node);
+            allNodes.push(node);
             node.children.forEach(walk);
         }
         walk(root);
     });
 
-    fuse = new Fuse(bodies, { keys: ['name'], threshold: 0.4 });
+    const fuseData = allNodes.map(node => ({
+        ...node.spec,
+        type: node.type,
+    }));
+    fuse = new Fuse(fuseData, { keys: ['name', 'type'], threshold: 0.4, includeScore: true });
 
-    celestialSelectorMenu.innerHTML = '';
-    const ul = document.createElement('ul');
-    ul.className = 'tree-root';
-    ul.setAttribute('role', 'tree');
-    treeNodes.forEach(node => ul.appendChild(renderNode(node)));
-    celestialSelectorMenu.appendChild(ul);
+    render();
 
-    ul.addEventListener('click', (e) => {
+    celestialSelectorMenu.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
+
+        const groupHeader = target.closest('.list-group-header');
+        if (currentView === 'type' && groupHeader) {
+            const childrenUl = groupHeader.nextElementSibling as HTMLUListElement;
+            const chevron = groupHeader.querySelector('.chevron');
+            if (childrenUl) {
+                const isExpanded = childrenUl.style.display !== 'none';
+                childrenUl.style.display = isExpanded ? 'none' : 'block';
+                if (chevron) chevron.textContent = isExpanded ? '▶' : '▼';
+            }
+            return;
+        }
+
         const nodeEl = target.closest('.tree-node');
         if (!nodeEl || !(nodeEl instanceof HTMLLIElement)) return;
         const nodeId = nodeEl.dataset.id!;
         const node = flatNodeMap.get(nodeId)!;
 
-        if (target.classList.contains('chevron')) {
+        if (currentView === 'hierarchy' && target.classList.contains('chevron')) {
             node.expanded = !node.expanded;
             updateDomVisibility();
         } else {
-            onSelect(node.id);
+            onSelectCallback(node.id);
         }
     });
 
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
-    searchInput.addEventListener('input', () => filterTree(searchInput.value));
+    searchInput.addEventListener('input', () => filterTree());
+
+    const typeFilter = document.getElementById('selector-type-filter') as HTMLSelectElement;
+    typeFilter.addEventListener('change', () => filterTree());
+
+    const viewRadios = document.querySelectorAll<HTMLInputElement>('input[name="selector-view"]');
+    viewRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            currentView = radio.value as ViewMode;
+            render();
+        });
+    });
 
     searchInput.addEventListener('keydown', (e: KeyboardEvent) => {
         const visibleNodes = getVisibleNodes();
@@ -182,7 +372,7 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
                 break;
             case 'Enter':
                 if (activeNodeId) {
-                    onSelect(activeNodeId);
+                    onSelectCallback(activeNodeId);
                 }
                 break;
             case 'ArrowRight': {

@@ -362,12 +362,54 @@ canvas {
     padding: 0;
     margin: 0;
 }
+
+.list-root {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.list-group-header {
+    padding: 8px 5px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.list-group-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.list-group-children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
 .tree-node-content {
     display: flex;
     align-items: center;
     padding: 5px;
     cursor: pointer;
     border-radius: 4px;
+    gap: 8px;
+}
+
+.tree-node-content .color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tree-node-content .icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: currentColor;
 }
 .tree-node-content:hover, .tree-node.focused > .tree-node-content {
     background-color: rgba(255, 255, 255, 0.1);
@@ -381,6 +423,12 @@ canvas {
     flex-grow: 1;
     font-size: 1em; /* Larger font for celestial body names */
     font-weight: 500; /* Medium weight for readability */
+}
+.tree-node .node-stats {
+    margin-left: auto;
+    font-size: 0.85em;
+    color: #999;
+    padding-right: 5px;
 }
 .tree-level {
     list-style: none;
