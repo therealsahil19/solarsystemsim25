@@ -1,9 +1,140 @@
 /* --- Main App Layout --- */
+#top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: rgba(20, 20, 30, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+#app-title {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    white-space: nowrap;
+    color: #fff;
+}
+
+.top-bar-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#top-bar-center {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+#top-bar-center #time-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+#top-bar-right {
+    justify-content: flex-end;
+}
+
+#github-link {
+    color: #fff;
+    text-decoration: none;
+}
+
+#github-link svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: currentColor;
+    transition: color 0.2s;
+}
+#github-link:hover {
+    color: #aaa;
+}
+
+#more-menu-container {
+    position: relative;
+}
+
+#more-menu-toggle.hidden {
+    display: none;
+}
+
+#more-menu-content {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    z-index: 110;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* --- Responsive Design --- */
+@media (max-width: 900px) {
+    #app-title {
+        font-size: 1.2em;
+    }
+
+    #top-bar {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    #top-bar-center #time-controls {
+        gap: 2px;
+    }
+
+    #top-bar-center .control-group {
+        gap: 5px;
+    }
+}
+
+@media (max-width: 768px) {
+    #app-title {
+        display: none; /* Hide title on very small screens */
+    }
+
+    #top-bar-center {
+       flex-grow: 0; /* Don't grow to fill space */
+    }
+
+    #top-bar-right {
+        flex-grow: 1; /* Take up remaining space */
+    }
+
+    /* Hide original buttons and show the 'More' menu toggle */
+    #top-bar-right > #visuals-toggle-btn,
+    #top-bar-right > #settings-toggle-btn,
+    #top-bar-right > #github-link {
+        display: none;
+    }
+
+    #more-menu-toggle {
+        display: block;
+    }
+}
+
 .app {
     display: grid;
     grid-template-columns: auto 1fr; /* Default to left dock */
     height: 100vh;
     overflow: hidden;
+    padding-top: 60px; /* Adjust this value based on the final height of the top bar */
 }
 
 .app.dock-right {
@@ -411,8 +542,13 @@ canvas {
     flex-shrink: 0;
     fill: currentColor;
 }
+.tree-node-content {
+    border-left: 3px solid transparent; /* Add transparent border for smooth transition */
+    transition: background 0.18s, border-color 0.18s;
+}
 .tree-node-content:hover, .tree-node.focused > .tree-node-content {
-    background-color: rgba(255, 255, 255, 0.1);
+    background: rgba(110, 132, 255, 0.13);
+    border-left: 3px solid #6C5CD7;
 }
 .tree-node .chevron {
     width: 20px;
@@ -425,7 +561,6 @@ canvas {
     font-weight: 500; /* Medium weight for readability */
 }
 .tree-node .node-stats {
-    margin-left: auto;
     font-size: 0.85em;
     color: #999;
     padding-right: 5px;
@@ -610,6 +745,7 @@ canvas {
     flex-grow: 1;
 }
 
+feature/panel-improvements
 /* --- Modal Backdrop --- */
 .modal-backdrop {
     position: fixed;
@@ -679,4 +815,72 @@ canvas {
 
 .resizer-handle {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+=======
+/* --- Celestial Selector UI Improvements --- */
+
+/* Category Tabs */
+#category-tabs {
+    gap: 8px; /* Spacing between tabs */
+}
+
+.category-tab {
+    background: none;
+    border: none;
+    color: #aab;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.category-tab:hover {
+    color: #fff;
+}
+
+.category-tab.active {
+    color: #fff;
+    font-weight: 600;
+    border-bottom-color: #6C5CD7;
+}
+
+/* List Item Content Layout */
+.tree-node-content .node-name {
+    flex-grow: 0; /* Don't grow to push stats away */
+}
+
+.tree-node-content .node-type {
+    font-size: 0.8em;
+    color: #888;
+    margin-left: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Favorite Button */
+.favorite-btn {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: auto; /* Push to the far right */
+    padding: 5px;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.favorite-btn:hover {
+    color: #888;
+    transform: scale(1.1);
+}
+
+.favorite-btn.favorited {
+    color: #f0c420;
+}
+
+.favorite-btn.favorited:hover {
+    color: #ffde57;
+main
 }
