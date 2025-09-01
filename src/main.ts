@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import { LOD } from 'three/addons/objects/LOD.js';
+import { LOD } from 'three';
 import { initScene, scene, camera, renderer, controls, pointLight } from './scene';
 import { celestialBodyData, CelestialBody } from './data';
 import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS, AU_TO_M } from './utils/misc';
@@ -140,7 +140,7 @@ celestialBodyData.forEach(bodyData => {
 
     if (bodyData.name === 'Sun') {
         sun = bodyMesh;
-        sun.add(pointLight);
+        sun!.add(pointLight);
     }
 
     bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData };
@@ -498,7 +498,10 @@ function resetSimulation() {
     dom.smallInfoCard.classList.add('hidden');
 }
 
-setupInteractions(camera, selectableObjects, sun!, { ...simulation, time: store.getState().simTime, isPaused: store.getState().isPaused, singleStep: false }, onBodySelected, controls, resetSimulation, []);
+if (!sun) {
+    throw new Error("Sun object was not initialized, cannot set up interactions.");
+}
+setupInteractions(camera, selectableObjects, sun, { ...simulation, time: store.getState().simTime, isPaused: store.getState().isPaused, singleStep: false }, onBodySelected, controls, resetSimulation, []);
 setupKeyboardShortcuts({ selectedObject: simulation.selectedObject }, [], onBodySelected, camera, controls);
 
 (dom.shadowToggle as HTMLInputElement).addEventListener('change', () => {
