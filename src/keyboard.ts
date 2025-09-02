@@ -6,11 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
 import { renderShortcutsList } from './ui/shortcuts-panel';
 import { store } from './state/store';
-
-// This type is now much simpler as state is handled in the store or the main simulation object
-type Simulation = {
-    selectedObject: THREE.Object3D | null;
-};
+import { Simulation } from './interactions';
 
 export function setupKeyboardShortcuts(
     simulation: Simulation,

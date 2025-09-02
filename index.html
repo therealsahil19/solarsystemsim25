@@ -54,24 +54,35 @@
                 </div>
             </header>
             <div id="panelBody" class="panel-body">
-                <section id="edu-section" class="hidden">
-                    <div class="edu-header">
-                        <img id="edu-thumb" src="" alt="Educational thumbnail" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover;">
-                        <div class="edu-title" style="margin-left: 15px;">
-                            <p id="edu-short-desc"></p>
-                        </div>
+                <div id="info-controls" class="info-controls-container">
+                    <div class="pill-buttons">
+                        <button id="btn-frame" class="pill-btn" title="Frame (F)">Frame</button>
+                        <button id="btn-follow" class="pill-btn" aria-pressed="false" title="Follow (L)">Follow</button>
+                        <button id="btn-orbit" class="pill-btn" aria-pressed="true" title="Toggle Orbit (O)">Orbit</button>
                     </div>
-                    <div class="edu-actions" style="margin-top: 10px;">
-                        <a id="edu-link" class="control-btn" href="#" target="_blank" rel="noopener noreferrer">Read More</a>
-                    </div>
-                    <div id="edu-source" style="font-size: 0.8em; opacity: 0.7; margin-top: 10px; text-align: right;"></div>
+                </div>
+                <section id="info-main-image-container">
+                    <img id="info-image" src="" alt="Image of the selected celestial body">
+                    <a id="info-link" href="#" target="_blank" rel="noopener noreferrer">Learn more on Wikipedia</a>
                 </section>
-                <div id="info-image-container">
-                    <!-- Planet image will be added here -->
+                <div id="info-description">
+                    <p id="info-short-desc"></p>
                 </div>
-                <div id="info-basic-stats">
-                    <!-- Basic stats will be populated here -->
+
+                <div class="info-section">
+                    <h3>Basic Stats</h3>
+                    <div id="info-basic-stats" class="stats-grid">
+                        <!-- Basic stats will be populated here -->
+                    </div>
                 </div>
+
+                <div class="info-section">
+                    <h3>Orbital Characteristics</h3>
+                    <div id="info-orbital-chars" class="stats-grid">
+                        <!-- Orbital characteristics will be populated here -->
+                    </div>
+                </div>
+
                 <div id="info-advanced-details" class="hidden">
                     <button id="advanced-details-toggle">Advanced Details</button>
                     <div id="advanced-details-content" class="hidden">
@@ -193,11 +204,6 @@
                     <div class="card-body">
                         <div id="card-title" class="card-title"></div>
                         <div id="card-stats" class="card-stats"></div>
-                        <div class="card-buttons">
-                            <button id="btn-frame" title="Frame (F)">Frame</button>
-                            <button id="btn-follow" aria-pressed="false">Follow</button>
-                            <button id="btn-orbit">Orbit</button>
-                        </div>
                     </div>
                 </div>
 

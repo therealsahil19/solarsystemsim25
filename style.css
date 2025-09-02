@@ -745,6 +745,11 @@ canvas {
     flex-grow: 1;
 }
 
+feature/enhanced-detail-panel
+.modal-container.hidden {
+    display: none;
+}
+=======
 feature/panel-improvements
 /* --- Modal Backdrop --- */
 .modal-backdrop {
@@ -884,3 +889,4 @@ feature/panel-improvements
     color: #ffde57;
 main
 }
+main

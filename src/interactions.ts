@@ -4,7 +4,7 @@ import * as dom from './ui/dom';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 // The simulation object is now simpler, as most state is in the store.
-type Simulation = {
+export type Simulation = {
     selectedObject: THREE.Object3D | null;
     focusTarget: THREE.Object3D | null;
     followTarget: THREE.Object3D | null;
@@ -12,9 +12,7 @@ type Simulation = {
     followSmoothing: number;
     isUserInteracting: boolean;
     isTweening: boolean;
-    time: number;
-    isPaused: boolean;
-    singleStep: boolean;
+    asteroidMaterialUniforms: { u_time: { value: number } } | null;
 };
 
 export function setupInteractions(
@@ -122,16 +120,14 @@ export function setupInteractions(
     dom.btnFollow.addEventListener('click', () => {
         if (!simulation.selectedObject) return;
 
-        const isFollowing = dom.btnFollow.getAttribute('aria-pressed') === 'true';
+        const isFollowing = simulation.followTarget === simulation.selectedObject;
         if (isFollowing) {
             simulation.followTarget = null;
-            dom.btnFollow.setAttribute('aria-pressed', 'false');
         } else {
             simulation.followTarget = simulation.selectedObject;
             const targetPosition = new THREE.Vector3();
             simulation.followTarget.getWorldPosition(targetPosition);
             simulation.followOffset = camera.position.clone().sub(targetPosition);
-            dom.btnFollow.setAttribute('aria-pressed', 'true');
         }
     });
 
@@ -141,6 +137,8 @@ export function setupInteractions(
         const orbit = orbits.find(o => o.userData.name === bodyName);
         if (orbit) {
             orbit.visible = !orbit.visible;
+            const isPressed = dom.btnOrbit.getAttribute('aria-pressed') === 'true';
+            dom.btnOrbit.setAttribute('aria-pressed', String(!isPressed));
         }
     });
 }
