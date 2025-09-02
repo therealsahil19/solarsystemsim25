@@ -697,8 +697,4 @@ animate(0);
 initShortcutsPanel();
 initPresetsPanel();
 initMainPanel();
-feature/interactivity-visual-feedback
-initTooltips();
-=======
 initTopBar();
-main
