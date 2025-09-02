@@ -450,6 +450,10 @@ window.addEventListener('focus', () => {
 function addStat(container: HTMLElement, label: string, value: string | number, unit: string = '', tooltip: string | null = null) {
     if (value === undefined || value === null) return;
 
+    const statId = `stat-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+    const row = document.createElement('div');
+    row.setAttribute('data-e2e', statId);
+
     const strong = document.createElement('strong');
     strong.textContent = `${label}:`;
 
@@ -467,8 +471,9 @@ function addStat(container: HTMLElement, label: string, value: string | number, 
         span.appendChild(tooltipSpan);
     }
 
-    container.appendChild(strong);
-    container.appendChild(span);
+    row.appendChild(strong);
+    row.appendChild(span);
+    container.appendChild(row);
 }
 
 store.subscribe((state) => {
@@ -553,8 +558,32 @@ store.subscribe((state) => {
 
         (dom.infoPanel as HTMLElement).classList.remove('hidden');
         (dom.freeCameraButton as HTMLElement).classList.remove('hidden');
+
+        if ((window as any).__E2E__) {
+            (window as any).__E2E__.lastSelected = selectedBody.id;
+            window.dispatchEvent(new CustomEvent('e2e:body-rendered', { detail: { id: selectedBody.id } }));
+        }
     }
 });
+
+if (import.meta.env.MODE === 'development' || import.meta.env.VITE_E2E) {
+    (window as any).__E2E__ = {
+        openPanel: (panelName: 'visuals' | 'settings') => {
+            const visualsPanel = document.getElementById('visuals-panel') as HTMLDivElement;
+            const settingsPanel = document.getElementById('settings-panel') as HTMLDivElement;
+            visualsPanel.classList.add('hidden');
+            settingsPanel.classList.add('hidden');
+            if (panelName === 'visuals') visualsPanel.classList.remove('hidden');
+            else if (panelName === 'settings') settingsPanel.classList.remove('hidden');
+        },
+        dockInfoPanel: (side: 'left' | 'right') => {
+            const app = document.getElementById('app')!;
+            app.classList.toggle('dock-right', side === 'right');
+            app.classList.toggle('dock-left', side !== 'right');
+        },
+        lastSelected: null,
+    };
+}
 
 const cameraTarget = new THREE.Vector3();
 
@@ -698,3 +727,5 @@ initShortcutsPanel();
 initPresetsPanel();
 initMainPanel();
 initTopBar();
+
+// This is the end of the file. No changes here, I will add the hooks inside the existing subscribe.
