@@ -7,6 +7,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Dockable Info Panel', () => {
   test('should dock to the right when dragged', async ({ page }) => {
     // 1. Select a body to make the panel visible
+    await expect(page.locator('#selector-search-input')).toBeVisible();
     await page.locator('#selector-search-input').fill('Earth');
     await page.locator('.tree-node[data-id="earth"]').click();
     await page.waitForSelector('#infoPanel:not(.hidden)');
@@ -31,6 +32,7 @@ test.describe('Dockable Info Panel', () => {
   });
 
   test('should collapse when pin button is clicked', async ({ page }) => {
+    await expect(page.locator('#selector-search-input')).toBeVisible();
     await page.locator('#selector-search-input').fill('Earth');
     await page.locator('.tree-node[data-id="earth"]').click();
     await page.waitForSelector('#infoPanel:not(.hidden)');
@@ -48,7 +50,9 @@ test.describe('Dockable Info Panel', () => {
 
 test.describe('Layout Presets', () => {
     test('should apply the "Presentation" preset correctly', async ({ page }) => {
+        await expect(page.locator('#manage-presets-btn')).toBeVisible();
         await page.locator('#manage-presets-btn').click();
+        await expect(page.locator('.preset-item button[data-id="builtin-presentation"]')).toBeVisible();
         await page.locator('.preset-item button[data-id="builtin-presentation"]').click();
 
         // Wait for the page to reload and animations to finish
@@ -66,6 +70,7 @@ test.describe('Layout Presets', () => {
 
 test.describe('Unit & Scale Controls', () => {
     test('should update distance units in the info panel', async ({ page }) => {
+        await expect(page.locator('#selector-search-input')).toBeVisible();
         await page.locator('#selector-search-input').fill('Earth');
         await page.locator('.tree-node[data-id="earth"]').click();
         await page.waitForSelector('#infoPanel:not(.hidden)');
@@ -86,6 +91,7 @@ test.describe('Unit & Scale Controls', () => {
 
 test.describe('Educational Sidebar', () => {
     test('should be visible for Earth and contain correct info', async ({ page }) => {
+        await expect(page.locator('#selector-search-input')).toBeVisible();
         await page.locator('#selector-search-input').fill('Earth');
         await page.locator('.tree-node[data-id="earth"]').click();
         await page.waitForSelector('#edu-section:not(.hidden)');
@@ -95,6 +101,7 @@ test.describe('Educational Sidebar', () => {
     });
 
     test('should be hidden for Mars', async ({ page }) => {
+        await expect(page.locator('#selector-search-input')).toBeVisible();
         await page.locator('#selector-search-input').fill('Mars');
         await page.locator('.tree-node[data-id="mars"]').click();
         await page.waitForSelector('#infoPanel:not(.hidden)');
@@ -109,6 +116,7 @@ test.describe('Visual Trails', () => {
         // A possible approach would be to expose trail visibility on a debug object.
         // For now, we'll just test the UI control.
         const trailsToggle = page.locator('#trails-enabled-toggle');
+        await expect(trailsToggle).toBeVisible();
         await expect(trailsToggle).toBeChecked();
         await trailsToggle.uncheck();
         await expect(trailsToggle).not.toBeChecked();
