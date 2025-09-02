@@ -2,7 +2,11 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse, { FuseResult } from 'fuse.js';
+feature/interactivity-visual-feedback
+import { store } from '../state/store';
+=======
 import { PanelManager } from './panel-manager';
+main
 
 type ViewMode = 'hierarchy' | 'type';
 type FuseDataItem = CelestialBody & { type: CelestialBodyType };
@@ -231,6 +235,9 @@ function updateDomVisibility() {
             }
         }
     });
+
+    store.subscribe(updateSelectionFromState);
+    updateSelectionFromState();
 }
 
 function filterTree() {
@@ -327,6 +334,19 @@ function setActiveNode(nodeId: string | null) {
     }
 }
 
+feature/interactivity-visual-feedback
+function updateSelectionFromState() {
+    const { selectedBodyId } = store.getState();
+    flatNodeMap.forEach((node) => {
+        if (node.element) {
+            if (node.id === selectedBodyId) {
+                node.element.classList.add('selected');
+            } else {
+                node.element.classList.remove('selected');
+            }
+        }
+    });
+=======
 function debounce(func: (...args: any[]) => void, delay: number) {
     let timeoutId: number;
     return (...args: any[]) => {
@@ -335,6 +355,7 @@ function debounce(func: (...args: any[]) => void, delay: number) {
             func(...args);
         }, delay);
     };
+main
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {

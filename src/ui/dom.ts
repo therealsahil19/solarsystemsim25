@@ -48,3 +48,54 @@ export const cardStats = document.getElementById('card-stats') as HTMLDivElement
 export const btnFrame = document.getElementById('btn-frame') as HTMLButtonElement;
 export const btnFollow = document.getElementById('btn-follow') as HTMLButtonElement;
 export const btnOrbit = document.getElementById('btn-orbit') as HTMLButtonElement;
+
+export function initTooltips() {
+    let tooltip: HTMLDivElement | null = null;
+
+    document.body.addEventListener('mouseover', (e) => {
+        const target = e.target as HTMLElement;
+        const title = target.getAttribute('data-tooltip') || target.getAttribute('title');
+
+        if (!title) return;
+
+        // Prevent default browser tooltip
+        if (target.getAttribute('title')) {
+            target.setAttribute('data-tooltip', title);
+            target.removeAttribute('title');
+        }
+
+        tooltip = document.createElement('div');
+        tooltip.className = 'tooltip-text';
+        tooltip.textContent = title;
+        document.body.appendChild(tooltip);
+
+        const targetRect = target.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        let top = targetRect.top - tooltipRect.height - 8;
+        let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+
+        if (top < 0) {
+            top = targetRect.bottom + 8;
+        }
+        if (left < 0) {
+            left = 5;
+        }
+        if (left + tooltipRect.width > window.innerWidth) {
+            left = window.innerWidth - tooltipRect.width - 5;
+        }
+
+        tooltip.style.position = 'fixed';
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.visibility = 'visible';
+        tooltip.style.opacity = '1';
+    });
+
+    document.body.addEventListener('mouseout', () => {
+        if (tooltip) {
+            tooltip.remove();
+            tooltip = null;
+        }
+    });
+}

@@ -46,19 +46,40 @@
 
     <div id="app" class="app">
         <aside id="infoPanel" class="panel dock-left pinned hidden" aria-label="Info Panel">
-            <header id="panelHeader" class="panel-header draggable">
+            <header id="panelHeader" class="panel-header">
+                <span class="drag-handle draggable">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M9 4h2v16H9zM13 4h2v16h-2z"></path>
+                    </svg>
+                </span>
                 <h2 id="info-name">Info</h2>
                 <div class="panel-actions">
-                    <button id="pinBtn" title="Pin panel" aria-pressed="true">📌</button>
-                    <button id="info-panel-close" title="Close panel">&times;</button>
+                    <button id="pinBtn" class="icon-btn" title="Pin panel" aria-pressed="true">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M16 3v11.2l-3.5-3.5-3.5 3.5V3h7m2-2H7a2 2 0 0 0-2 2v16l7-7 7 7V3a2 2 0 0 0-2-2z"/></svg>
+                    </button>
+                    <button id="info-panel-close" class="icon-btn" title="Close panel">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
                 </div>
             </header>
             <div id="panelBody" class="panel-body">
+feature/interactivity-visual-feedback
+                <section id="edu-section" class="hidden">
+                    <div class="edu-header">
+                        <img id="edu-thumb" src="" alt="Educational thumbnail" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover;">
+                        <div class="edu-title" style="margin-left: 15px;">
+                            <p id="edu-short-desc"></p>
+                        </div>
+                    </div>
+                    <div class="edu-actions" style="margin-top: 10px;">
+                        <a id="edu-link" class="btn" href="#" target="_blank" rel="noopener noreferrer">Read More</a>
+=======
                 <div id="info-controls" class="info-controls-container">
                     <div class="pill-buttons">
                         <button id="btn-frame" class="pill-btn" title="Frame (F)">Frame</button>
                         <button id="btn-follow" class="pill-btn" aria-pressed="false" title="Follow (L)">Follow</button>
                         <button id="btn-orbit" class="pill-btn" aria-pressed="true" title="Toggle Orbit (O)">Orbit</button>
+main
                     </div>
                 </div>
                 <section id="info-main-image-container">
@@ -84,13 +105,13 @@
                 </div>
 
                 <div id="info-advanced-details" class="hidden">
-                    <button id="advanced-details-toggle">Advanced Details</button>
+                    <button id="advanced-details-toggle" class="btn">Advanced Details</button>
                     <div id="advanced-details-content" class="hidden">
                         <!-- Advanced details will be populated here -->
                     </div>
                 </div>
                 <div id="info-exact-mode" class="hidden">
-                    <button id="exact-mode-toggle" class="control-btn" style="width: 100%; margin-top: 10px;">Show Exact Orbital Data</button>
+                    <button id="exact-mode-toggle" class="btn" style="width: 100%; margin-top: 10px;">Show Exact Orbital Data</button>
                     <div id="exact-mode-content" class="hidden" style="padding: 10px; background-color: rgba(0, 0, 0, 0.2); border-radius: 6px; margin-top: 5px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px;">
                         <!-- Exact orbital elements will be populated here -->
                     </div>
@@ -108,6 +129,47 @@
                         <input type="checkbox" id="trails-enabled-toggle" checked>
                         <label for="trails-enabled-toggle">Trails</label>
                     </div>
+feature/interactivity-visual-feedback
+
+                    <div id="time-tab" class="tab-content">
+                        <div id="timestamp-display" style="text-align: center; font-size: 1.2em; margin-bottom: 10px;"></div>
+                        <div class="control-group" style="margin-bottom: 5px;">
+                            <button id="time-step-backward" class="btn" title="Step Backward">|◀</button>
+                            <button id="play-pause-btn" class="btn" title="Play/Pause">❚❚</button>
+                            <button id="time-step-forward" class="btn" title="Step Forward">▶|</button>
+                            <input type="range" id="time-scale-slider" min="0" max="1" value="0.2" step="0.001" style="flex-grow: 1;">
+                            <span id="time-scale-label" style="min-width: 80px; text-align: right;">1.00x</span>
+                        </div>
+                        <div class="control-group">
+                            <button class="btn time-preset" data-speed="1">1x</button>
+                            <button class="btn time-preset" data-speed="100">100x</button>
+                            <button class="btn time-preset" data-speed="86400">1d/s</button>
+                            <button class="btn time-preset" data-speed="31557600">1y/s</button>
+                        </div>
+                    </div>
+
+                    <div id="visuals-tab" class="tab-content" style="display: none;">
+                        <div class="control-group">
+                            <input type="checkbox" id="trails-enabled-toggle" checked>
+                            <label for="trails-enabled-toggle">Trails</label>
+                        </div>
+                         <div class="control-group">
+                            <label for="trail-length-slider">Length:</label>
+                            <input type="range" id="trail-length-slider" min="1" max="3650" value="365" step="1">
+                        </div>
+                        <div class="control-group">
+                            <label for="distance-unit-select">Units:</label>
+                            <select id="distance-unit-select" class="btn">
+                                <option value="au">AU</option>
+                                <option value="km">km</option>
+                                <option value="earthR">Earth Radii</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
+                            <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
+                        </div>
+=======
                         <div class="control-group">
                         <label for="trail-length-slider">Length:</label>
                         <input type="range" id="trail-length-slider" min="1" max="3650" value="365" step="1">
@@ -123,9 +185,30 @@
                     <div class="control-group">
                         <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
                         <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
+main
                     </div>
                 </div>
 
+feature/interactivity-visual-feedback
+                    <div id="settings-tab" class="tab-content" style="display: none;">
+                        <div class="control-group tooltip">
+                            <input type="checkbox" id="shadow-toggle" checked>
+                            <label for="shadow-toggle" id="shadow-label">Shadows</label>
+                            <span id="shadow-icon">☀️</span>
+                            <span class="tooltip-text">Toggle realistic planet shadows. This may affect performance.</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="performance-preset">Quality:</label>
+                            <select id="performance-preset" class="btn">
+                                <option value="auto">Auto</option>
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button id="reset-btn" class="btn">Reset</button>
+                        <button id="manage-presets-btn" class="btn">Presets</button>
+=======
                 <div id="settings-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
                     <div class="control-group tooltip">
                         <input type="checkbox" id="shadow-toggle" checked>
@@ -141,24 +224,31 @@
                             <option value="medium" selected>Medium</option>
                             <option value="high">High</option>
                         </select>
+                      main
                     </div>
                     <button id="reset-btn" class="control-btn">Reset</button>
                     <button id="manage-presets-btn" class="control-btn">Presets</button>
                 </div>
 
                 <div id="selection-panel" class="panel">
-                    <button id="open-celestial-selector-btn" class="control-btn">Select Body</button>
-                    <button id="free-camera-btn" class="control-btn hidden">Solar System View</button>
+                    <button id="open-celestial-selector-btn" class="btn">Select Body</button>
+                    <button id="free-camera-btn" class="btn hidden">Solar System View</button>
                 </div>
 
                 <div id="celestial-selector-modal" class="modal-container hidden">
                     <div class="modal-content panel">
                         <div class="modal-header panel-header">
                             <h2>Select a Celestial Body</h2>
+feature/interactivity-visual-feedback
+                            <button id="close-celestial-selector-btn" class="icon-btn">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            </button>
+=======
                             <div>
                                 <button class="control-btn minimize-btn">–</button>
                                 <button id="close-celestial-selector-btn" class="control-btn">&times;</button>
                             </div>
+main
                         </div>
                         <div id="celestial-selector" class="dropdown">
                             <div class="selector-controls" style="padding: 5px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-bottom: 5px;">
@@ -167,11 +257,22 @@
                                     <label style="cursor: pointer;"><input type="radio" name="selector-view" value="type"> By Type</label>
                                 </div>
                             </div>
+feature/interactivity-visual-feedback
+                            <div class="search-container" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                                <input type="text" id="selector-search-input" class="btn" placeholder="Search..." style="flex-grow: 1; box-sizing: border-box;">
+                                <select id="selector-type-filter" class="btn" title="Filter by type">
+                                    <option value="all">All Types</option>
+                                    <option value="star">Star</option>
+                                    <option value="planet">Planet</option>
+                                    <option value="moon">Moon</option>
+                                </select>
+=======
                             <div class="search-container" style="margin-bottom: 10px;">
                                 <input type="text" id="selector-search-input" class="control-btn" placeholder="Search by name..." style="width: 100%; box-sizing: border-box;">
                             </div>
                             <div id="category-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                                 <!-- Tabs will be dynamically inserted here -->
+main
                             </div>
                             <div id="celestial-selector-menu" class="dropdown-menu">
                                 <!-- Tree view will be populated by JS -->
@@ -191,12 +292,12 @@
                 <div id="help-overlay" class="panel hidden">
                     <h3>Keyboard Shortcuts</h3>
                     <div class="help-search-container">
-                        <input type="text" id="help-search-input" class="control-btn" placeholder="Search actions...">
+                        <input type="text" id="help-search-input" class="btn" placeholder="Search actions...">
                     </div>
                     <div id="shortcuts-list" class="shortcuts-grid">
                         <!-- Shortcut rows will be populated by JS -->
                     </div>
-                    <button id="help-overlay-close" class="control-btn" style="margin-top: 15px;">Close</button>
+                    <button id="help-overlay-close" class="btn" style="margin-top: 15px;">Close</button>
                 </div>
 
                 <div id="small-info-card" class="panel hidden" role="region" aria-label="Selected body summary">
@@ -204,26 +305,40 @@
                     <div class="card-body">
                         <div id="card-title" class="card-title"></div>
                         <div id="card-stats" class="card-stats"></div>
+feature/interactivity-visual-feedback
+                        <div class="card-buttons">
+                            <button id="btn-frame" class="btn" title="Frame (F)">Frame</button>
+                            <button id="btn-follow" class="btn" aria-pressed="false">Follow</button>
+                            <button id="btn-orbit" class="btn">Orbit</button>
+                        </div>
+=======
+main
                     </div>
                 </div>
 
-                <button id="help-button" class="control-btn help-btn">?</button>
+                <button id="help-button" class="btn help-btn">?</button>
 
 feature/panel-improvements
         <div id="presets-modal" class="panel hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; width: 500px; max-width: 90vw;">
             <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
                 <h3>Manage Layout Presets</h3>
+              feature/interactivity-visual-feedback
+                <button id="close-presets-modal-btn" class="icon-btn">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+=======
                 <div>
                     <button class="control-btn minimize-btn">–</button>
                     <button id="close-presets-modal-btn" class="control-btn">&times;</button>
                 </div>
+          main
             </div>
             <div id="presets-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;">
                 <!-- Preset items will be populated here -->
             </div>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <input type="text" id="new-preset-name" class="control-btn" placeholder="New preset name..." style="flex-grow: 1;">
-                <button id="save-current-preset-btn" class="control-btn">Save Current</button>
+                <input type="text" id="new-preset-name" class="btn" placeholder="New preset name..." style="flex-grow: 1;">
+                <button id="save-current-preset-btn" class="btn">Save Current</button>
             </div>
         </div>
 =======

@@ -48,3 +48,15 @@ export function speedDisplayKmPerS(speed_m_s: number): string {
   }
   return (speed_m_s / 1000).toFixed(2) + ' km/s';
 }
+
+export function getGlowColor(hexColor: number): number {
+    const r = (hexColor >> 16) & 255;
+    const g = (hexColor >> 8) & 255;
+    const b = hexColor & 255;
+
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    // If the color is dark, return a light glow color.
+    // If the color is light, return a dark glow color.
+    return luminance < 128 ? 0x72C8FF : 0x0000FF;
+}

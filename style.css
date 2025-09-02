@@ -1,3 +1,15 @@
+:root {
+    --accent-color: #72C8FF;
+    --accent-color-hover: #a4e1ff;
+    --accent-color-active: #5dbbea;
+    --background-color-main: rgba(20, 20, 30, 0.7);
+    --background-color-panel: rgba(12, 12, 18, 0.85);
+    --background-color-hover: rgba(60, 60, 70, 0.9);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-color: #fff;
+    --text-color-secondary: #aab;
+}
+
 /* --- Main App Layout --- */
 #top-bar {
     position: fixed;
@@ -252,10 +264,11 @@ canvas {
     padding: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
+    position: relative;
 }
 
-#panelHeader.draggable {
-    cursor: grab;
+.drag-handle.draggable {
+    cursor: move;
 }
 #panelHeader.dragging {
     cursor: grabbing;
@@ -267,6 +280,19 @@ canvas {
     font-weight: 700; /* Bolder panel titles */
     white-space: nowrap;
     overflow: hidden;
+    flex-grow: 1;
+    text-align: center;
+    padding: 0 30px; /* Make space for buttons */
+}
+
+.drag-handle {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    opacity: 0.4;
+    color: var(--text-color-secondary);
+    pointer-events: none; /* The whole header is draggable */
 }
 
 #panelHeader .panel-actions {
@@ -274,17 +300,60 @@ canvas {
     gap: 10px;
 }
 
-#panelHeader button {
+/* --- Generic Button Styles --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.14s, transform 0.12s, border-color 0.14s;
+    background-color: rgba(40, 40, 50, 0.8);
+    color: var(--text-color);
+}
+
+.btn:hover {
+    background-color: var(--background-color-hover);
+}
+
+.btn:active {
+    transform: translateY(2px) scale(0.97);
+    background-color: rgba(30, 30, 40, 0.9);
+}
+
+.btn .icon {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+}
+
+/* Icon-only Button */
+.icon-btn {
     background: none;
     border: none;
-    color: white;
+    color: var(--text-color-secondary);
     font-size: 1.2em;
     cursor: pointer;
-    transition: color 0.2s;
-    padding: 0;
+    padding: 6px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.14s, color 0.14s, transform 0.12s;
 }
-#panelHeader button:hover {
-    color: #aaa;
+
+.icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+.icon-btn:active {
+    transform: translateY(2px) scale(0.95);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 #panelBody {
@@ -403,33 +472,13 @@ canvas {
 }
 
 /* --- Simulation Control Buttons --- */
-.control-btn {
-    background-color: rgba(40, 40, 50, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2); /* Slightly more visible border */
-    color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1em; /* Larger button font size */
-    font-weight: 600; /* Bolder button text */
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.control-btn:hover {
-    background-color: rgba(60, 60, 70, 0.9);
-}
-
-.control-btn:active {
-    transform: scale(0.95);
-}
-
 .control-btn.hidden {
     display: none;
 }
 
 /* --- Selection Panel --- */
 #selection-panel {
-    top: 80px;
+    top: 182px;
     left: 10px;
 }
 
@@ -527,6 +576,7 @@ canvas {
     cursor: pointer;
     border-radius: 4px;
     gap: 8px;
+    transition: background-color 0.18s, transform 0.18s ease-out;
 }
 
 .tree-node-content .color-dot {
@@ -550,6 +600,16 @@ canvas {
     background: rgba(110, 132, 255, 0.13);
     border-left: 3px solid #6C5CD7;
 }
+
+.tree-node.selected > .tree-node-content {
+    background-color: var(--accent-color);
+    color: #111;
+    transform: scale(1.03);
+}
+
+.tree-node.selected > .tree-node-content .node-stats {
+    color: #333;
+}
 .tree-node .chevron {
     width: 20px;
     text-align: center;
@@ -572,12 +632,7 @@ canvas {
 }
 
 /* --- Tooltip Styles --- */
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-
-.tooltip .tooltip-text {
+.tooltip-text {
     visibility: hidden;
     width: 220px;
     background-color: #1c1c22;
@@ -587,19 +642,11 @@ canvas {
     padding: 10px;
     position: absolute;
     z-index: 101;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -110px; /* Use half of the width to center */
     opacity: 0;
     transition: opacity 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     pointer-events: none;
-}
-
-.tooltip:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
 }
 
 /* --- Debug HUD --- */
@@ -696,6 +743,10 @@ canvas {
     max-width: 90vw;
 }
 
+#presets-modal.hidden {
+    display: none;
+}
+
 #presets-modal .modal-header {
     display: flex;
     justify-content: space-between;
@@ -745,6 +796,10 @@ canvas {
     flex-grow: 1;
 }
 
+feature/interactivity-visual-feedback
+/* --- Modal Styles --- */
+.modal-container {
+=======
 feature/enhanced-detail-panel
 .modal-container.hidden {
     display: none;
@@ -753,11 +808,36 @@ feature/enhanced-detail-panel
 feature/panel-improvements
 /* --- Modal Backdrop --- */
 .modal-backdrop {
+main
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+  feature/interactivity-visual-feedback
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-container.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: var(--background-color-panel);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+=======
     background: rgba(0, 0, 0, 0.52);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
@@ -795,10 +875,17 @@ feature/panel-improvements
 .resizer-handle.sw { bottom: -8px; left: -8px; cursor: sw-resize; }
 
 /* --- Panel Header --- */
+main
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+feature/interactivity-visual-feedback
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+=======
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 10px;
     margin-bottom: 15px;
@@ -889,4 +976,5 @@ feature/panel-improvements
     color: #ffde57;
 main
 }
+main
 main
