@@ -75,7 +75,12 @@ export function initInfoPanel(): void {
     applyState();
 
     header.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (!header.classList.contains('draggable') || (e.target as HTMLElement).closest('button')) {
+        const target = e.target as HTMLElement;
+        if (!target.classList.contains('draggable') && !target.closest('.draggable')) {
+            return;
+        }
+
+        if (target.closest('button')) {
             return;
         }
 

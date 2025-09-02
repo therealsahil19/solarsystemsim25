@@ -3,7 +3,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { LOD } from 'three';
 import { initScene, scene, camera, renderer, controls, pointLight } from './scene';
 import { celestialBodyData, CelestialBody } from './data';
-import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS, AU_TO_M } from './utils/misc';
+import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS, AU_TO_M, getGlowColor } from './utils/misc';
 import { formatDistance, KM_PER_AU } from './utils/units';
 import { compressDistance, computeDisplayRadius } from './utils/visualScale';
 import { createPlanetRings } from './bodies/rings';
@@ -19,6 +19,7 @@ import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
 import { initMainPanel } from './ui/main-panel';
 import { TrailManager } from './orbits/TrailManager';
+import { initTooltips } from './ui/dom';
 
 const CAMERA_FOCUS_DEFAULT_MS = 700;
 
@@ -39,6 +40,7 @@ const simulation = {
     isUserInteracting: false,
     isTweening: false,
     asteroidMaterialUniforms: null as { u_time: { value: number } } | null,
+    selectedGlow: null as THREE.Mesh | null,
 };
 
 const perfState = {
@@ -142,7 +144,21 @@ celestialBodyData.forEach(bodyData => {
         sun!.add(pointLight);
     }
 
-    bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData };
+    const glowColor = bodyData.name === 'Sun' ? 0xffd700 : getGlowColor(bodyData.color);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+        color: glowColor,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.BackSide,
+    });
+    const glowMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(bodyRadius * 1.2, 32, 32),
+        glowMaterial
+    );
+    glowMesh.visible = false;
+    bodyMesh.add(glowMesh);
+
+    bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData, glowMesh };
     bodyGroup.add(bodyMesh);
 
     const celestialObject = { ...bodyData, group: bodyGroup, mesh: bodyMesh };
@@ -348,6 +364,18 @@ function frameObject(object3D: THREE.Object3D, opts: { duration?: number; fitOff
 function onBodySelected(id: string) {
     const selectedObject = selectableObjects.find(obj => obj.userData.id === id);
     if (!selectedObject) return;
+
+    if (simulation.selectedGlow) {
+        simulation.selectedGlow.visible = false;
+    }
+
+    const { glowMesh } = selectedObject.userData;
+    if (glowMesh) {
+        glowMesh.visible = true;
+        simulation.selectedGlow = glowMesh;
+    } else {
+        simulation.selectedGlow = null;
+    }
 
     store.getState().setSelectedBodyId(id);
     simulation.focusTarget = selectedObject;
@@ -675,6 +703,14 @@ const animate: Animate = (time) => {
         }
     });
 
+    if (simulation.selectedGlow) {
+        const pulseTime = time * 0.001 * (2 * Math.PI) / 1.2; // 1.2s cycle
+        const scale = 1.3 + Math.sin(pulseTime) * 0.1; // 1.2 to 1.4
+        const opacity = 0.7 + Math.sin(pulseTime) * 0.2; // 0.5 to 0.9
+        simulation.selectedGlow.scale.set(scale, scale, scale);
+        (simulation.selectedGlow.material as THREE.MeshBasicMaterial).opacity = opacity;
+    }
+
     TWEEN.update(time);
     controls.update();
     renderer.render(scene, camera);
@@ -685,3 +721,4 @@ animate(0);
 initShortcutsPanel();
 initPresetsPanel();
 initMainPanel();
+initTooltips();

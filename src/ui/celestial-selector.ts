@@ -2,6 +2,7 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse, { FuseResult } from 'fuse.js';
+import { store } from '../state/store';
 
 type ViewMode = 'hierarchy' | 'type';
 type FuseDataItem = CelestialBody & { type: CelestialBodyType };
@@ -193,6 +194,9 @@ function updateDomVisibility() {
             }
         }
     });
+
+    store.subscribe(updateSelectionFromState);
+    updateSelectionFromState();
 }
 
 function filterTree() {
@@ -288,6 +292,19 @@ function setActiveNode(nodeId: string | null) {
             node.element.scrollIntoView({ block: 'nearest' });
         }
     }
+}
+
+function updateSelectionFromState() {
+    const { selectedBodyId } = store.getState();
+    flatNodeMap.forEach((node) => {
+        if (node.element) {
+            if (node.id === selectedBodyId) {
+                node.element.classList.add('selected');
+            } else {
+                node.element.classList.remove('selected');
+            }
+        }
+    });
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
