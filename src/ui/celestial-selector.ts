@@ -2,6 +2,7 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse, { FuseResult } from 'fuse.js';
+import { PanelManager } from './panel-manager';
 
 type ViewMode = 'hierarchy' | 'type';
 type FuseDataItem = CelestialBody & { type: CelestialBodyType };
@@ -13,6 +14,35 @@ let fuse: Fuse<FuseDataItem>;
 let activeNodeId: string | null = null;
 let currentView: ViewMode = 'hierarchy';
 let onSelectCallback: (id: string) => void;
+let currentFilterType: CelestialBodyType | 'all' = 'all';
+const favoritedIds = new Set<string>();
+
+function createFavoriteButton(node: TreeNode): HTMLButtonElement {
+    const favoriteBtn = document.createElement('button');
+    favoriteBtn.className = 'favorite-btn';
+    favoriteBtn.innerHTML = '&#9733;'; // Unicode star
+    if (favoritedIds.has(node.id)) {
+        favoriteBtn.classList.add('favorited');
+    }
+    favoriteBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the row from being selected
+        if (favoritedIds.has(node.id)) {
+            favoritedIds.delete(node.id);
+            favoriteBtn.classList.remove('favorited');
+        } else {
+            favoritedIds.add(node.id);
+            favoriteBtn.classList.add('favorited');
+        }
+    });
+    return favoriteBtn;
+}
+
+function createTypeSpan(node: TreeNode): HTMLSpanElement {
+    const typeSpan = document.createElement('span');
+    typeSpan.className = 'node-type';
+    typeSpan.textContent = node.type.charAt(0).toUpperCase() + node.type.slice(1);
+    return typeSpan;
+}
 
 function renderListItem(node: TreeNode): HTMLLIElement {
     const li = document.createElement('li');
@@ -47,10 +77,14 @@ function renderListItem(node: TreeNode): HTMLLIElement {
     name.textContent = node.name;
     content.appendChild(name);
 
+    content.appendChild(createTypeSpan(node));
+
     const stats = document.createElement('span');
     stats.className = 'node-stats';
     stats.textContent = `${node.spec.radius.toLocaleString()} km`;
     content.appendChild(stats);
+
+    content.appendChild(createFavoriteButton(node));
 
     li.appendChild(content);
     node.element = li;
@@ -95,10 +129,14 @@ function renderNode(node: TreeNode): HTMLLIElement {
     name.textContent = node.name;
     content.appendChild(name);
 
+    content.appendChild(createTypeSpan(node));
+
     const stats = document.createElement('span');
     stats.className = 'node-stats';
     stats.textContent = `${node.spec.radius.toLocaleString()} km`;
     content.appendChild(stats);
+
+    content.appendChild(createFavoriteButton(node));
 
     li.appendChild(content);
 
@@ -197,9 +235,8 @@ function updateDomVisibility() {
 
 function filterTree() {
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
-    const typeFilter = document.getElementById('selector-type-filter') as HTMLSelectElement;
     const query = searchInput.value;
-    const selectedType = typeFilter.value;
+    const selectedType = currentFilterType;
 
     if (!query && selectedType === 'all') {
         allNodes.forEach(node => {
@@ -290,22 +327,50 @@ function setActiveNode(nodeId: string | null) {
     }
 }
 
+function debounce(func: (...args: any[]) => void, delay: number) {
+    let timeoutId: number;
+    return (...args: any[]) => {
+        clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+            func(...args);
+        }, delay);
+    };
+}
+
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
-    const modal = document.getElementById('celestial-selector-modal')!;
+    const modalContainer = document.getElementById('celestial-selector-modal')!;
+    const modal = modalContainer.querySelector('.modal-content') as HTMLElement;
     const openBtn = document.getElementById('open-celestial-selector-btn')!;
     const closeBtn = document.getElementById('close-celestial-selector-btn')!;
+    const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
+    const header = modal.querySelector('.panel-header') as HTMLElement;
 
-    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    const panelManager = new PanelManager(modal);
+    panelManager.makeDraggable(header);
+    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+    panelManager.makeResizable();
+
+    const openModal = () => {
+        modalContainer.classList.remove('hidden');
+        PanelManager.showBackdrop();
+    };
+
+    const closeModal = () => {
+        modalContainer.classList.add('hidden');
+        PanelManager.hideBackdrop();
+    };
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
     window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
+        if (e.target === modalContainer) {
+            closeModal();
         }
     });
 
     onSelectCallback = (id) => {
         onSelect(id);
-        modal.classList.add('hidden');
+        closeModal();
     };
 
     treeNodes = buildTree(bodies);
@@ -355,10 +420,32 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     });
 
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
-    searchInput.addEventListener('input', () => filterTree());
+    searchInput.addEventListener('input', debounce(() => filterTree(), 300));
 
-    const typeFilter = document.getElementById('selector-type-filter') as HTMLSelectElement;
-    typeFilter.addEventListener('change', () => filterTree());
+    const categoryTabsContainer = document.getElementById('category-tabs')!;
+    const categories: (CelestialBodyType | 'all')[] = ['all', 'star', 'planet', 'moon'];
+
+    categories.forEach(category => {
+        const tab = document.createElement('button');
+        tab.className = 'category-tab';
+        tab.dataset.category = category;
+
+        let text = category.charAt(0).toUpperCase() + category.slice(1);
+        if (category !== 'all') text += 's';
+        tab.textContent = text;
+
+        if (category === currentFilterType) {
+            tab.classList.add('active');
+        }
+
+        tab.addEventListener('click', () => {
+            currentFilterType = category;
+            categoryTabsContainer.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            filterTree();
+        });
+        categoryTabsContainer.appendChild(tab);
+    });
 
     const viewRadios = document.querySelectorAll<HTMLInputElement>('input[name="selector-view"]');
     viewRadios.forEach(radio => {
