@@ -75,6 +75,6 @@ export default defineConfig({
     command: 'npm run test:e2e',
     url: 'http://localhost:3000/solarsystemsim25/',
     timeout: 300000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
   },
 });
