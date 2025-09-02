@@ -18,6 +18,7 @@ import { instantaneousOrbitalSpeed } from './orbits/kepler';
 import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
 import { initMainPanel } from './ui/main-panel';
+import { initTopBar } from './ui/top-bar';
 import { TrailManager } from './orbits/TrailManager';
 import { initTooltips } from './ui/dom';
 
@@ -349,13 +350,13 @@ function frameObject(object3D: THREE.Object3D, opts: { duration?: number; fitOff
     cancelActiveCameraTween();
     const t1 = new TWEEN.Tween(controls.target)
         .to(center, dur)
-        .easing(TWEEN.Easing.Cubic.Out)
+        .easing(TWEEN.Easing.Quintic.InOut)
         .onUpdate(() => controls.update())
         .onComplete(() => simulation.isTweening = false)
         .start();
     const t2 = new TWEEN.Tween(camera.position)
         .to(newPos, dur)
-        .easing(TWEEN.Easing.Cubic.Out)
+        .easing(TWEEN.Easing.Quintic.InOut)
         .onUpdate(() => camera.lookAt(controls.target))
         .start();
     (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
@@ -400,8 +401,9 @@ function resetSimulation() {
 if (!sun) {
     throw new Error("Sun object was not initialized, cannot set up interactions.");
 }
-setupInteractions(camera, selectableObjects, sun, { ...simulation, time: store.getState().simTime, isPaused: store.getState().isPaused, singleStep: false }, onBodySelected, controls, resetSimulation, []);
-setupKeyboardShortcuts({ selectedObject: simulation.selectedObject }, [], onBodySelected, camera, controls);
+const allOrbits = celestialObjects.map(o => o.orbit).filter(o => o) as THREE.Line[];
+setupInteractions(camera, selectableObjects, sun, simulation, onBodySelected, controls, resetSimulation, allOrbits);
+setupKeyboardShortcuts(simulation, [], onBodySelected, camera, controls);
 
 (dom.shadowToggle as HTMLInputElement).addEventListener('change', () => {
     const isEnabled = (dom.shadowToggle as HTMLInputElement).checked;
@@ -445,6 +447,30 @@ window.addEventListener('focus', () => {
     }
 });
 
+function addStat(container: HTMLElement, label: string, value: string | number, unit: string = '', tooltip: string | null = null) {
+    if (value === undefined || value === null) return;
+
+    const strong = document.createElement('strong');
+    strong.textContent = `${label}:`;
+
+    const span = document.createElement('span');
+    span.textContent = `${value} ${unit}`;
+
+    if (tooltip) {
+        const tooltipSpan = document.createElement('span');
+        tooltipSpan.className = 'tooltip';
+        tooltipSpan.textContent = '(?)';
+        const tooltipText = document.createElement('span');
+        tooltipText.className = 'tooltip-text';
+        tooltipText.textContent = tooltip;
+        tooltipSpan.appendChild(tooltipText);
+        span.appendChild(tooltipSpan);
+    }
+
+    container.appendChild(strong);
+    container.appendChild(span);
+}
+
 store.subscribe((state) => {
     const selectedBody = celestialObjects.find(c => c.id === state.selectedBodyId);
     if (selectedBody) {
@@ -454,9 +480,10 @@ store.subscribe((state) => {
         const { data, type } = selectedBody.mesh.userData;
         dom.smallInfoCard.classList.remove('hidden');
         dom.cardTitle.textContent = data.name;
-        dom.cardThumb.src = data.texture || '';
+        dom.cardThumb.src = data.edu?.image || data.texture || '';
         dom.cardThumb.alt = `${data.name} thumbnail`;
         dom.infoName.textContent = data.name;
+
         let material;
         if (selectedBody.mesh instanceof LOD) {
             material = ((selectedBody.mesh as LOD).levels[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
@@ -465,84 +492,30 @@ store.subscribe((state) => {
         }
         const color = `#${material.color.getHexString()}`;
         updateInfoPanelColor(color);
-        dom.infoImageContainer.innerHTML = '';
-        const svgNS = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(svgNS, "svg");
-        svg.setAttribute("width", "100%");
-        svg.setAttribute("height", "100%");
-        const rect = document.createElementNS(svgNS, "rect");
-        rect.setAttribute("width", "100%");
-        rect.setAttribute("height", "100%");
-        rect.setAttribute("fill", color);
-        svg.appendChild(rect);
-        dom.infoImageContainer.appendChild(svg);
-        dom.infoBasicStats.innerHTML = '';
 
+        // --- Populate New Info Panel ---
+        dom.infoImage.src = data.edu?.image || '';
+        dom.infoImage.alt = `Image of ${data.name}`;
+        dom.infoLink.href = data.edu?.readMoreUrl || '#';
+        dom.infoShortDesc.textContent = data.edu?.shortDescription || '';
+
+        // Clear previous stats
+        dom.infoBasicStats.innerHTML = '';
+        dom.infoOrbitalChars.innerHTML = '';
+
+        // Basic Stats
+        addStat(dom.infoBasicStats, 'Radius', data.radius.toLocaleString(), 'km');
+        addStat(dom.infoBasicStats, 'Mass', data.mass, 'x 10^24 kg');
+        addStat(dom.infoBasicStats, 'Density', data.density, 'kg/m³');
+        addStat(dom.infoBasicStats, 'Gravity', data.surfaceGravity, 'm/s²');
+
+        // Orbital Characteristics
         const distanceInKm = type === 'moon' ? (data.semiMajorAxisKm || 0) : data.semiMajorAxis * KM_PER_AU;
         const distanceUnit = store.getState().distanceUnit;
-
-        const stats: { [key: string]: { value: string; tooltip?: string | null } } = {
-            'Radius': { value: `${data.radius.toLocaleString()} km` },
-            'Distance': {
-                value: formatDistance(distanceInKm, distanceUnit),
-                tooltip: type !== 'moon' ? 'Astronomical Unit: the average distance from Earth to the Sun.' : 'Distance from parent body.'
-            },
-            'Orbital Period': {
-                value: `${data.orbitalPeriod} days`,
-                tooltip: 'The time it takes for the object to complete one orbit around its parent body.'
-            }
-        };
-        for (const [key, { value, tooltip }] of Object.entries(stats)) {
-            const strong = document.createElement('strong');
-            strong.textContent = `${key}:`;
-            const span = document.createElement('span');
-            span.textContent = value;
-            if (tooltip) {
-                const tooltipSpan = document.createElement('span');
-                tooltipSpan.className = 'tooltip';
-                tooltipSpan.textContent = '(?)';
-                const tooltipText = document.createElement('span');
-                tooltipText.className = 'tooltip-text';
-                tooltipText.textContent = tooltip;
-                tooltipSpan.appendChild(tooltipText);
-                span.appendChild(tooltipSpan);
-            }
-            dom.infoBasicStats.appendChild(strong);
-            dom.infoBasicStats.appendChild(span);
-        }
-        const advancedStats: { [key: string]: string } = {};
-        if (data.axialTilt) {
-            advancedStats['Axial Tilt'] = `${data.axialTilt}°`;
-        }
-        if (data.rings) {
-            advancedStats['Rings'] = `${data.rings.bands.length} main bands`;
-        }
-        if (Object.keys(advancedStats).length > 0) {
-            (dom.infoAdvancedDetails as HTMLElement).classList.remove('hidden');
-            (dom.advancedDetailsContent as HTMLElement).innerHTML = '';
-            for (const [key, value] of Object.entries(advancedStats)) {
-                const strong = document.createElement('strong');
-                strong.textContent = `${key}:`;
-                const span = document.createElement('span');
-                span.textContent = value;
-                dom.advancedDetailsContent.appendChild(strong);
-                dom.advancedDetailsContent.appendChild(span);
-            }
-        } else {
-            (dom.infoAdvancedDetails as HTMLElement).classList.add('hidden');
-        }
-
-        // Handle Educational Sidebar
-        const eduSection = document.getElementById('edu-section')!;
-        if (data.edu) {
-            (document.getElementById('edu-thumb') as HTMLImageElement).src = data.edu.thumbnail || '';
-            (document.getElementById('edu-short-desc') as HTMLParagraphElement).textContent = data.edu.shortDescription || '';
-            (document.getElementById('edu-link') as HTMLAnchorElement).href = data.edu.readMoreUrl || '#';
-            (document.getElementById('edu-source') as HTMLDivElement).textContent = `Source: ${data.edu.sourceName || 'N/A'}`;
-            eduSection.classList.remove('hidden');
-        } else {
-            eduSection.classList.add('hidden');
-        }
+        addStat(dom.infoOrbitalChars, 'Orbital Period', data.orbitalPeriod, 'days');
+        addStat(dom.infoOrbitalChars, 'Semi-Major Axis', formatDistance(distanceInKm, distanceUnit), '', 'The average distance from its parent body.');
+        addStat(dom.infoOrbitalChars, 'Eccentricity', data.eccentricity.toFixed(4));
+        addStat(dom.infoOrbitalChars, 'Inclination', data.inclination, '°');
 
         // Handle Exact Mode panel
         const exactModeContainer = document.getElementById('info-exact-mode')!;
@@ -653,6 +626,9 @@ const animate: Animate = (time) => {
         const desiredCamPos = targetPosition.clone().add(simulation.followOffset);
         camera.position.lerp(desiredCamPos, simulation.followSmoothing);
         controls.target.lerp(targetPosition, simulation.followSmoothing);
+        dom.btnFollow.setAttribute('aria-pressed', 'true');
+    } else {
+        dom.btnFollow.setAttribute('aria-pressed', 'false');
     }
 
     if (store.getState().selectedBodyId) {
@@ -721,4 +697,8 @@ animate(0);
 initShortcutsPanel();
 initPresetsPanel();
 initMainPanel();
+feature/interactivity-visual-feedback
 initTooltips();
+=======
+initTopBar();
+main

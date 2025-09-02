@@ -1,7 +1,11 @@
-export const infoPanel = document.getElementById('info-panel') as HTMLDivElement;
+export const infoPanel = document.getElementById('infoPanel') as HTMLDivElement;
 export const infoName = document.getElementById('info-name') as HTMLHeadingElement;
-export const infoImageContainer = document.getElementById('info-image-container') as HTMLDivElement;
+export const infoControls = document.getElementById('info-controls') as HTMLDivElement;
+export const infoImage = document.getElementById('info-image') as HTMLImageElement;
+export const infoLink = document.getElementById('info-link') as HTMLAnchorElement;
+export const infoShortDesc = document.getElementById('info-short-desc') as HTMLParagraphElement;
 export const infoBasicStats = document.getElementById('info-basic-stats') as HTMLDivElement;
+export const infoOrbitalChars = document.getElementById('info-orbital-chars') as HTMLDivElement;
 export const infoAdvancedDetails = document.getElementById('info-advanced-details') as HTMLDivElement;
 export const advancedDetailsToggle = document.getElementById('advanced-details-toggle') as HTMLButtonElement;
 export const advancedDetailsContent = document.getElementById('advanced-details-content') as HTMLDivElement;

@@ -1,7 +1,8 @@
 import { camera, controls, renderer } from '../scene';
 import { store } from '../state/store';
 import { Preset, PanelState, getAllPresets, addPreset, deletePreset } from '../state/presets';
-import { v4 as uuidv4 } from 'uuid'; // I'll need to install uuid
+import { v4 as uuidv4 } from 'uuid';
+import { PanelManager } from './panel-manager';
 
 const PANEL_STATE_KEY = 'solarsim.panel.v1'; // Duplicated from info-panel, should be shared
 
@@ -84,15 +85,27 @@ export function initPresetsPanel() {
     const saveBtn = document.getElementById('save-current-preset-btn')!;
     const nameInput = document.getElementById('new-preset-name') as HTMLInputElement;
     const listEl = document.getElementById('presets-list')!;
+    const header = modal.querySelector('.panel-header') as HTMLElement;
+    const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
 
-    openBtn.addEventListener('click', () => {
+    const panelManager = new PanelManager(modal);
+    panelManager.makeDraggable(header);
+    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+    panelManager.makeResizable();
+
+    const openModal = () => {
         renderPresetsList();
         modal.classList.remove('hidden');
-    });
+        PanelManager.showBackdrop();
+    };
 
-    closeBtn.addEventListener('click', () => {
+    const closeModal = () => {
         modal.classList.add('hidden');
-    });
+        PanelManager.hideBackdrop();
+    };
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
 
     saveBtn.addEventListener('click', () => {
         const name = nameInput.value.trim();
