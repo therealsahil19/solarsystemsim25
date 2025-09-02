@@ -609,3 +609,7 @@ canvas {
 #new-preset-name {
     flex-grow: 1;
 }
+
+.modal-container.hidden {
+    display: none;
+}
