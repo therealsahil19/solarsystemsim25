@@ -364,27 +364,6 @@ canvas {
     overflow-y: auto;
 }
 
-.resizer {
-    width: 5px;
-    cursor: ew-resize;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    z-index: 100;
-    background-color: transparent;
-    transition: background-color 0.2s;
-}
-.resizer:hover {
-    background-color: rgba(77, 144, 254, 0.5);
-}
-
-#infoPanel.dock-left .resizer {
-    right: -2.5px;
-}
-
-#infoPanel.dock-right .resizer {
-    left: -2.5px;
-}
 
 
 #info-image-container {
@@ -952,4 +931,166 @@ canvas {
 
 .favorite-btn.favorited:hover {
     color: #ffde57;
+}
+
+/* ==========================================================================
+   New Floating Panel System
+   ========================================================================== */
+
+/* --- Base Floating Panel --- */
+.panel.floating {
+    position: absolute;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    min-width: 280px;
+    min-height: 150px;
+    /* Override old dock styles if they exist */
+    border: 1.5px solid rgba(255,255,255, 0.11);
+    box-shadow: 0 8px 40px 0 rgba(0,0,0,0.32);
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out, left 0.15s ease-out, top 0.15s ease-out;
+}
+
+.panel.hidden {
+    display: none !important;
+}
+
+/* --- Panel Header --- */
+.panel-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: grab;
+    flex-shrink: 0;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s;
+    border-bottom: 1px solid var(--border-color); /* Keep a consistent separator */
+}
+
+.panel-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.panel-header:active {
+    cursor: grabbing;
+}
+
+.panel-header .drag-handle {
+    position: static;
+    transform: none;
+    opacity: 0.6;
+    margin-right: 8px;
+    color: var(--text-color);
+    cursor: grab;
+}
+
+.panel-header h2 {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0;
+    text-align: left;
+}
+
+.panel-header .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- Pinned State --- */
+.panel.pinned .panel-header,
+.panel.pinned .drag-handle {
+    cursor: default;
+}
+
+.panel.pinned .resizer-handle {
+    display: none !important; /* Hide resize handles */
+}
+
+.panel.pinned .panel-actions .icon-btn[title*="Close"] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+
+/* --- Pin Button Icons --- */
+.icon-btn .icon-pin-pinned { display: none; }
+.icon-btn .icon-pin-unpinned { display: block; }
+
+.icon-btn[aria-pressed="true"] .icon-pin-pinned { display: block; }
+.icon-btn[aria-pressed="true"] .icon-pin-unpinned { display: none; }
+
+
+/* --- Resizer Handles (New) --- */
+.resizer-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: transparent;
+    z-index: 1001;
+    transition: background-color 0.2s, opacity 0.2s;
+    opacity: 0;
+}
+
+.panel:not(.pinned):hover .resizer-handle {
+    opacity: 0.5;
+}
+.resizer-handle:hover {
+    background-color: var(--accent-color);
+    opacity: 1;
+}
+
+.resizer-handle.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resizer-handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resizer-handle.e { right: -4px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+.resizer-handle.w { left: -4px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+.resizer-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+.resizer-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+.resizer-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+.resizer-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+
+
+/* --- Snap-to-Edge Effects --- */
+.snap-glow {
+    position: fixed;
+    z-index: 9999;
+    background: var(--accent-color);
+    box-shadow: 0 0 12px 6px var(--accent-color);
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    pointer-events: none;
+    display: none;
+}
+
+.snap-glow.visible {
+    opacity: 0.4;
+    display: block;
+}
+
+.snap-glow.top { top: 0; left: 0; width: 100%; height: 8px; }
+.snap-glow.bottom { bottom: 0; left: 0; width: 100%; height: 8px; }
+.snap-glow.left { top: 0; left: 0; width: 8px; height: 100%; }
+.snap-glow.right { top: 0; right: 0; width: 8px; height: 100%; }
+
+.panel.snap-flash {
+    outline: 4px solid var(--accent-color-active);
+    transition: outline 0s; /* Flash should be instant on, then transition off */
+}
+
+/* Minimized state */
+.panel.minimized .panel-body,
+.panel.minimized .resizer-handle {
+    display: none;
+}
+
+.panel.minimized {
+    height: auto !important;
+    width: auto !important;
+    min-width: 200px;
 }
