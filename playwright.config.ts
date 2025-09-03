@@ -48,9 +48,9 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'VITE_E2E=1 npm run preview -- --port 5173',
-    port: 5173,
+    command: 'vite build --mode test && vite preview --port=5173 --strictPort --mode test',
+    url: 'http://127.0.0.1:5173/solarsystemsim25/',
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000, // Give server time to start
+    timeout: 120_000,
   },
 });
