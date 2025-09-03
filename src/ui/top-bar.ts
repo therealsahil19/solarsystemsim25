@@ -1,3 +1,5 @@
+import { store, ScalePreset } from '../state/store';
+
 // --- DOM Element References ---
 let visualsBtn: HTMLButtonElement;
 let settingsBtn: HTMLButtonElement;
@@ -10,6 +12,9 @@ let settingsPanel: HTMLDivElement;
 let moreMenuContent: HTMLDivElement;
 let topBar: HTMLElement;
 let appContainer: HTMLElement;
+let scaleControlGroup: HTMLDivElement;
+let scalePresetSelect: HTMLSelectElement;
+let scaleBadge: HTMLSpanElement;
 
 // --- Original Parent Elements for Responsive Moves ---
 let visualsBtnParent: HTMLElement;
@@ -17,6 +22,7 @@ let settingsBtnParent: HTMLElement;
 let githubLinkParent: HTMLElement;
 let timeSliderGroupParent: HTMLElement;
 let timePresetGroupParent: HTMLElement;
+let scaleControlGroupParent: HTMLElement;
 
 function cacheDOMElements() {
     visualsBtn = document.getElementById('visuals-toggle-btn') as HTMLButtonElement;
@@ -30,6 +36,9 @@ function cacheDOMElements() {
     moreMenuContent = document.getElementById('more-menu-content') as HTMLDivElement;
     topBar = document.getElementById('top-bar') as HTMLElement;
     appContainer = document.getElementById('app') as HTMLElement;
+    scaleControlGroup = document.getElementById('scale-control-group') as HTMLDivElement;
+    scalePresetSelect = document.getElementById('scale-preset-select') as HTMLSelectElement;
+    scaleBadge = document.getElementById('scale-badge') as HTMLSpanElement;
 
     // Store original parents
     visualsBtnParent = visualsBtn.parentNode as HTMLElement;
@@ -37,6 +46,7 @@ function cacheDOMElements() {
     githubLinkParent = githubLink.parentNode as HTMLElement;
     timeSliderGroupParent = timeSliderGroup.parentNode as HTMLElement;
     timePresetGroupParent = timePresetGroup.parentNode as HTMLElement;
+    scaleControlGroupParent = scaleControlGroup.parentNode as HTMLElement;
 }
 
 function handleResponsiveLayout() {
@@ -49,17 +59,20 @@ function handleResponsiveLayout() {
         if (!moreMenuContent.contains(visualsBtn)) moreMenuContent.appendChild(visualsBtn);
         if (!moreMenuContent.contains(settingsBtn)) moreMenuContent.appendChild(settingsBtn);
         if (!moreMenuContent.contains(githubLink)) moreMenuContent.appendChild(githubLink);
+        if (!moreMenuContent.contains(scaleControlGroup)) moreMenuContent.appendChild(scaleControlGroup);
         moreMenuBtn.classList.remove('hidden');
     } else {
         // Move back to original positions
         timeSliderGroupParent.appendChild(timeSliderGroup);
         timePresetGroupParent.appendChild(timePresetGroup);
 
-        // Insert before the 'more menu' container
         const moreMenuContainer = document.getElementById('more-menu-container')!;
         visualsBtnParent.insertBefore(visualsBtn, moreMenuContainer);
         settingsBtnParent.insertBefore(settingsBtn, moreMenuContainer);
+        // Insert scale control before github link
+        scaleControlGroupParent.insertBefore(scaleControlGroup, githubLink);
         githubLinkParent.insertBefore(githubLink, moreMenuContainer);
+
 
         moreMenuBtn.classList.add('hidden');
         moreMenuContent.classList.add('hidden'); // Ensure menu is closed when resizing to desktop
@@ -96,6 +109,31 @@ function setupEventListeners() {
     moreMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         moreMenuContent.classList.toggle('hidden');
+    });
+
+    scalePresetSelect.addEventListener('change', (e) => {
+        const preset = (e.target as HTMLSelectElement).value as ScalePreset;
+        store.getState().setScalePreset(preset);
+    });
+
+    store.subscribe((state) => {
+        const preset = state.scalePreset;
+        if (scalePresetSelect.value !== preset) {
+            scalePresetSelect.value = preset;
+        }
+
+        // Update badge text based on preset
+        switch (preset) {
+            case 'realistic':
+                scaleBadge.textContent = '1:1 Scale';
+                break;
+            case 'educational':
+                scaleBadge.textContent = 'Large Planets';
+                break;
+            case 'hybrid':
+                scaleBadge.textContent = 'Log Distance';
+                break;
+        }
     });
 
     // Improved click-outside-to-close logic
