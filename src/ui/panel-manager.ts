@@ -13,6 +13,9 @@ export class PanelManager {
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
+    private static snapThreshold = 30;
+    private static snapGlows: { [key: string]: HTMLElement } = {};
+
     constructor(panel: HTMLElement) {
         this.panel = panel;
         this.boundOnDragMove = this.onDragMove.bind(this);
@@ -23,6 +26,12 @@ export class PanelManager {
     private init() {
         this.bringToFront();
         this.panel.addEventListener('mousedown', () => this.bringToFront());
+        if (!PanelManager.snapGlows['top']) {
+            PanelManager.snapGlows['top'] = document.getElementById('snap-glow-top')!;
+            PanelManager.snapGlows['right'] = document.getElementById('snap-glow-right')!;
+            PanelManager.snapGlows['bottom'] = document.getElementById('snap-glow-bottom')!;
+            PanelManager.snapGlows['left'] = document.getElementById('snap-glow-left')!;
+        }
     }
 
     public makeDraggable(header: HTMLElement) {
@@ -51,7 +60,7 @@ export class PanelManager {
         this.panelStartY = rect.top;
 
         document.addEventListener('mousemove', this.boundOnDragMove);
-        document.addEventListener('mouseup', this.boundOnDragEnd);
+        document.addEventListener('mouseup', this.boundOnDragEnd, { once: true });
 
         this.header!.style.cursor = 'grabbing';
         document.body.style.userSelect = 'none';
@@ -70,10 +79,44 @@ export class PanelManager {
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
 
+        // --- Snapping and Glow Logic ---
+        const { snapThreshold } = PanelManager;
+        let snapX = false, snapY = false;
+
+        // Hide all glows initially
+        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
+
+        // Left edge
+        if (newLeft < snapThreshold) {
+            newLeft = 0;
+            snapX = true;
+            PanelManager.snapGlows.left.classList.add('visible');
+        }
+        // Right edge
+        if (newLeft + rect.width > winWidth - snapThreshold) {
+            newLeft = winWidth - rect.width;
+            snapX = true;
+            PanelManager.snapGlows.right.classList.add('visible');
+        }
+        // Top edge
+        if (newTop < snapThreshold) {
+            newTop = 0;
+            snapY = true;
+            PanelManager.snapGlows.top.classList.add('visible');
+        }
+        // Bottom edge
+        if (newTop + rect.height > winHeight - snapThreshold) {
+            newTop = winHeight - rect.height;
+            snapY = true;
+            PanelManager.snapGlows.bottom.classList.add('visible');
+        }
+
+        // Boundary checks
         if (newLeft < 0) newLeft = 0;
         if (newTop < 0) newTop = 0;
         if (newLeft + rect.width > winWidth) newLeft = winWidth - rect.width;
         if (newTop + rect.height > winHeight) newTop = winHeight - rect.height;
+
 
         this.panel.style.left = `${newLeft}px`;
         this.panel.style.top = `${newTop}px`;
@@ -82,10 +125,13 @@ export class PanelManager {
     private onDragEnd() {
         this.isDragging = false;
         document.removeEventListener('mousemove', this.boundOnDragMove);
-        document.removeEventListener('mouseup', this.boundOnDragEnd);
+        // 'mouseup' listener is removed in onDragStart with { once: true }
 
         this.header!.style.cursor = 'grab';
         document.body.style.userSelect = '';
+
+        // Hide all glows
+        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
     }
 
     public makeResizable(minWidth = 250, minHeight = 150) {

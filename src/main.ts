@@ -19,6 +19,9 @@ import { initShortcutsPanel } from './ui/shortcuts-panel';
 import { initPresetsPanel } from './ui/presets-panel';
 import { initMainPanel } from './ui/main-panel';
 import { initTopBar } from './ui/top-bar';
+import { setupQuickAccessToolbar } from './ui/quick-access-toolbar';
+import { initContextualHud } from './ui/contextual-hud';
+import { initOnboardingTour } from './ui/onboarding-tour';
 import { TrailManager } from './orbits/TrailManager';
 import { initTooltips } from './ui/dom';
 
@@ -714,6 +717,9 @@ async function start() {
     initPresetsPanel();
     initMainPanel();
     initTopBar();
+    setupQuickAccessToolbar();
+    initContextualHud();
+    initOnboardingTour();
 
     // --- E2E and App Readiness Notification ---
     // This should be the last thing to run.

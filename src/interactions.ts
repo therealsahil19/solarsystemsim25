@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { showHud } from './ui/contextual-hud';
 
 // The simulation object is now simpler, as most state is in the store.
 export type Simulation = {
@@ -75,6 +76,7 @@ export function setupInteractions(
         if (intersects.length > 0) {
             const clicked = intersects[0].object;
             onBodySelected(clicked.userData.name);
+            showHud(clicked, camera);
         } else {
             const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
             const intersection = new THREE.Vector3();
@@ -111,9 +113,17 @@ export function setupInteractions(
         }
     });
 
+    function triggerButtonFlash(btn: HTMLElement) {
+        btn.classList.add('flash');
+        btn.addEventListener('animationend', () => {
+            btn.classList.remove('flash');
+        }, { once: true });
+    }
+
     dom.btnFrame.addEventListener('click', () => {
         if (simulation.selectedObject) {
             onBodySelected(simulation.selectedObject.userData.name);
+            triggerButtonFlash(dom.btnFrame);
         }
     });
 
@@ -129,6 +139,7 @@ export function setupInteractions(
             simulation.followTarget.getWorldPosition(targetPosition);
             simulation.followOffset = camera.position.clone().sub(targetPosition);
         }
+        triggerButtonFlash(dom.btnFollow);
     });
 
     dom.btnOrbit.addEventListener('click', () => {
@@ -139,6 +150,7 @@ export function setupInteractions(
             orbit.visible = !orbit.visible;
             const isPressed = dom.btnOrbit.getAttribute('aria-pressed') === 'true';
             dom.btnOrbit.setAttribute('aria-pressed', String(!isPressed));
+            triggerButtonFlash(dom.btnOrbit);
         }
     });
 }
