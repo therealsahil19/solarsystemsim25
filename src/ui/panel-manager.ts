@@ -26,12 +26,23 @@ export class PanelManager {
     private isDragging = false;
     private dragStartX = 0;
     private dragStartY = 0;
+feat/responsive-design-overhaul
+    private panelStartX = 0;
+    private panelStartY = 0;
+    private storageKey: string | null = null;
+=======
+main
 
     // Bound event listeners
     private boundOnDragStart: (e: MouseEvent) => void;
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
+feat/responsive-design-overhaul
+    constructor(panel: HTMLElement, storageKey: string | null = null) {
+        this.panel = panel;
+        this.storageKey = storageKey;
+=======
     constructor(
         public id: string,
         private panel: HTMLElement,
@@ -42,6 +53,7 @@ export class PanelManager {
         this.state = this.loadState();
 
         this.boundOnDragStart = this.onDragStart.bind(this);
+main
         this.boundOnDragMove = this.onDragMove.bind(this);
         this.boundOnDragEnd = this.onDragEnd.bind(this);
 
@@ -49,6 +61,11 @@ export class PanelManager {
     }
 
     private init() {
+feat/responsive-design-overhaul
+        this.bringToFront();
+        this.panel.addEventListener('mousedown', () => this.bringToFront());
+        this.loadState();
+=======
         this.applyState();
         this.makeDraggable();
         this.makeResizable();
@@ -120,6 +137,7 @@ export class PanelManager {
         this.applyState();
         this.updateFocus();
         this.saveState();
+      main
     }
 
     public hide() {
@@ -269,6 +287,11 @@ export class PanelManager {
         this.snapGlow.className = `snap-glow ${edge} visible`;
     }
 
+feat/responsive-design-overhaul
+        this.header!.style.cursor = 'grab';
+        document.body.style.userSelect = '';
+        this.saveState();
+=======
     private static hideSnapPreview() {
         if (this.snapGlow) {
             this.snapGlow.className = 'snap-glow';
@@ -278,6 +301,7 @@ export class PanelManager {
     private flashSnapConfirmation() {
         this.panel.classList.add('snap-flash');
         setTimeout(() => this.panel.classList.remove('snap-flash'), 150);
+main
     }
 
     // =================================================================
@@ -345,4 +369,55 @@ export class PanelManager {
         document.body.style.cursor = `${dir}-resize`;
         document.body.style.userSelect = 'none';
     }
+feat/responsive-design-overhaul
+
+    public static showBackdrop() {
+        if (!this.backdrop) {
+            this.backdrop = document.createElement('div');
+            this.backdrop.className = 'modal-backdrop';
+            document.body.appendChild(this.backdrop);
+        }
+        this.backdrop.style.display = 'block';
+        document.body.classList.add('modal-open');
+    }
+
+    public static hideBackdrop() {
+        if (this.backdrop) {
+            this.backdrop.style.display = 'none';
+        }
+        document.body.classList.remove('modal-open');
+    }
+
+    private saveState() {
+        if (!this.storageKey) return;
+        const state = {
+            left: this.panel.style.left,
+            top: this.panel.style.top,
+            width: this.panel.style.width,
+            height: this.panel.style.height,
+        };
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(state));
+        } catch (e) {
+            console.error("Failed to save panel state to localStorage", e);
+        }
+    }
+
+    private loadState() {
+        if (!this.storageKey) return;
+        try {
+            const storedState = localStorage.getItem(this.storageKey);
+            if (storedState) {
+                const state = JSON.parse(storedState);
+                if (state.left) this.panel.style.left = state.left;
+                if (state.top) this.panel.style.top = state.top;
+                if (state.width) this.panel.style.width = state.width;
+                if (state.height) this.panel.style.height = state.height;
+            }
+        } catch (e) {
+            console.error("Failed to load panel state from localStorage", e);
+        }
+    }
+=======
+main
 }

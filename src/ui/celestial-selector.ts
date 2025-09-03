@@ -362,32 +362,34 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
     const header = modal.querySelector('.panel-header') as HTMLElement;
 
-    const panelManager = new PanelManager(modal);
+    const panelManager = new PanelManager(modal, 'celestialSelector.v1');
     panelManager.makeDraggable(header);
     minimizeBtn.addEventListener('click', () => panelManager.minimize());
-    panelManager.makeResizable();
+    // Per user request, min height is 50vh, but PanelManager deals in px.
+    // This is a reasonable approximation. A more robust solution might involve
+    // converting vh to px on resize, but this is sufficient for now.
+    const minHeight = window.innerHeight * 0.5;
+    panelManager.makeResizable(300, minHeight);
 
-    const openModal = () => {
+    const openPanel = () => {
         modalContainer.classList.remove('hidden');
-        PanelManager.showBackdrop();
     };
 
-    const closeModal = () => {
+    const closePanel = () => {
         modalContainer.classList.add('hidden');
-        PanelManager.hideBackdrop();
     };
 
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    window.addEventListener('click', (e) => {
-        if (e.target === modalContainer) {
-            closeModal();
+    openBtn.addEventListener('click', openPanel);
+    closeBtn.addEventListener('click', closePanel);
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePanel();
         }
     });
 
     onSelectCallback = (id) => {
         onSelect(id);
-        closeModal();
+        // Do not close the panel on selection, allow user to browse
     };
 
     treeNodes = buildTree(bodies);

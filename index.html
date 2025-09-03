@@ -28,8 +28,27 @@
                     <button class="control-btn time-preset" data-speed="31557600">1y/s</button>
                 </div>
             </div>
+            <!-- Moved scale control here to be always visible -->
+            <div class="control-group">
+                <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
+                <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
+            </div>
         </div>
         <div class="top-bar-section" id="top-bar-right">
+feat/responsive-design-overhaul
+            <div class="mobile-hide">
+                <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
+                <button id="settings-toggle-btn" class="control-btn">Settings</button>
+                <a id="github-link" href="https://github.com/therealsahil19/solarsystemsim25" target="_blank" rel="noopener noreferrer" title="View project on GitHub">
+                    GitHub
+                </a>
+            </div>
+            <div id="more-menu-container" class="mobile-only">
+                <button id="more-menu-toggle" class="control-btn icon-btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+                    <span class="sr-only">Open menu</span>
+                </button>
+=======
             <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
             <button id="settings-toggle-btn" class="control-btn">Settings</button>
             <div id="scale-control-group" class="control-group">
@@ -46,8 +65,9 @@
             </a>
             <div id="more-menu-container">
                 <button id="more-menu-toggle" class="control-btn hidden">⋮</button>
+main
                 <div id="more-menu-content" class="panel hidden">
-                    <!-- This container is now populated by top-bar.ts -->
+                    <!-- This container is populated by top-bar.ts -->
                 </div>
             </div>
         </div>
@@ -141,6 +161,8 @@
                             <option value="earthR">Earth Radii</option>
                         </select>
                     </div>
+feat/responsive-design-overhaul
+=======
 feature/new-panel-system
                     <div class="control-group">
                         <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
@@ -148,6 +170,7 @@ feature/new-panel-system
                     </div>
                     <hr>
 =======
+main
                 </div>
 
                 <div id="settings-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
