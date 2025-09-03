@@ -248,8 +248,7 @@ canvas {
     display: none;
 }
 
-#infoPanel.collapsed #panelHeader h2,
-#infoPanel.collapsed #panelHeader #pinBtn {
+#infoPanel.collapsed #panelHeader h2 {
     display: none;
 }
 
