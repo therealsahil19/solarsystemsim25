@@ -2,6 +2,8 @@ import { createStore } from 'zustand/vanilla';
 
 import { DistanceUnit } from "../utils/units";
 
+export type ScalePreset = 'realistic' | 'educational' | 'hybrid';
+
 interface AppState {
   selectedBodyId: string | null;
   setSelectedBodyId: (id: string | null) => void;
@@ -17,8 +19,8 @@ interface AppState {
   setFollowingId: (id: string | null) => void;
   distanceUnit: DistanceUnit;
   setDistanceUnit: (unit: DistanceUnit) => void;
-  visualScale: number; // 0 = real, 1 = visual
-  setVisualScale: (scale: number) => void;
+  scalePreset: ScalePreset;
+  setScalePreset: (preset: ScalePreset) => void;
 
   // Trail settings
   trailsEnabled: boolean;
@@ -42,8 +44,8 @@ export const store = createStore<AppState>((set) => ({
   setFollowingId: (id) => set({ followingId: id }),
   distanceUnit: 'au',
   setDistanceUnit: (unit) => set({ distanceUnit: unit }),
-  visualScale: 0.5,
-  setVisualScale: (scale) => set({ visualScale: scale }),
+  scalePreset: 'hybrid',
+  setScalePreset: (preset) => set({ scalePreset: preset }),
 
   // Trail settings
   trailsEnabled: true,
