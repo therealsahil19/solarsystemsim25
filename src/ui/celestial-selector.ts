@@ -17,6 +17,7 @@ let currentView: ViewMode = 'hierarchy';
 let onSelectCallback: (id: string) => void;
 let currentFilterType: CelestialBodyType | 'all' = 'all';
 const favoritedIds = new Set<string>();
+let showFavoritesOnly = false;
 
 function createFavoriteButton(node: TreeNode): HTMLButtonElement {
     const favoriteBtn = document.createElement('button');
@@ -33,6 +34,9 @@ function createFavoriteButton(node: TreeNode): HTMLButtonElement {
         } else {
             favoritedIds.add(node.id);
             favoriteBtn.classList.add('favorited');
+        }
+        if (showFavoritesOnly) {
+            filterTree();
         }
     });
     return favoriteBtn;
@@ -213,6 +217,7 @@ function render() {
     } else {
         renderByTypeView();
     }
+    filterTree();
 }
 
 
@@ -242,51 +247,55 @@ function filterTree() {
     const query = searchInput.value;
     const selectedType = currentFilterType;
 
-    if (!query && selectedType === 'all') {
-        allNodes.forEach(node => {
-            node.visible = true;
-            if (node.element) node.element.style.display = '';
-        });
+    const hasQuery = !!query;
+    const hasTypeFilter = selectedType !== 'all';
+    const noFilters = !hasQuery && !hasTypeFilter && !showFavoritesOnly;
 
-        if (currentView === 'hierarchy') {
-            allNodes.forEach(n => n.expanded = false);
-            updateDomVisibility();
+    let finalVisibleIds: Set<string>;
+
+    if (noFilters) {
+        finalVisibleIds = new Set(allNodes.map(n => n.id));
+    } else {
+        let searchResultIds: Set<string>;
+
+        if (hasQuery || hasTypeFilter) {
+            const searchClauses: ({ [key: string]: string })[] = [];
+            if (hasQuery) searchClauses.push({ name: query });
+            if (hasTypeFilter) searchClauses.push({ type: selectedType });
+
+            const results = fuse.search({ $and: searchClauses });
+            searchResultIds = new Set(results.map(r => r.item.id));
         } else {
-            document.querySelectorAll('.list-group').forEach(el => (el as HTMLElement).style.display = '');
-            document.querySelectorAll('.list-group-children').forEach(el => (el as HTMLElement).style.display = 'block');
-            document.querySelectorAll('.list-group-header .chevron').forEach(el => el.textContent = '▼');
+            searchResultIds = new Set(allNodes.map(n => n.id));
         }
-        return;
-    }
 
-    const searchClauses: ({ [key: string]: string })[] = [];
-    if (query) {
-        searchClauses.push({ name: query });
+        if (showFavoritesOnly) {
+            finalVisibleIds = new Set([...searchResultIds].filter(id => favoritedIds.has(id)));
+        } else {
+            finalVisibleIds = searchResultIds;
+        }
     }
-    if (selectedType !== 'all') {
-        searchClauses.push({ type: selectedType });
-    }
-
-    const results = searchClauses.length > 0
-        ? fuse.search({ $and: searchClauses })
-        : allNodes.map(node => ({ item: node.spec as FuseDataItem, score: 1 }));
-    const visibleIds = new Set(results.map(r => r.item.id));
 
     if (currentView === 'hierarchy') {
         allNodes.forEach(node => node.visible = false);
-        visibleIds.forEach(id => {
+        finalVisibleIds.forEach(id => {
             let current = flatNodeMap.get(id);
             while(current) {
                 current.visible = true;
-                current.expanded = true;
+                if (!noFilters) { // Expand only when filters are active
+                    current.expanded = true;
+                }
                 current = current.parent || undefined;
             }
         });
+        if (noFilters) {
+             allNodes.forEach(n => n.expanded = false);
+        }
         updateDomVisibility();
     } else {
         allNodes.forEach(node => {
             if (node.element) {
-                node.element.style.display = visibleIds.has(node.id) ? '' : 'none';
+                node.element.style.display = finalVisibleIds.has(node.id) ? '' : 'none';
             }
         });
         document.querySelectorAll('.list-group').forEach(group => {
@@ -355,13 +364,23 @@ function debounce(func: (...args: any[]) => void, delay: number) {
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
-    const modalContainer = document.getElementById('celestial-selector-modal')!;
-    const modal = modalContainer.querySelector('.modal-content') as HTMLElement;
-    const openBtn = document.getElementById('open-celestial-selector-btn')!;
-    const closeBtn = document.getElementById('close-celestial-selector-btn')!;
-    const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
-    const header = modal.querySelector('.panel-header') as HTMLElement;
+    const panel = document.getElementById('celestial-selector-panel')!;
+    if (!panel) return;
 
+    const openBtn = document.getElementById('open-celestial-selector-btn')!;
+    const closeBtn = panel.querySelector('#close-celestial-selector-btn') as HTMLElement;
+    const minimizeBtn = panel.querySelector('.minimize-btn') as HTMLElement;
+    const header = panel.querySelector('.panel-header') as HTMLElement;
+
+feature/UI-UX-improvements
+    const panelManager = new PanelManager(panel);
+    panelManager.makeDraggable(header);
+    panelManager.makeResizable();
+
+    const openPanel = () => {
+        panel.classList.remove('hidden');
+        (panelManager as any).bringToFront();
+=======
     const panelManager = new PanelManager(modal, 'celestialSelector.v1');
     panelManager.makeDraggable(header);
     minimizeBtn.addEventListener('click', () => panelManager.minimize());
@@ -373,8 +392,17 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
 
     const openPanel = () => {
         modalContainer.classList.remove('hidden');
+main
     };
+    const closePanel = () => panel.classList.add('hidden');
 
+feature/UI-UX-improvements
+    openBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (panel.classList.contains('hidden')) {
+            openPanel();
+        } else {
+=======
     const closePanel = () => {
         modalContainer.classList.add('hidden');
     };
@@ -383,13 +411,21 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     closeBtn.addEventListener('click', closePanel);
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+main
             closePanel();
         }
     });
 
+    closeBtn.addEventListener('click', closePanel);
+    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+
     onSelectCallback = (id) => {
         onSelect(id);
+feature/UI-UX-improvements
+        // We don't close the panel anymore since it's a persistent panel
+=======
         // Do not close the panel on selection, allow user to browse
+main
     };
 
     treeNodes = buildTree(bodies);
@@ -409,6 +445,24 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     fuse = new Fuse(fuseData, { keys: ['name', 'type'], threshold: 0.4, includeScore: true });
 
     render();
+
+    // Add Favorites Toggle Button
+    const categoryTabsContainer = document.getElementById('category-tabs')!;
+    const favToggleContainer = document.createElement('div');
+    favToggleContainer.style.padding = "5px 0 10px 5px";
+    favToggleContainer.innerHTML = `
+        <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; font-weight: 500; color: #f0c420;">
+            <input type="checkbox" id="favorites-filter-toggle">
+            Show Favorites Only
+        </label>
+    `;
+    categoryTabsContainer.parentNode!.insertBefore(favToggleContainer, categoryTabsContainer);
+
+    const favToggle = document.getElementById('favorites-filter-toggle') as HTMLInputElement;
+    favToggle.addEventListener('change', () => {
+        showFavoritesOnly = favToggle.checked;
+        filterTree();
+    });
 
     celestialSelectorMenu.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
@@ -441,7 +495,6 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
     searchInput.addEventListener('input', debounce(() => filterTree(), 300));
 
-    const categoryTabsContainer = document.getElementById('category-tabs')!;
     const categories: (CelestialBodyType | 'all')[] = ['all', 'star', 'planet', 'moon'];
 
     categories.forEach(category => {

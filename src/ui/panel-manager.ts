@@ -38,8 +38,15 @@ main
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
+feature/UI-UX-improvements
+    private static snapThreshold = 30;
+    private static snapGlows: { [key: string]: HTMLElement } = {};
+
+    constructor(panel: HTMLElement) {
+=======
 feat/responsive-design-overhaul
     constructor(panel: HTMLElement, storageKey: string | null = null) {
+main
         this.panel = panel;
         this.storageKey = storageKey;
 =======
@@ -64,6 +71,14 @@ main
 feat/responsive-design-overhaul
         this.bringToFront();
         this.panel.addEventListener('mousedown', () => this.bringToFront());
+feature/UI-UX-improvements
+        if (!PanelManager.snapGlows['top']) {
+            PanelManager.snapGlows['top'] = document.getElementById('snap-glow-top')!;
+            PanelManager.snapGlows['right'] = document.getElementById('snap-glow-right')!;
+            PanelManager.snapGlows['bottom'] = document.getElementById('snap-glow-bottom')!;
+            PanelManager.snapGlows['left'] = document.getElementById('snap-glow-left')!;
+        }
+=======
         this.loadState();
 =======
         this.applyState();
@@ -124,6 +139,7 @@ feat/responsive-design-overhaul
 
         this.panel.classList.toggle('pinned', this.state.pinned);
         this.panel.classList.toggle('minimized', this.state.minimized);
+main
     }
 
     public toggleMinimize() {
@@ -253,6 +269,55 @@ feat/responsive-design-overhaul
         const winHeight = window.innerHeight;
         let activeSnap: PanelSnapEdge = null;
 
+feature/UI-UX-improvements
+        // --- Snapping and Glow Logic ---
+        const { snapThreshold } = PanelManager;
+        let snapX = false, snapY = false;
+
+        // Hide all glows initially
+        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
+
+        // Left edge
+        if (newLeft < snapThreshold) {
+            newLeft = 0;
+            snapX = true;
+            PanelManager.snapGlows.left.classList.add('visible');
+        }
+        // Right edge
+        if (newLeft + rect.width > winWidth - snapThreshold) {
+            newLeft = winWidth - rect.width;
+            snapX = true;
+            PanelManager.snapGlows.right.classList.add('visible');
+        }
+        // Top edge
+        if (newTop < snapThreshold) {
+            newTop = 0;
+            snapY = true;
+            PanelManager.snapGlows.top.classList.add('visible');
+        }
+        // Bottom edge
+        if (newTop + rect.height > winHeight - snapThreshold) {
+            newTop = winHeight - rect.height;
+            snapY = true;
+            PanelManager.snapGlows.bottom.classList.add('visible');
+        }
+
+        // Boundary checks
+        if (newLeft < 0) newLeft = 0;
+        if (newTop < 0) newTop = 0;
+        if (newLeft + rect.width > winWidth) newLeft = winWidth - rect.width;
+        if (newTop + rect.height > winHeight) newTop = winHeight - rect.height;
+
+
+        this.panel.style.left = `${newLeft}px`;
+        this.panel.style.top = `${newTop}px`;
+    }
+
+    private onDragEnd() {
+        this.isDragging = false;
+        document.removeEventListener('mousemove', this.boundOnDragMove);
+        // 'mouseup' listener is removed in onDragStart with { once: true }
+=======
         if (this.state.x < SNAP_THRESHOLD) activeSnap = 'left';
         else if (this.state.x + this.state.w > winWidth - SNAP_THRESHOLD) activeSnap = 'right';
         else if (this.state.y < SNAP_THRESHOLD) activeSnap = 'top';
@@ -286,10 +351,16 @@ feat/responsive-design-overhaul
         }
         this.snapGlow.className = `snap-glow ${edge} visible`;
     }
+main
 
 feat/responsive-design-overhaul
         this.header!.style.cursor = 'grab';
         document.body.style.userSelect = '';
+feature/UI-UX-improvements
+
+        // Hide all glows
+        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
+=======
         this.saveState();
 =======
     private static hideSnapPreview() {
@@ -301,6 +372,7 @@ feat/responsive-design-overhaul
     private flashSnapConfirmation() {
         this.panel.classList.add('snap-flash');
         setTimeout(() => this.panel.classList.remove('snap-flash'), 150);
+main
 main
     }
 

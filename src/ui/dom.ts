@@ -19,6 +19,7 @@ export const selectionPanel = document.getElementById('selection-panel') as HTML
 export const celestialSelector = document.getElementById('celestial-selector') as HTMLDivElement;
 export const celestialSelectorToggle = document.getElementById('celestial-selector-toggle') as HTMLButtonElement;
 export const celestialSelectorMenu = document.getElementById('celestial-selector-menu') as HTMLDivElement;
+export const quickAccessToolbar = document.getElementById('quick-access-toolbar') as HTMLDivElement;
 export const freeCameraButton = document.getElementById('free-camera-btn') as HTMLButtonElement;
 export const performancePreset = document.getElementById('performance-preset') as HTMLSelectElement;
 

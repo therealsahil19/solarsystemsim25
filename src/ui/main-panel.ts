@@ -42,6 +42,21 @@ function initTimeControls() {
     const presetButtons = document.querySelectorAll('.time-preset');
     const stepForwardBtn = document.getElementById('time-step-forward') as HTMLButtonElement;
     const stepBackwardBtn = document.getElementById('time-step-backward') as HTMLButtonElement;
+    const tooltip = document.getElementById('time-scale-tooltip') as HTMLDivElement;
+
+    function updateSliderTooltip() {
+        const value = parseFloat(slider.value);
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const percent = (value - min) / (max - min);
+        const thumbWidth = 16; // Approximate width of the slider thumb
+        const trackWidth = slider.offsetWidth;
+        const thumbPosition = percent * (trackWidth - thumbWidth) + (thumbWidth / 2);
+
+        tooltip.style.left = `${thumbPosition}px`;
+        const displayValue = formatTimeScaleFriendly(sliderToTimeScale(value, DEFAULT_TIME_CFG));
+        tooltip.textContent = displayValue;
+    }
 
     function updateUiFromState() {
         const { isPaused, timeScale, simTime } = store.getState();
@@ -49,6 +64,7 @@ function initTimeControls() {
         slider.value = timeScaleToSlider(timeScale, DEFAULT_TIME_CFG).toString();
         label.textContent = formatTimeScaleFriendly(timeScale);
         timestampDisplay.textContent = formatTimestamp(simTime);
+        updateSliderTooltip();
     }
 
     // Initial UI sync
@@ -62,6 +78,16 @@ function initTimeControls() {
     slider.addEventListener('input', () => {
         const scale = sliderToTimeScale(parseFloat(slider.value), DEFAULT_TIME_CFG);
         store.getState().setTimeScale(scale);
+        updateSliderTooltip();
+    });
+
+    slider.addEventListener('mouseenter', () => {
+        tooltip.classList.add('visible');
+        updateSliderTooltip();
+    });
+
+    slider.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('visible');
     });
 
     presetButtons.forEach(btn => {

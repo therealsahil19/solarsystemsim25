@@ -256,7 +256,7 @@ canvas {
     display: none;
 }
 
-#panelHeader {
+#panelHeader, .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -264,6 +264,11 @@ canvas {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
     position: relative;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+#panelHeader:hover, .panel-header:hover {
+    box-shadow: 0 0 15px rgba(110, 132, 255, 0.2);
 }
 
 .drag-handle.draggable {
@@ -579,6 +584,11 @@ canvas {
     border-left: 3px solid #6C5CD7;
 }
 
+.tree-node-content:active {
+    transform: scale(0.98);
+    background: rgba(110, 132, 255, 0.25);
+}
+
 .tree-node.selected > .tree-node-content {
     background-color: var(--accent-color);
     color: #111;
@@ -661,6 +671,25 @@ canvas {
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
+}
+
+.slider-tooltip {
+    position: absolute;
+    bottom: 25px; /* Position above the slider */
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.slider-tooltip.visible {
+    opacity: 1;
 }
 
 /* --- Small Info Card --- */
@@ -938,6 +967,137 @@ canvas {
     color: #ffde57;
 }
 
+feature/UI-UX-improvements
+/* --- Contextual HUD --- */
+#contextual-hud {
+    /* The panel class provides the background and border */
+    transform: translate(-50%, -150%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    /* pointer-events are handled by the hidden class */
+}
+
+#contextual-hud.hidden {
+    opacity: 0;
+    transform: translate(-50%, -120%);
+    pointer-events: none;
+}
+
+#contextual-hud .icon-btn {
+    font-size: 1.4em; /* Make icons a bit larger */
+}
+
+/* --- Pill Buttons in Info Panel --- */
+.pill-buttons {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.pill-btn {
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+}
+
+.pill-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.pill-btn[aria-pressed="true"] {
+    background-color: var(--accent-color);
+    color: #111;
+    font-weight: bold;
+}
+
+@keyframes pill-flash {
+  from {
+    background-color: var(--accent-color-hover);
+    transform: scale(1.05);
+  }
+  to {
+    background-color: var(--accent-color);
+    transform: scale(1);
+  }
+}
+
+.pill-btn.flash {
+  animation: pill-flash 0.3s ease-out;
+}
+
+/* --- Quick Access Toolbar --- */
+#quick-access-toolbar {
+    top: 75px; /* Position below the main top bar */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 8px;
+    border-radius: 12px;
+    transition: opacity 0.5s ease-in-out, top 0.5s ease-in-out;
+    height: 40px;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+#quick-access-toolbar.hidden {
+    opacity: 0;
+    top: 55px; /* Animate upwards on hide */
+    pointer-events: none;
+}
+
+.quick-access-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.quick-access-btn:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.quick-access-btn:active {
+    transform: translateY(1px);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* --- Edge Snap Glow --- */
+.snap-glow {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(110, 132, 255, 0.5);
+    box-shadow: 0 0 15px 5px rgba(110, 132, 255, 0.5);
+    display: none;
+    pointer-events: none;
+}
+
+#snap-glow-top { top: 0; left: 0; width: 100%; height: 5px; }
+#snap-glow-right { top: 0; right: 0; width: 5px; height: 100%; }
+#snap-glow-bottom { bottom: 0; left: 0; width: 100%; height: 5px; }
+#snap-glow-left { top: 0; left: 0; width: 5px; height: 100%; }
+
+.snap-glow.visible {
+    display: block;
+}
+=======
 feat/responsive-design-overhaul
 @media (max-width: 640px) {
     #debug-hud {
@@ -1106,3 +1266,4 @@ feat/responsive-design-overhaul
     min-width: 200px;
 main
 }
+main

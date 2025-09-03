@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="snap-glow-top" class="snap-glow"></div>
+    <div id="snap-glow-right" class="snap-glow"></div>
+    <div id="snap-glow-bottom" class="snap-glow"></div>
+    <div id="snap-glow-left" class="snap-glow"></div>
     <header id="top-bar">
         <div class="top-bar-section" id="top-bar-left">
             <h1 id="app-title">Solar System Simulator</h1>
@@ -18,7 +22,10 @@
                     <button id="time-step-backward" class="control-btn" title="Step Backward">|◀</button>
                     <button id="play-pause-btn" class="control-btn" title="Play/Pause">❚❚</button>
                     <button id="time-step-forward" class="control-btn" title="Step Forward">▶|</button>
-                    <input type="range" id="time-scale-slider" min="0" max="1" value="0.2" step="0.001" style="flex-grow: 1;">
+                    <div style="position: relative; flex-grow: 1;">
+                        <input type="range" id="time-scale-slider" min="0" max="1" value="0.2" step="0.001" style="width: 100%;">
+                        <div id="time-scale-tooltip" class="slider-tooltip hidden"></div>
+                    </div>
                     <span id="time-scale-label" style="min-width: 80px; text-align: right;">1.00x</span>
                 </div>
                 <div id="time-presets-group" class="control-group">
@@ -129,6 +136,16 @@ main
                 </div>
             </aside>
 
+feature/UI-UX-improvements
+        <main id="canvasArea" class="canvas-area">
+            <canvas id="bg"></canvas>
+            <div id="ui-container">
+                <div id="quick-access-toolbar" class="panel">
+                    <!-- Populated by quick-access-toolbar.ts -->
+                </div>
+                <!-- Pop-out panels for Visuals and Settings -->
+                <div id="visuals-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
+=======
             <!-- Main Controls Panel -->
             <div id="mainPanel" class="panel floating hidden" style="top: 20px; right: 20px;" aria-label="Main Controls Panel">
                 <header id="mainPanelHeader" class="panel-header">
@@ -145,6 +162,7 @@ main
                     </div>
                 </header>
                 <div class="panel-body">
+main
                     <div class="control-group">
                         <input type="checkbox" id="trails-enabled-toggle" checked>
                         <label for="trails-enabled-toggle">Trails</label>
@@ -195,6 +213,37 @@ main
                 </div>
             </div>
 
+feature/UI-UX-improvements
+                <div id="selection-panel" class="panel">
+                    <button id="open-celestial-selector-btn" class="btn">Select Body</button>
+                    <button id="free-camera-btn" class="btn hidden">Solar System View</button>
+                </div>
+
+                <div id="celestial-selector-panel" class="panel hidden" style="position: absolute; top: 120px; left: calc(50% - 175px); width: 380px; height: 550px; display: flex; flex-direction: column;">
+                    <div class="panel-header" style="cursor: grab;">
+                        <h2>Select a Celestial Body</h2>
+                        <div>
+                            <button class="control-btn minimize-btn" title="Minimize">–</button>
+                            <button id="close-celestial-selector-btn" class="control-btn" title="Close">&times;</button>
+                        </div>
+                    </div>
+                    <div id="celestial-selector" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 10px;">
+                        <div class="selector-controls" style="padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-bottom: 10px;">
+                            <div class="control-group" style="justify-content: space-around;">
+                                <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="selector-view" value="hierarchy" checked> Hierarchy</label>
+                                <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="selector-view" value="type"> By Type</label>
+                            </div>
+                        </div>
+                        <div class="search-container" style="display: flex; gap: 5px; margin-bottom: 10px;">
+                            <input type="text" id="selector-search-input" class="btn" placeholder="Search..." style="flex-grow: 1; box-sizing: border-box;">
+                        </div>
+                        <div id="category-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                            <!-- Tabs will be dynamically inserted here -->
+                        </div>
+                        <div id="celestial-selector-menu" class="dropdown-menu" style="position: relative; width: 100%; box-shadow: none; border: none; background: none; flex-grow: 1; overflow-y: auto;">
+                            <!-- Tree view will be populated by JS -->
+                        </div>
+=======
             <!-- Presets Panel -->
             <div id="presetsPanel" class="panel floating hidden" aria-label="Layout Presets Panel">
                 <header id="presetsPanelHeader" class="panel-header">
@@ -217,10 +266,30 @@ main
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
                         <input type="text" id="new-preset-name" class="control-btn" placeholder="New preset name..." style="flex-grow: 1;">
                         <button id="save-current-preset-btn" class="control-btn">Save Current</button>
+main
                     </div>
                 </div>
             </div>
 
+feature/UI-UX-improvements
+                <div id="contextual-hud" class="panel hidden" style="display: flex; gap: 5px; padding: 8px; transform: translate(-50%, -150%); transition: opacity 0.3s, transform 0.3s;">
+                    <button id="hud-frame-btn" class="icon-btn" title="Frame (F)">🎯</button>
+                    <button id="hud-follow-btn" class="icon-btn" title="Follow (L)">📡</button>
+                    <button id="hud-orbit-btn" class="icon-btn" title="Toggle Orbit (O)">🛰️</button>
+                    <button id="hud-info-btn" class="icon-btn" title="Show Info Panel (I)">ℹ️</button>
+                </div>
+
+                <div id="debug-hud" class="panel hidden">
+                    <h4>Debug Info</h4>
+                    <div>Preset: <span id="debug-preset"></span></div>
+                    <div>DPR: <span id="debug-dpr"></span></div>
+                    <div>Avg. ms: <span id="debug-avg-ms"></span></div>
+                    <div>Scale: <span id="debug-scale"></span></div>
+                </div>
+
+                <div id="help-overlay" class="panel hidden">
+                    <h3>Keyboard Shortcuts</h3>
+=======
             <!-- Shortcuts Panel -->
             <div id="shortcutsPanel" class="panel floating hidden" aria-label="Keyboard Shortcuts Panel">
                 <header id="shortcutsPanelHeader" class="panel-header">
@@ -237,6 +306,7 @@ main
                     </div>
                 </header>
                 <div class="panel-body">
+main
                     <div class="help-search-container">
                         <input type="text" id="help-search-input" class="btn" placeholder="Search actions...">
                     </div>
