@@ -32,6 +32,15 @@
         <div class="top-bar-section" id="top-bar-right">
             <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
             <button id="settings-toggle-btn" class="control-btn">Settings</button>
+            <div id="scale-control-group" class="control-group">
+                <label for="scale-preset-select">Scale:</label>
+                <select id="scale-preset-select" class="control-btn">
+                    <option value="realistic">Realistic</option>
+                    <option value="educational">Educational</option>
+                    <option value="hybrid" selected>Hybrid</option>
+                </select>
+                <span id="scale-badge" class="badge">1 AU = 150m</span>
+            </div>
             <a id="github-link" href="https://github.com/therealsahil19/solarsystemsim25" target="_blank" rel="noopener noreferrer" title="View project on GitHub">
                 GitHub
             </a>
@@ -132,11 +141,17 @@
                             <option value="earthR">Earth Radii</option>
                         </select>
                     </div>
+feature/new-panel-system
                     <div class="control-group">
                         <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
                         <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
                     </div>
                     <hr>
+=======
+                </div>
+
+                <div id="settings-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
+main
                     <div class="control-group tooltip">
                         <input type="checkbox" id="shadow-toggle" checked>
                         <label for="shadow-toggle" id="shadow-label">Shadows</label>
