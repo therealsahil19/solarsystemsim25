@@ -12,8 +12,16 @@ const DEFAULT_TIME_CFG: TimeScaleConfig = {
   pauseThreshold: 1e-7
 };
 
+feature/UI-UX-improvements
 export type AppState = {
   // State
+=======
+export type ScalePreset = 'realistic' | 'educational' | 'hybrid';
+
+interface AppState {
+  selectedBodyId: string | null;
+  setSelectedBodyId: (id: string | null) => void;
+main
   isPaused: boolean;
   simTime: number;
   timeScale: number;
@@ -22,6 +30,7 @@ export type AppState = {
   trailsEnabled: boolean;
   trailLength: number; // in days
   distanceUnit: DistanceUnit;
+feature/UI-UX-improvements
   visualScale: number; // 0 = real, 1 = visual
   perfPreset: 'auto' | 'low' | 'medium' | 'high';
   // Actions
@@ -30,6 +39,14 @@ export type AppState = {
   setTimeScale: (scale: number) => void;
   setSelectedBodyId: (id: string | null) => void;
   toggleFollow: () => void;
+=======
+  setDistanceUnit: (unit: DistanceUnit) => void;
+  scalePreset: ScalePreset;
+  setScalePreset: (preset: ScalePreset) => void;
+
+  // Trail settings
+  trailsEnabled: boolean;
+main
   setTrailsEnabled: (enabled: boolean) => void;
   setTrailLength: (length: number) => void;
   setDistanceUnit: (unit: DistanceUnit) => void;
@@ -53,6 +70,7 @@ export const useStore = create<AppState>()(
       visualScale: 0.5,
       perfPreset: 'auto',
 
+feature/UI-UX-improvements
       setPaused: (isPaused) => set({ isPaused }),
       setSimTime: (time) => set({ simTime: time }),
       setTimeScale: (scale) => {
@@ -77,5 +95,24 @@ export const useStore = create<AppState>()(
     }))
   )
 );
+=======
+export const store = createStore<AppState>((set) => ({
+  selectedBodyId: null,
+  setSelectedBodyId: (id) => set({ selectedBodyId: id }),
+  isPaused: false,
+  setPaused: (p) => set({ isPaused: p }),
+  timeScale: 1,
+  setTimeScale: (t) => set({ timeScale: t }),
+  simTime: 0,
+  setSimTime: (t) => set({ simTime: t }),
+  perfPreset: 'auto',
+  setPerfPreset: (p) => set({ perfPreset: p }),
+  followingId: null,
+  setFollowingId: (id) => set({ followingId: id }),
+  distanceUnit: 'au',
+  setDistanceUnit: (unit) => set({ distanceUnit: unit }),
+  scalePreset: 'hybrid',
+  setScalePreset: (preset) => set({ scalePreset: preset }),
+main
 
 export const store = useStore;

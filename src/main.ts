@@ -1,17 +1,18 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { LOD } from 'three';
+import { gsap } from 'gsap';
 import { initScene, scene, camera, renderer, controls, pointLight } from './scene';
 import { celestialBodyData, CelestialBody } from './data';
-import { scaleDistance, scaleBodyRadius, speedDisplayKmPerS, AU_TO_M, getGlowColor } from './utils/misc';
+import { speedDisplayKmPerS, AU_TO_M, getGlowColor } from './utils/misc';
 import { formatDistance, KM_PER_AU } from './utils/units';
-import { compressDistance, computeDisplayRadius } from './utils/visualScale';
 import { createPlanetRings } from './bodies/rings';
+import { calculateDisplayPosition, getDisplayRadius, ScaleTransition } from './utils/scaling';
 import { createCelestialBodySelector } from './ui/celestial-selector';
 import { setupInteractions } from './interactions';
 import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
 import { OrbitManager } from './orbits/OrbitManager';
-import { store } from './state/store';
+import { store, ScalePreset } from './state/store';
 import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
@@ -35,9 +36,9 @@ async function start() {
     initScene(dom.canvas);
     const textureLoader = new THREE.TextureLoader();
 
-    const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D })[] = [];
+    const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D; physicsPosition: THREE.Vector3 })[] = [];
     const selectableObjects: THREE.Object3D[] = [];
-    const bodyMap = new Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D }>();
+    const bodyMap = new Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D, physicsPosition: THREE.Vector3 }>();
     let sun: THREE.Object3D | undefined;
 
     const simulation = {
@@ -50,6 +51,13 @@ async function start() {
         isTweening: false,
         asteroidMaterialUniforms: null as { u_time: { value: number } } | null,
         selectedGlow: null as THREE.Mesh | null,
+    };
+
+    const scaleTransition: ScaleTransition = {
+        active: false,
+        progress: 0,
+        fromPreset: store.getState().scalePreset,
+        toPreset: store.getState().scalePreset,
     };
 
     const perfState = {
@@ -130,16 +138,15 @@ async function start() {
         }
 
         const lod = new LOD();
-        const bodyRadius = scaleBodyRadius(bodyData.radius);
 
         const lodLevels = [
             { segments: 64, distance: 0 },
-            { segments: 32, distance: bodyRadius * 15 },
-            { segments: 16, distance: bodyRadius * 50 },
+            { segments: 32, distance: 20 },
+            { segments: 16, distance: 100 },
         ];
 
         for (const level of lodLevels) {
-            const geometry = new THREE.SphereGeometry(bodyRadius, level.segments, level.segments);
+            const geometry = new THREE.SphereGeometry(1, level.segments, level.segments);
             const mesh = new THREE.Mesh(geometry, bodyMaterial);
             mesh.castShadow = bodyData.name !== 'Sun';
             mesh.receiveShadow = bodyData.name !== 'Sun';
@@ -161,7 +168,7 @@ async function start() {
             side: THREE.BackSide,
         });
         const glowMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(bodyRadius * 1.2, 32, 32),
+            new THREE.SphereGeometry(1.2, 32, 32),
             glowMaterial
         );
         glowMesh.visible = false;
@@ -170,10 +177,10 @@ async function start() {
         bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData, glowMesh };
         bodyGroup.add(bodyMesh);
 
-        const celestialObject = { ...bodyData, group: bodyGroup, mesh: bodyMesh };
+        const celestialObject = { ...bodyData, group: bodyGroup, mesh: bodyMesh, physicsPosition: new THREE.Vector3() };
         celestialObjects.push(celestialObject);
         selectableObjects.push(bodyMesh);
-        bodyMap.set(bodyData.id, { data: bodyData, group: bodyGroup, mesh: bodyMesh });
+        bodyMap.set(bodyData.id, { data: bodyData, group: bodyGroup, mesh: bodyMesh, physicsPosition: celestialObject.physicsPosition });
 
         createPlanetRings(bodyData, bodyGroup, textureLoader);
     });
@@ -202,8 +209,9 @@ async function start() {
     const physicsBodies = celestialObjects
         .filter(obj => obj.parentId === 'sun' || obj.parentId === null)
         .map(obj => ({
+            id: obj.id,
             name: obj.name,
-            semiMajorAxis: scaleDistance(obj.semiMajorAxis),
+            semiMajorAxis: obj.semiMajorAxis,
             eccentricity: obj.eccentricity,
             orbitalPeriod: obj.orbitalPeriod,
         }));
@@ -218,19 +226,34 @@ async function start() {
     physicsWorker.onmessage = (e: MessageEvent) => {
         if (e.data.type === 'update') {
             const positions = new Float32Array(e.data.positions);
-            celestialObjects
-                .filter(obj => obj.parentId === 'sun' || obj.parentId === null)
-                .forEach((obj, i) => {
-                    if (obj.name !== 'Sun') {
-                        obj.group.position.set(
-                            positions[i * 3 + 0],
-                            positions[i * 3 + 1],
-                            positions[i * 3 + 2]
-                        );
-                    }
-                });
+            physicsBodies.forEach((body, i) => {
+                const bodyState = bodyMap.get(body.id);
+                if (bodyState) {
+                    bodyState.physicsPosition.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+                }
+            });
         }
     };
+
+    let previousPreset = store.getState().scalePreset;
+    store.subscribe((state) => {
+        if (state.scalePreset !== previousPreset) {
+            scaleTransition.fromPreset = previousPreset;
+            scaleTransition.toPreset = state.scalePreset;
+            scaleTransition.progress = 0;
+            scaleTransition.active = true;
+
+            gsap.to(scaleTransition, {
+                progress: 1,
+                duration: 0.2, // 200ms ease-out
+                ease: 'power2.out',
+                onComplete: () => {
+                    scaleTransition.active = false;
+                },
+            });
+            previousPreset = state.scalePreset;
+        }
+    });
 
     function createStarryBackground() {
         const starVertices = [];
@@ -273,8 +296,9 @@ async function start() {
         };
         const inst = new THREE.InstancedMesh(geom, material, count);
         inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        const beltMin = scaleDistance(2.2);
-        const beltMax = scaleDistance(3.2);
+        const distanceScale = 150.0; // 1 AU = 150 meters in the simulation
+        const beltMin = 2.2 * distanceScale;
+        const beltMax = 3.2 * distanceScale;
         const instanceParams = new Float32Array(count * 4);
         const instanceYOffsets = new Float32Array(count);
         for (let i = 0; i < count; i++) {
@@ -601,32 +625,46 @@ async function start() {
             }
         }
 
-        const { timeScale, isPaused, simTime, visualScale } = store.getState();
-
+        const { timeScale, isPaused, simTime } = store.getState();
+        const newTime = isPaused ? simTime : simTime + (dt / 1000) * timeScale;
         if (!isPaused) {
-            const deltaTime = (dt / 1000) * timeScale;
-            const newTime = simTime + deltaTime;
             store.getState().setSimTime(newTime);
+        }
 
-            physicsWorker.postMessage({
-                command: 'update',
-                payload: { deltaTime }
-            });
+        physicsWorker.postMessage({
+            command: 'update',
+            payload: { deltaTime: isPaused ? 0 : (dt / 1000) * timeScale }
+        });
 
-            if (simulation.asteroidMaterialUniforms) {
-                simulation.asteroidMaterialUniforms.u_time.value = newTime;
+        if (simulation.asteroidMaterialUniforms) {
+            simulation.asteroidMaterialUniforms.u_time.value = newTime;
+        }
+
+        // Update positions and scales of all celestial objects
+        celestialObjects.forEach(obj => {
+            let physicsPosition = obj.physicsPosition;
+
+            if (obj.parentId && obj.parentId !== 'sun') {
+                const parent = bodyMap.get(obj.parentId);
+                if (parent) {
+                    const moonAngle = (2 * Math.PI * newTime) / obj.orbitalPeriod;
+                    const semiMajorAxisAu = (obj.semiMajorAxisKm || 0) / KM_PER_AU;
+                    const moonRelativePos = new THREE.Vector3(
+                        semiMajorAxisAu * Math.cos(moonAngle),
+                        0,
+                        semiMajorAxisAu * Math.sin(moonAngle)
+                    );
+                    physicsPosition = parent.physicsPosition.clone().add(moonRelativePos);
+                }
             }
 
-            celestialObjects.forEach(body => {
-                if (body.parentId && body.parentId !== 'sun') {
-                    const moonScaledDistance = scaleDistance((body.semiMajorAxisKm || 0) / KM_PER_AU);
-                    const moonAngle = (2 * Math.PI * newTime) / body.orbitalPeriod;
-                    const x = moonScaledDistance * Math.cos(moonAngle);
-                    const z = moonScaledDistance * Math.sin(moonAngle);
-                    body.group.position.set(x, 0, z);
-                }
-            });
-        }
+            const displayPosition = calculateDisplayPosition(physicsPosition, scaleTransition);
+            obj.group.position.copy(displayPosition);
+
+            const displayRadius = getDisplayRadius(obj.radius, scaleTransition);
+            obj.mesh.scale.set(displayRadius, displayRadius, displayRadius);
+        });
+
 
         if (simulation.focusTarget) {
             if (simulation.focusTarget === sun) {
@@ -671,28 +709,7 @@ async function start() {
         orbitManager.updateLODs(camera, 800);
         trailManager.update();
 
-        // Apply visual scaling
         celestialObjects.forEach(obj => {
-            const realPosition = new THREE.Vector3();
-            obj.group.getWorldPosition(realPosition);
-
-            const realRadius = obj.radius;
-
-            // Calculate display position
-            const displayPosition = new THREE.Vector3();
-            const r = realPosition.length();
-            const rCompressed = compressDistance(r, visualScale, KM_PER_AU);
-            displayPosition.copy(realPosition).setLength(rCompressed);
-
-            // Calculate display radius
-            const displayRadius = computeDisplayRadius(realRadius, visualScale);
-            const scaleFactor = realRadius > 0 ? displayRadius / realRadius : 1;
-
-            // The mesh is the visual representation, we move it relative to the group
-            const visualOffset = displayPosition.sub(realPosition);
-            obj.mesh.position.copy(visualOffset);
-            obj.mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
             if (obj.mesh instanceof LOD) {
                 (obj.mesh as LOD).update(camera);
             }

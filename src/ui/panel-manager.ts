@@ -1,69 +1,239 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+type PanelSnapEdge = 'left' | 'right' | 'top' | 'bottom' | null;
+
+export type PanelState = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    visible: boolean;
+    snapped: PanelSnapEdge;
+    pinned: boolean;
+    minimized: boolean;
+    lastFocused: number;
+};
+
+const SNAP_THRESHOLD = 32;
+const SNAP_DISTANCE = 16;
+const UNSNAP_DISTANCE = 24;
+
 export class PanelManager {
     private static highestZIndex = 1000;
-    private static backdrop: HTMLElement | null = null;
-    private panel: HTMLElement;
-    private header: HTMLElement | null = null;
+    public static panels: Map<string, PanelManager> = new Map();
+    private static snapGlow: HTMLElement;
+
+    public state: PanelState;
     private isDragging = false;
     private dragStartX = 0;
     private dragStartY = 0;
+feat/responsive-design-overhaul
     private panelStartX = 0;
     private panelStartY = 0;
+    private storageKey: string | null = null;
+=======
+main
 
     // Bound event listeners
+    private boundOnDragStart: (e: MouseEvent) => void;
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
+feature/UI-UX-improvements
     private static snapThreshold = 30;
     private static snapGlows: { [key: string]: HTMLElement } = {};
 
     constructor(panel: HTMLElement) {
+=======
+feat/responsive-design-overhaul
+    constructor(panel: HTMLElement, storageKey: string | null = null) {
+main
         this.panel = panel;
+        this.storageKey = storageKey;
+=======
+    constructor(
+        public id: string,
+        private panel: HTMLElement,
+        private header: HTMLElement,
+        private closeButton?: HTMLElement,
+    ) {
+        PanelManager.panels.set(this.id, this);
+        this.state = this.loadState();
+
+        this.boundOnDragStart = this.onDragStart.bind(this);
+main
         this.boundOnDragMove = this.onDragMove.bind(this);
         this.boundOnDragEnd = this.onDragEnd.bind(this);
+
         this.init();
     }
 
     private init() {
+feat/responsive-design-overhaul
         this.bringToFront();
         this.panel.addEventListener('mousedown', () => this.bringToFront());
+feature/UI-UX-improvements
         if (!PanelManager.snapGlows['top']) {
             PanelManager.snapGlows['top'] = document.getElementById('snap-glow-top')!;
             PanelManager.snapGlows['right'] = document.getElementById('snap-glow-right')!;
             PanelManager.snapGlows['bottom'] = document.getElementById('snap-glow-bottom')!;
             PanelManager.snapGlows['left'] = document.getElementById('snap-glow-left')!;
         }
+=======
+        this.loadState();
+=======
+        this.applyState();
+        this.makeDraggable();
+        this.makeResizable();
+
+        this.panel.addEventListener('mousedown', () => this.updateFocus(), true);
+        this.closeButton?.addEventListener('click', () => this.hide());
     }
 
-    public makeDraggable(header: HTMLElement) {
-        this.header = header;
-        this.header.addEventListener('mousedown', this.onDragStart.bind(this));
+    // =================================================================
+    // State and Visibility
+    // =================================================================
+
+    private loadState(): PanelState {
+        const storedState = localStorage.getItem(`solarsim.panel.${this.id}`);
+        if (storedState) {
+            try {
+                // If we have a stored state, use it, but provide defaults for any missing keys.
+                const parsed = JSON.parse(storedState);
+                const defaultsForMerging: PanelState = {
+                    x: 50, y: 50, w: 320, h: 480, visible: true, snapped: null, pinned: false, minimized: false, lastFocused: 0
+                };
+                return { ...defaultsForMerging, ...parsed };
+            } catch (e) {
+                console.error(`Failed to parse stored state for panel ${this.id}:`, e);
+            }
+        }
+
+        // If no stored state exists, create a default state based on the initial HTML.
+        return {
+            x: this.panel.offsetLeft,
+            y: this.panel.offsetTop,
+            w: this.panel.offsetWidth || 320,
+            h: this.panel.offsetHeight || 480,
+            visible: !this.panel.classList.contains('hidden'),
+            snapped: null,
+            pinned: false,
+            minimized: false,
+            lastFocused: 0,
+        };
     }
 
-    public minimize() {
-        this.panel.classList.toggle('minimized');
+    public saveState() {
+        localStorage.setItem(`solarsim.panel.${this.id}`, JSON.stringify(this.state));
     }
 
-    private bringToFront() {
+    private applyState() {
+        if (this.state.visible) {
+            this.panel.classList.remove('hidden');
+        } else {
+            this.panel.classList.add('hidden');
+        }
+        this.panel.style.left = `${this.state.x}px`;
+        this.panel.style.top = `${this.state.y}px`;
+        this.panel.style.width = `${this.state.w}px`;
+        this.panel.style.height = `${this.state.h}px`;
+
+        this.panel.classList.toggle('pinned', this.state.pinned);
+        this.panel.classList.toggle('minimized', this.state.minimized);
+main
+    }
+
+    public toggleMinimize() {
+        this.state.minimized = !this.state.minimized;
+        this.applyState();
+        this.saveState();
+    }
+
+    public show() {
+        this.state.visible = true;
+        this.applyState();
+        this.updateFocus();
+        this.saveState();
+      main
+    }
+
+    public hide() {
+        this.state.visible = false;
+        this.applyState();
+        this.saveState();
+    }
+
+    public toggleVisibility() {
+        if (this.state.visible) {
+            this.hide();
+        } else {
+            this.show();
+        }
+    }
+
+    // =================================================================
+    // Focus Management
+    // =================================================================
+
+    private updateFocus() {
+        this.state.lastFocused = Date.now();
         this.panel.style.zIndex = String(++PanelManager.highestZIndex);
+        this.saveState();
+    }
+
+    public static getMostRecentlyFocusedPanel(): PanelManager | null {
+        const visiblePanels = Array.from(PanelManager.panels.values()).filter(p => p.state.visible);
+        if (visiblePanels.length === 0) return null;
+
+        return visiblePanels.reduce((prev, curr) => (prev.state.lastFocused > curr.state.lastFocused ? prev : curr));
+    }
+
+    // =================================================================
+    // Pinning
+    // =================================================================
+
+    public togglePin() {
+        this.state.pinned = !this.state.pinned;
+        this.panel.classList.toggle('pinned', this.state.pinned);
+        this.saveState();
+    }
+
+    // =================================================================
+    // Dragging and Snapping
+    // =================================================================
+
+    private makeDraggable() {
+        this.header.addEventListener('mousedown', this.boundOnDragStart);
     }
 
     private onDragStart(e: MouseEvent) {
-        if (e.button !== 0) return; // Only allow left-click to drag
+        if (e.button !== 0 || this.state.pinned) return;
+        e.preventDefault();
+        e.stopPropagation();
+
         this.isDragging = true;
-        this.bringToFront();
+        this.updateFocus();
 
         this.dragStartX = e.clientX;
         this.dragStartY = e.clientY;
 
-        const rect = this.panel.getBoundingClientRect();
-        this.panelStartX = rect.left;
-        this.panelStartY = rect.top;
-
         document.addEventListener('mousemove', this.boundOnDragMove);
         document.addEventListener('mouseup', this.boundOnDragEnd, { once: true });
 
-        this.header!.style.cursor = 'grabbing';
+        this.header.style.cursor = 'grabbing';
         document.body.style.userSelect = 'none';
+
+        if (this.state.snapped) {
+            const checkUnsnap = (moveEvent: MouseEvent) => {
+                const dx = Math.abs(moveEvent.clientX - this.dragStartX);
+                const dy = Math.abs(moveEvent.clientY - this.dragStartY);
+                if (dx > UNSNAP_DISTANCE || dy > UNSNAP_DISTANCE) {
+                    this.state.snapped = null;
+                    this.saveState();
+                    document.removeEventListener('mousemove', checkUnsnap);
+                }
+            };
+            document.addEventListener('mousemove', checkUnsnap);
+        }
     }
 
     private onDragMove(e: MouseEvent) {
@@ -71,14 +241,35 @@ export class PanelManager {
 
         const dx = e.clientX - this.dragStartX;
         const dy = e.clientY - this.dragStartY;
+        this.state.x += dx;
+        this.state.y += dy;
 
-        let newLeft = this.panelStartX + dx;
-        let newTop = this.panelStartY + dy;
+        this.dragStartX = e.clientX;
+        this.dragStartY = e.clientY;
 
-        const rect = this.panel.getBoundingClientRect();
+        this.handleSnapping();
+        this.applyState();
+    }
+
+    private onDragEnd() {
+        this.isDragging = false;
+        this.header.style.cursor = 'grab';
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', this.boundOnDragMove);
+
+        PanelManager.hideSnapPreview();
+        if (this.state.snapped) {
+            this.flashSnapConfirmation();
+        }
+        this.saveState();
+    }
+
+    private handleSnapping() {
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
+        let activeSnap: PanelSnapEdge = null;
 
+feature/UI-UX-improvements
         // --- Snapping and Glow Logic ---
         const { snapThreshold } = PanelManager;
         let snapX = false, snapY = false;
@@ -126,15 +317,70 @@ export class PanelManager {
         this.isDragging = false;
         document.removeEventListener('mousemove', this.boundOnDragMove);
         // 'mouseup' listener is removed in onDragStart with { once: true }
+=======
+        if (this.state.x < SNAP_THRESHOLD) activeSnap = 'left';
+        else if (this.state.x + this.state.w > winWidth - SNAP_THRESHOLD) activeSnap = 'right';
+        else if (this.state.y < SNAP_THRESHOLD) activeSnap = 'top';
+        else if (this.state.y + this.state.h > winHeight - SNAP_THRESHOLD) activeSnap = 'bottom';
 
+        PanelManager.hideSnapPreview();
+        if (activeSnap) {
+            PanelManager.showSnapPreview(activeSnap);
+            if (
+                (activeSnap === 'left' && this.state.x < SNAP_DISTANCE) ||
+                (activeSnap === 'right' && this.state.x + this.state.w > winWidth - SNAP_DISTANCE) ||
+                (activeSnap === 'top' && this.state.y < SNAP_DISTANCE) ||
+                (activeSnap === 'bottom' && this.state.y + this.state.h > winHeight - SNAP_DISTANCE)
+            ) {
+                this.state.snapped = activeSnap;
+                if (activeSnap === 'left') this.state.x = 0;
+                if (activeSnap === 'right') this.state.x = winWidth - this.state.w;
+                if (activeSnap === 'top') this.state.y = 0;
+                if (activeSnap === 'bottom') this.state.y = winHeight - this.state.h;
+            }
+        } else {
+            this.state.snapped = null;
+        }
+    }
+
+    private static showSnapPreview(edge: PanelSnapEdge) {
+        if (!this.snapGlow) {
+            this.snapGlow = document.createElement('div');
+            this.snapGlow.className = 'snap-glow';
+            document.body.appendChild(this.snapGlow);
+        }
+        this.snapGlow.className = `snap-glow ${edge} visible`;
+    }
+main
+
+feat/responsive-design-overhaul
         this.header!.style.cursor = 'grab';
         document.body.style.userSelect = '';
+feature/UI-UX-improvements
 
         // Hide all glows
         Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
+=======
+        this.saveState();
+=======
+    private static hideSnapPreview() {
+        if (this.snapGlow) {
+            this.snapGlow.className = 'snap-glow';
+        }
     }
 
-    public makeResizable(minWidth = 250, minHeight = 150) {
+    private flashSnapConfirmation() {
+        this.panel.classList.add('snap-flash');
+        setTimeout(() => this.panel.classList.remove('snap-flash'), 150);
+main
+main
+    }
+
+    // =================================================================
+    // Resizing
+    // =================================================================
+
+    private makeResizable(minWidth = 250, minHeight = 150) {
         const directions = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
         directions.forEach(dir => {
             const handle = document.createElement('div');
@@ -145,43 +391,41 @@ export class PanelManager {
     }
 
     private onResizeStart(e: MouseEvent, dir: string, minWidth: number, minHeight: number) {
+        if (this.state.pinned) return;
         e.stopPropagation();
         e.preventDefault();
-        this.bringToFront();
+        this.updateFocus();
 
         const startX = e.clientX;
         const startY = e.clientY;
-        const startWidth = this.panel.offsetWidth;
-        const startHeight = this.panel.offsetHeight;
-        const startLeft = this.panel.offsetLeft;
-        const startTop = this.panel.offsetTop;
+        const startW = this.state.w;
+        const startH = this.state.h;
+        const startLeft = this.state.x;
+        const startTop = this.state.y;
 
         const onMouseMove = (moveEvent: MouseEvent) => {
             const dx = moveEvent.clientX - startX;
             const dy = moveEvent.clientY - startY;
 
             if (dir.includes('e')) {
-                const newWidth = Math.max(minWidth, startWidth + dx);
-                this.panel.style.width = `${newWidth}px`;
+                this.state.w = Math.max(minWidth, startW + dx);
             }
             if (dir.includes('w')) {
-                const newWidth = Math.max(minWidth, startWidth - dx);
-                if (newWidth > minWidth) {
-                    this.panel.style.width = `${newWidth}px`;
-                    this.panel.style.left = `${startLeft + dx}px`;
-                }
+                const newWidth = Math.max(minWidth, startW - dx);
+                this.state.x = startLeft + (startW - newWidth);
+                this.state.w = newWidth;
             }
             if (dir.includes('s')) {
-                const newHeight = Math.max(minHeight, startHeight + dy);
-                this.panel.style.height = `${newHeight}px`;
+                this.state.h = Math.max(minHeight, startH + dy);
             }
             if (dir.includes('n')) {
-                const newHeight = Math.max(minHeight, startHeight - dy);
-                if (newHeight > minHeight) {
-                    this.panel.style.height = `${newHeight}px`;
-                    this.panel.style.top = `${startTop + dy}px`;
-                }
+                const newHeight = Math.max(minHeight, startH - dy);
+                this.state.y = startTop + (startH - newHeight);
+                this.state.h = newHeight;
             }
+
+            this.state.snapped = null;
+            this.applyState();
         };
 
         const onMouseUp = () => {
@@ -189,6 +433,7 @@ export class PanelManager {
             document.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
+            this.saveState();
         };
 
         document.addEventListener('mousemove', onMouseMove);
@@ -196,6 +441,7 @@ export class PanelManager {
         document.body.style.cursor = `${dir}-resize`;
         document.body.style.userSelect = 'none';
     }
+feat/responsive-design-overhaul
 
     public static showBackdrop() {
         if (!this.backdrop) {
@@ -213,4 +459,37 @@ export class PanelManager {
         }
         document.body.classList.remove('modal-open');
     }
+
+    private saveState() {
+        if (!this.storageKey) return;
+        const state = {
+            left: this.panel.style.left,
+            top: this.panel.style.top,
+            width: this.panel.style.width,
+            height: this.panel.style.height,
+        };
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(state));
+        } catch (e) {
+            console.error("Failed to save panel state to localStorage", e);
+        }
+    }
+
+    private loadState() {
+        if (!this.storageKey) return;
+        try {
+            const storedState = localStorage.getItem(this.storageKey);
+            if (storedState) {
+                const state = JSON.parse(storedState);
+                if (state.left) this.panel.style.left = state.left;
+                if (state.top) this.panel.style.top = state.top;
+                if (state.width) this.panel.style.width = state.width;
+                if (state.height) this.panel.style.height = state.height;
+            }
+        } catch (e) {
+            console.error("Failed to load panel state from localStorage", e);
+        }
+    }
+=======
+main
 }

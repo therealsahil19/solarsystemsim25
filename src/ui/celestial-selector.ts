@@ -372,6 +372,7 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     const minimizeBtn = panel.querySelector('.minimize-btn') as HTMLElement;
     const header = panel.querySelector('.panel-header') as HTMLElement;
 
+feature/UI-UX-improvements
     const panelManager = new PanelManager(panel);
     panelManager.makeDraggable(header);
     panelManager.makeResizable();
@@ -379,14 +380,38 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     const openPanel = () => {
         panel.classList.remove('hidden');
         (panelManager as any).bringToFront();
+=======
+    const panelManager = new PanelManager(modal, 'celestialSelector.v1');
+    panelManager.makeDraggable(header);
+    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+    // Per user request, min height is 50vh, but PanelManager deals in px.
+    // This is a reasonable approximation. A more robust solution might involve
+    // converting vh to px on resize, but this is sufficient for now.
+    const minHeight = window.innerHeight * 0.5;
+    panelManager.makeResizable(300, minHeight);
+
+    const openPanel = () => {
+        modalContainer.classList.remove('hidden');
+main
     };
     const closePanel = () => panel.classList.add('hidden');
 
+feature/UI-UX-improvements
     openBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (panel.classList.contains('hidden')) {
             openPanel();
         } else {
+=======
+    const closePanel = () => {
+        modalContainer.classList.add('hidden');
+    };
+
+    openBtn.addEventListener('click', openPanel);
+    closeBtn.addEventListener('click', closePanel);
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+main
             closePanel();
         }
     });
@@ -396,7 +421,11 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
 
     onSelectCallback = (id) => {
         onSelect(id);
+feature/UI-UX-improvements
         // We don't close the panel anymore since it's a persistent panel
+=======
+        // Do not close the panel on selection, allow user to browse
+main
     };
 
     treeNodes = buildTree(bodies);

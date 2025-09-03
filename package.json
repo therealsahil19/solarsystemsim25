@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "vite",
-    "dev": "vite",
+    "dev": "node_modules/.bin/vite",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -50,7 +50,11 @@
   "dependencies": {
     "@tweenjs/tween.js": "^23.1.1",
     "fuse.js": "^7.1.0",
+feature/UI-UX-improvements
     "shepherd.js": "^14.5.1",
+=======
+    "gsap": "^3.13.0",
+main
     "three": "^0.179.1",
     "uuid": "^11.1.0",
     "zustand": "^5.0.8"
