@@ -8,13 +8,15 @@ export class PanelManager {
     private dragStartY = 0;
     private panelStartX = 0;
     private panelStartY = 0;
+    private storageKey: string | null = null;
 
     // Bound event listeners
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
-    constructor(panel: HTMLElement) {
+    constructor(panel: HTMLElement, storageKey: string | null = null) {
         this.panel = panel;
+        this.storageKey = storageKey;
         this.boundOnDragMove = this.onDragMove.bind(this);
         this.boundOnDragEnd = this.onDragEnd.bind(this);
         this.init();
@@ -23,6 +25,7 @@ export class PanelManager {
     private init() {
         this.bringToFront();
         this.panel.addEventListener('mousedown', () => this.bringToFront());
+        this.loadState();
     }
 
     public makeDraggable(header: HTMLElement) {
@@ -86,6 +89,7 @@ export class PanelManager {
 
         this.header!.style.cursor = 'grab';
         document.body.style.userSelect = '';
+        this.saveState();
     }
 
     public makeResizable(minWidth = 250, minHeight = 150) {
@@ -143,6 +147,7 @@ export class PanelManager {
             document.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
+            this.saveState();
         };
 
         document.addEventListener('mousemove', onMouseMove);
@@ -166,5 +171,36 @@ export class PanelManager {
             this.backdrop.style.display = 'none';
         }
         document.body.classList.remove('modal-open');
+    }
+
+    private saveState() {
+        if (!this.storageKey) return;
+        const state = {
+            left: this.panel.style.left,
+            top: this.panel.style.top,
+            width: this.panel.style.width,
+            height: this.panel.style.height,
+        };
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(state));
+        } catch (e) {
+            console.error("Failed to save panel state to localStorage", e);
+        }
+    }
+
+    private loadState() {
+        if (!this.storageKey) return;
+        try {
+            const storedState = localStorage.getItem(this.storageKey);
+            if (storedState) {
+                const state = JSON.parse(storedState);
+                if (state.left) this.panel.style.left = state.left;
+                if (state.top) this.panel.style.top = state.top;
+                if (state.width) this.panel.style.width = state.width;
+                if (state.height) this.panel.style.height = state.height;
+            }
+        } catch (e) {
+            console.error("Failed to load panel state from localStorage", e);
+        }
     }
 }

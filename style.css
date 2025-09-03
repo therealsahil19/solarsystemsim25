@@ -650,10 +650,15 @@ canvas {
 
 /* --- Debug HUD --- */
 #debug-hud {
-    top: 80px;
-    right: 10px;
-    font-size: 0.875em; /* Smaller font size */
-    color: #aaa; /* Lower contrast color */
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    font-size: 0.875em;
+    color: #aaa;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    z-index: 90;
 }
 
 #debug-hud.hidden {
@@ -952,4 +957,10 @@ canvas {
 
 .favorite-btn.favorited:hover {
     color: #ffde57;
+}
+
+@media (max-width: 640px) {
+    #debug-hud {
+        transform: translateY(-3rem);
+    }
 }
