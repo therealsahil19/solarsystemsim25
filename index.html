@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Simulator</title>
-  <script type="module" crossorigin src="/solarsystemsim25/assets/index-DNyqt4TD.js"></script>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="/solarsystemsim25/assets/index-B-ysCeHO.js"></script>
   <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-DIJba_F3.css">
 </head>
 <body>
@@ -36,27 +37,12 @@
                     <button class="control-btn time-preset" data-speed="31557600">1y/s</button>
                 </div>
             </div>
-            <!-- Moved scale control here to be always visible -->
             <div class="control-group">
                 <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
                 <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
             </div>
         </div>
         <div class="top-bar-section" id="top-bar-right">
-feat/responsive-design-overhaul
-            <div class="mobile-hide">
-                <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
-                <button id="settings-toggle-btn" class="control-btn">Settings</button>
-                <a id="github-link" href="https://github.com/therealsahil19/solarsystemsim25" target="_blank" rel="noopener noreferrer" title="View project on GitHub">
-                    GitHub
-                </a>
-            </div>
-            <div id="more-menu-container" class="mobile-only">
-                <button id="more-menu-toggle" class="control-btn icon-btn">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
-                    <span class="sr-only">Open menu</span>
-                </button>
-=======
             <button id="visuals-toggle-btn" class="control-btn">Visuals</button>
             <button id="settings-toggle-btn" class="control-btn">Settings</button>
             <div id="scale-control-group" class="control-group">
@@ -73,7 +59,6 @@ feat/responsive-design-overhaul
             </a>
             <div id="more-menu-container">
                 <button id="more-menu-toggle" class="control-btn hidden">⋮</button>
-main
                 <div id="more-menu-content" class="panel hidden">
                     <!-- This container is populated by top-bar.ts -->
                 </div>
@@ -136,17 +121,6 @@ main
                     </div>
                 </div>
             </aside>
-
-feature/UI-UX-improvements
-        <main id="canvasArea" class="canvas-area">
-            <canvas id="bg"></canvas>
-            <div id="ui-container">
-                <div id="quick-access-toolbar" class="panel">
-                    <!-- Populated by quick-access-toolbar.ts -->
-                </div>
-                <!-- Pop-out panels for Visuals and Settings -->
-                <div id="visuals-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
-=======
             <!-- Main Controls Panel -->
             <div id="mainPanel" class="panel floating hidden" style="top: 20px; right: 20px;" aria-label="Main Controls Panel">
                 <header id="mainPanelHeader" class="panel-header">
@@ -163,7 +137,6 @@ feature/UI-UX-improvements
                     </div>
                 </header>
                 <div class="panel-body">
-main
                     <div class="control-group">
                         <input type="checkbox" id="trails-enabled-toggle" checked>
                         <label for="trails-enabled-toggle">Trails</label>
@@ -180,20 +153,11 @@ main
                             <option value="earthR">Earth Radii</option>
                         </select>
                     </div>
-feat/responsive-design-overhaul
-=======
-feature/new-panel-system
                     <div class="control-group">
                         <label for="visual-scale-slider" title="0% = Real Scale, 100% = Visual Scale">Scale:</label>
                         <input type="range" id="visual-scale-slider" min="0" max="1" value="0.5" step="0.01">
                     </div>
                     <hr>
-=======
-main
-                </div>
-
-                <div id="settings-panel" class="panel hidden" style="position: absolute; top: 70px; right: 20px; z-index: 101;">
-main
                     <div class="control-group tooltip">
                         <input type="checkbox" id="shadow-toggle" checked>
                         <label for="shadow-toggle" id="shadow-label">Shadows</label>
@@ -213,38 +177,6 @@ main
                     <button id="manage-presets-btn" class="control-btn">Presets</button>
                 </div>
             </div>
-
-feature/UI-UX-improvements
-                <div id="selection-panel" class="panel">
-                    <button id="open-celestial-selector-btn" class="btn">Select Body</button>
-                    <button id="free-camera-btn" class="btn hidden">Solar System View</button>
-                </div>
-
-                <div id="celestial-selector-panel" class="panel hidden" style="position: absolute; top: 120px; left: calc(50% - 175px); width: 380px; height: 550px; display: flex; flex-direction: column;">
-                    <div class="panel-header" style="cursor: grab;">
-                        <h2>Select a Celestial Body</h2>
-                        <div>
-                            <button class="control-btn minimize-btn" title="Minimize">–</button>
-                            <button id="close-celestial-selector-btn" class="control-btn" title="Close">&times;</button>
-                        </div>
-                    </div>
-                    <div id="celestial-selector" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 10px;">
-                        <div class="selector-controls" style="padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-bottom: 10px;">
-                            <div class="control-group" style="justify-content: space-around;">
-                                <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="selector-view" value="hierarchy" checked> Hierarchy</label>
-                                <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="selector-view" value="type"> By Type</label>
-                            </div>
-                        </div>
-                        <div class="search-container" style="display: flex; gap: 5px; margin-bottom: 10px;">
-                            <input type="text" id="selector-search-input" class="btn" placeholder="Search..." style="flex-grow: 1; box-sizing: border-box;">
-                        </div>
-                        <div id="category-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-                            <!-- Tabs will be dynamically inserted here -->
-                        </div>
-                        <div id="celestial-selector-menu" class="dropdown-menu" style="position: relative; width: 100%; box-shadow: none; border: none; background: none; flex-grow: 1; overflow-y: auto;">
-                            <!-- Tree view will be populated by JS -->
-                        </div>
-=======
             <!-- Presets Panel -->
             <div id="presetsPanel" class="panel floating hidden" aria-label="Layout Presets Panel">
                 <header id="presetsPanelHeader" class="panel-header">
@@ -267,30 +199,9 @@ feature/UI-UX-improvements
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
                         <input type="text" id="new-preset-name" class="control-btn" placeholder="New preset name..." style="flex-grow: 1;">
                         <button id="save-current-preset-btn" class="control-btn">Save Current</button>
-main
                     </div>
                 </div>
             </div>
-
-feature/UI-UX-improvements
-                <div id="contextual-hud" class="panel hidden" style="display: flex; gap: 5px; padding: 8px; transform: translate(-50%, -150%); transition: opacity 0.3s, transform 0.3s;">
-                    <button id="hud-frame-btn" class="icon-btn" title="Frame (F)">🎯</button>
-                    <button id="hud-follow-btn" class="icon-btn" title="Follow (L)">📡</button>
-                    <button id="hud-orbit-btn" class="icon-btn" title="Toggle Orbit (O)">🛰️</button>
-                    <button id="hud-info-btn" class="icon-btn" title="Show Info Panel (I)">ℹ️</button>
-                </div>
-
-                <div id="debug-hud" class="panel hidden">
-                    <h4>Debug Info</h4>
-                    <div>Preset: <span id="debug-preset"></span></div>
-                    <div>DPR: <span id="debug-dpr"></span></div>
-                    <div>Avg. ms: <span id="debug-avg-ms"></span></div>
-                    <div>Scale: <span id="debug-scale"></span></div>
-                </div>
-
-                <div id="help-overlay" class="panel hidden">
-                    <h3>Keyboard Shortcuts</h3>
-=======
             <!-- Shortcuts Panel -->
             <div id="shortcutsPanel" class="panel floating hidden" aria-label="Keyboard Shortcuts Panel">
                 <header id="shortcutsPanelHeader" class="panel-header">
@@ -307,7 +218,6 @@ feature/UI-UX-improvements
                     </div>
                 </header>
                 <div class="panel-body">
-main
                     <div class="help-search-container">
                         <input type="text" id="help-search-input" class="btn" placeholder="Search actions...">
                     </div>
@@ -316,7 +226,6 @@ main
                     </div>
                 </div>
             </div>
-
             <!-- Celestial Selector Panel -->
             <div id="celestialSelector" class="panel floating hidden" aria-label="Celestial Body Selector">
                 <header id="celestialSelectorHeader" class="panel-header">
@@ -351,7 +260,6 @@ main
                     </div>
                 </div>
             </div>
-
             <!-- Other UI elements that are not panels -->
             <div id="selection-panel" class="panel">
                 <button id="open-celestial-selector-btn" class="btn">Select Body</button>
