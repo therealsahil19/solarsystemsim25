@@ -3,6 +3,7 @@ import { CelestialBody } from '../data';
 import { store } from '../state/store';
 import { Trail } from './Trail';
 import { calculateDisplayPosition, ScaleTransition } from '../utils/scaling';
+import { SceneBody } from '../types/scene';
 
 interface HistoryPoint {
     time: number; // simTime in days
@@ -12,9 +13,9 @@ interface HistoryPoint {
 export class TrailManager {
     private trails = new Map<string, Trail>();
     private trailHistories = new Map<string, HistoryPoint[]>();
-    private bodyMap = new Map<string, CelestialBody>();
+    private bodyMap = new Map<string, SceneBody>();
 
-    constructor(private bodies: CelestialBody[], private scene: THREE.Scene) {
+    constructor(private bodies: SceneBody[], private scene: THREE.Scene) {
         this.bodies.forEach(b => this.bodyMap.set(b.id, b));
     }
 

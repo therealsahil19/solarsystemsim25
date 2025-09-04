@@ -967,7 +967,6 @@ canvas {
     color: #ffde57;
 }
 
-feature/UI-UX-improvements
 /* --- Contextual HUD --- */
 #contextual-hud {
     /* The panel class provides the background and border */
@@ -1079,31 +1078,6 @@ feature/UI-UX-improvements
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* --- Edge Snap Glow --- */
-.snap-glow {
-    position: fixed;
-    z-index: 9999;
-    background: rgba(110, 132, 255, 0.5);
-    box-shadow: 0 0 15px 5px rgba(110, 132, 255, 0.5);
-    display: none;
-    pointer-events: none;
-}
-
-#snap-glow-top { top: 0; left: 0; width: 100%; height: 5px; }
-#snap-glow-right { top: 0; right: 0; width: 5px; height: 100%; }
-#snap-glow-bottom { bottom: 0; left: 0; width: 100%; height: 5px; }
-#snap-glow-left { top: 0; left: 0; width: 5px; height: 100%; }
-
-.snap-glow.visible {
-    display: block;
-}
-=======
-feat/responsive-design-overhaul
-@media (max-width: 640px) {
-    #debug-hud {
-        transform: translateY(-3rem);
-    }
-=======
 /* ==========================================================================
    New Floating Panel System
    ========================================================================== */
@@ -1264,6 +1238,4 @@ feat/responsive-design-overhaul
     height: auto !important;
     width: auto !important;
     min-width: 200px;
-main
 }
-main

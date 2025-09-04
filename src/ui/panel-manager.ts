@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { Backdrop } from './backdrop';
+import { PanelController, PanelOptions } from './panel-types';
+
 type PanelSnapEdge = 'left' | 'right' | 'top' | 'bottom' | null;
 
 export type PanelState = {
@@ -17,29 +20,98 @@ const SNAP_THRESHOLD = 32;
 const SNAP_DISTANCE = 16;
 const UNSNAP_DISTANCE = 24;
 
+// Helper function to create a controller from an instance
+function createController(instance: PanelManager): PanelController {
+    return {
+        id: instance.id,
+        el: instance.getPanelElement(),
+        focus: () => instance.updateFocus(),
+        setMinimized: (minimized: boolean) => {
+            if (instance.state.minimized !== minimized) {
+                instance.toggleMinimize();
+            }
+        },
+        isMinimized: () => instance.state.minimized,
+        toggleVisibility: () => instance.toggleVisibility(),
+        show: () => instance.show(),
+        hide: () => instance.hide(),
+        destroy: () => instance.destroy(),
+        togglePin: () => instance.togglePin(),
+        isPinned: () => instance.state.pinned,
+        on: (event, cb) => instance.on(event, cb),
+    };
+}
+
 export class PanelManager {
     private static highestZIndex = 1000;
     public static panels: Map<string, PanelManager> = new Map();
+    private static controllers: Map<string, PanelController> = new Map();
     private static snapGlow: HTMLElement;
 
     public state: PanelState;
     private isDragging = false;
     private dragStartX = 0;
     private dragStartY = 0;
+    private isModal = false;
+
+    private events = new Map<string, Array<() => void>>();
 
     // Bound event listeners
     private boundOnDragStart: (e: MouseEvent) => void;
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
-    constructor(
+    // --- NEW STATIC API ---
+
+    public static createPanel(
+        id: string,
+        title: string, // Title is not used yet, but good for future use
+        panelEl: HTMLElement,
+        options: PanelOptions = {},
+    ): PanelController {
+        if (this.controllers.has(id)) {
+            return this.controllers.get(id)!;
+        }
+
+        const headerEl = panelEl.querySelector('.panel-header') as HTMLElement;
+        const closeBtn = panelEl.querySelector('.close-btn, .close-button, #close-celestial-selector-btn, #close-presets-modal-btn') as HTMLElement | null;
+        const minimizeBtn = panelEl.querySelector('.minimize-btn') as HTMLElement | null;
+
+        if (!headerEl) {
+            console.error(`PanelManager: Panel with id "${id}" must have a child element with class ".panel-header"`);
+        }
+
+        const instance = new PanelManager(id, panelEl, headerEl || panelEl, options);
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => instance.hide());
+        }
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => instance.toggleMinimize());
+        }
+
+        const controller = createController(instance);
+        this.controllers.set(id, controller);
+
+        return controller;
+    }
+
+    public static getController(id: string): PanelController | undefined {
+        return this.controllers.get(id);
+    }
+
+
+    // --- INSTANCE LOGIC ---
+
+    private constructor(
         public id: string,
         private panel: HTMLElement,
         private header: HTMLElement,
-        private closeButton?: HTMLElement,
+        private options: PanelOptions = {},
     ) {
         PanelManager.panels.set(this.id, this);
         this.state = this.loadState();
+        this.isModal = options.modal || false;
 
         this.boundOnDragStart = this.onDragStart.bind(this);
         this.boundOnDragMove = this.onDragMove.bind(this);
@@ -50,11 +122,37 @@ export class PanelManager {
 
     private init() {
         this.applyState();
-        this.makeDraggable();
-        this.makeResizable();
+        if (this.options.draggable !== false) {
+            this.makeDraggable();
+        }
+        if (this.options.resizable !== false) {
+            this.makeResizable();
+        }
 
         this.panel.addEventListener('mousedown', () => this.updateFocus(), true);
-        this.closeButton?.addEventListener('click', () => this.hide());
+    }
+
+    public destroy() {
+        // Unregister and remove from DOM
+        PanelManager.panels.delete(this.id);
+        PanelManager.controllers.delete(this.id);
+        this.panel.remove();
+        this.emit('close');
+    }
+
+    public on(event: string, cb: () => void) {
+        if (!this.events.has(event)) {
+            this.events.set(event, []);
+        }
+        this.events.get(event)!.push(cb);
+    }
+
+    private emit(event: string) {
+        this.events.get(event)?.forEach(cb => cb());
+    }
+
+    public getPanelElement(): HTMLElement {
+        return this.panel;
     }
 
     // =================================================================
@@ -63,21 +161,16 @@ export class PanelManager {
 
     private loadState(): PanelState {
         const storedState = localStorage.getItem(`solarsim.panel.${this.id}`);
+        let loadedState: Partial<PanelState> = {};
         if (storedState) {
             try {
-                // If we have a stored state, use it, but provide defaults for any missing keys.
-                const parsed = JSON.parse(storedState);
-                const defaultsForMerging: PanelState = {
-                    x: 50, y: 50, w: 320, h: 480, visible: true, snapped: null, pinned: false, minimized: false, lastFocused: 0
-                };
-                return { ...defaultsForMerging, ...parsed };
+                loadedState = JSON.parse(storedState);
             } catch (e) {
                 console.error(`Failed to parse stored state for panel ${this.id}:`, e);
             }
         }
 
-        // If no stored state exists, create a default state based on the initial HTML.
-        return {
+        const defaultState: PanelState = {
             x: this.panel.offsetLeft,
             y: this.panel.offsetTop,
             w: this.panel.offsetWidth || 320,
@@ -88,6 +181,22 @@ export class PanelManager {
             minimized: false,
             lastFocused: 0,
         };
+
+        const optionsState: Partial<PanelState> = {};
+        if (this.options.initialPosition?.x !== undefined) {
+            optionsState.x = this.options.initialPosition.x;
+        }
+        if (this.options.initialPosition?.y !== undefined) {
+            optionsState.y = this.options.initialPosition.y;
+        }
+        if (this.options.width !== undefined) {
+            optionsState.w = this.options.width;
+        }
+        if (this.options.height !== undefined) {
+            optionsState.h = this.options.height;
+        }
+
+        return { ...defaultState, ...optionsState, ...loadedState };
     }
 
     public saveState() {
@@ -113,19 +222,33 @@ export class PanelManager {
         this.state.minimized = !this.state.minimized;
         this.applyState();
         this.saveState();
+        this.emit('minimize');
     }
 
     public show() {
+        if (this.state.visible) {
+            this.updateFocus(); // Still bring to front if already visible
+            return;
+        }
         this.state.visible = true;
         this.applyState();
         this.updateFocus();
         this.saveState();
+        if (this.isModal) {
+            Backdrop.show();
+        }
+        this.emit('show');
     }
 
     public hide() {
+        if (!this.state.visible) return;
         this.state.visible = false;
         this.applyState();
         this.saveState();
+        if (this.isModal) {
+            Backdrop.hide();
+        }
+        this.emit('hide');
     }
 
     public toggleVisibility() {
@@ -140,17 +263,19 @@ export class PanelManager {
     // Focus Management
     // =================================================================
 
-    private updateFocus() {
+    public updateFocus() {
         this.state.lastFocused = Date.now();
         this.panel.style.zIndex = String(++PanelManager.highestZIndex);
         this.saveState();
+        this.emit('focus');
     }
 
-    public static getMostRecentlyFocusedPanel(): PanelManager | null {
+    public static getMostRecentlyFocusedController(): PanelController | null {
         const visiblePanels = Array.from(PanelManager.panels.values()).filter(p => p.state.visible);
         if (visiblePanels.length === 0) return null;
 
-        return visiblePanels.reduce((prev, curr) => (prev.state.lastFocused > curr.state.lastFocused ? prev : curr));
+        const mostRecentInstance = visiblePanels.reduce((prev, curr) => (prev.state.lastFocused > curr.state.lastFocused ? prev : curr));
+        return this.controllers.get(mostRecentInstance.id) || null;
     }
 
     // =================================================================
@@ -169,10 +294,15 @@ export class PanelManager {
 
     private makeDraggable() {
         this.header.addEventListener('mousedown', this.boundOnDragStart);
+        this.header.style.cursor = 'grab';
     }
 
     private onDragStart(e: MouseEvent) {
         if (e.button !== 0 || this.state.pinned) return;
+        if ((e.target as HTMLElement).closest('button, input, select, textarea')) {
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
 

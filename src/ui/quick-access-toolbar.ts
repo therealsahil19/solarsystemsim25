@@ -11,7 +11,6 @@ function handleBodyClick(event: MouseEvent) {
     const bodyName = target.dataset.body;
     if (bodyName) {
         store.getState().setSelectedBodyId(bodyName);
-        store.getState().frame();
     }
 }
 
