@@ -30,11 +30,18 @@ export const timePresetButtons = document.querySelectorAll('.time-preset') as No
 export const timeControls = document.getElementById('time-controls') as HTMLDivElement;
 
 // Debug elements - comment out if not used to prevent errors
-// export const debugHUD = document.getElementById('debug-hud') as HTMLDivElement;
-// export const debugPreset = document.getElementById('debug-preset') as HTMLSpanElement;
-// export const debugDPR = document.getElementById('debug-dpr') as HTMLSpanElement;
-// export const debugAvgMs = document.getElementById('debug-avg-ms') as HTMLSpanElement;
-// export const debugScale = document.getElementById('debug-scale') as HTMLSpanElement;
+export const debugHUD = document.getElementById('debug-hud') as HTMLDivElement;
+export const debugPreset = document.getElementById('debug-preset') as HTMLSpanElement;
+export const debugDPR = document.getElementById('debug-dpr') as HTMLSpanElement;
+export const debugAvgMs = document.getElementById('debug-avg-ms') as HTMLSpanElement;
+export const debugScale = document.getElementById('debug-scale') as HTMLSpanElement;
+
+// Help overlay
+export const helpOverlay = document.getElementById('help-overlay') as HTMLDivElement;
+export const helpOverlayClose = document.getElementById('help-overlay-close') as HTMLButtonElement;
+
+// Quick access toolbar
+export const quickAccessToolbar = document.getElementById('quick-access-toolbar') as HTMLDivElement;
 
 // Small Info Card
 export const smallInfoCard = document.getElementById('small-info-card') as HTMLDivElement;
