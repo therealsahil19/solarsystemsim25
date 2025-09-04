@@ -9,37 +9,32 @@ export const infoOrbitalChars = document.getElementById('info-orbital-chars') as
 export const infoAdvancedDetails = document.getElementById('info-advanced-details') as HTMLDivElement;
 export const advancedDetailsToggle = document.getElementById('advanced-details-toggle') as HTMLButtonElement;
 export const advancedDetailsContent = document.getElementById('advanced-details-content') as HTMLDivElement;
-export const pauseButton = document.getElementById('pause-btn') as HTMLButtonElement;
+export const playPauseButton = document.getElementById('play-pause-btn') as HTMLButtonElement;
 export const resetButton = document.getElementById('reset-btn') as HTMLButtonElement;
 export const shadowToggle = document.getElementById('shadow-toggle') as HTMLInputElement;
 export const canvas = document.querySelector('#bg') as HTMLCanvasElement;
 
-export const controlsPanel = document.getElementById('controls-panel') as HTMLDivElement;
+// Existing elements
 export const selectionPanel = document.getElementById('selection-panel') as HTMLDivElement;
-export const celestialSelector = document.getElementById('celestial-selector') as HTMLDivElement;
-export const celestialSelectorToggle = document.getElementById('celestial-selector-toggle') as HTMLButtonElement;
+export const celestialSelector = document.getElementById('celestialSelector') as HTMLDivElement;
 export const celestialSelectorMenu = document.getElementById('celestial-selector-menu') as HTMLDivElement;
-export const quickAccessToolbar = document.getElementById('quick-access-toolbar') as HTMLDivElement;
 export const freeCameraButton = document.getElementById('free-camera-btn') as HTMLButtonElement;
-export const performancePreset = document.getElementById('performance-preset') as HTMLSelectElement;
-
-export const debugHUD = document.getElementById('debug-hud') as HTMLDivElement;
-export const debugPreset = document.getElementById('debug-preset') as HTMLSpanElement;
-export const debugDPR = document.getElementById('debug-dpr') as HTMLSpanElement;
-export const debugAvgMs = document.getElementById('debug-avg-ms') as HTMLSpanElement;
-export const debugScale = document.getElementById('debug-scale') as HTMLSpanElement;
-
-export const helpOverlay = document.getElementById('help-overlay') as HTMLDivElement;
-export const helpOverlayClose = document.getElementById('help-overlay-close') as HTMLButtonElement;
 export const helpButton = document.getElementById('help-button') as HTMLButtonElement;
 
-export const timeScaleValue = document.getElementById('time-scale-value') as HTMLSpanElement;
+// Time controls elements
+export const timeScaleValue = document.getElementById('time-scale-label') as HTMLSpanElement; // Updated ID
 export const timeStepBackward = document.getElementById('time-step-backward') as HTMLButtonElement;
 export const timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
 export const timeStepForward = document.getElementById('time-step-forward') as HTMLButtonElement;
 export const timePresetButtons = document.querySelectorAll('.time-preset') as NodeListOf<HTMLButtonElement>;
-export const timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
 export const timeControls = document.getElementById('time-controls') as HTMLDivElement;
+
+// Debug elements - comment out if not used to prevent errors
+// export const debugHUD = document.getElementById('debug-hud') as HTMLDivElement;
+// export const debugPreset = document.getElementById('debug-preset') as HTMLSpanElement;
+// export const debugDPR = document.getElementById('debug-dpr') as HTMLSpanElement;
+// export const debugAvgMs = document.getElementById('debug-avg-ms') as HTMLSpanElement;
+// export const debugScale = document.getElementById('debug-scale') as HTMLSpanElement;
 
 // Small Info Card
 export const smallInfoCard = document.getElementById('small-info-card') as HTMLDivElement;
