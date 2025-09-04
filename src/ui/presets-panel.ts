@@ -79,33 +79,33 @@ function renderPresetsList() {
 }
 
 export function initPresetsPanel() {
-    const modal = document.getElementById('presets-modal')!;
-    const openBtn = document.getElementById('manage-presets-btn')!;
-    const closeBtn = document.getElementById('close-presets-modal-btn')!;
-    const saveBtn = document.getElementById('save-current-preset-btn')!;
+    const modalEl = document.getElementById('presets-modal');
+    if (!modalEl) return;
+
+    const panelController = PanelManager.createPanel(
+        'presets',
+        'Presets',
+        modalEl,
+        {
+            width: 500,
+            height: 450,
+            modal: true,
+        }
+    );
+
+    const openBtn = document.getElementById('manage-presets-btn');
+    const saveBtn = document.getElementById('save-current-preset-btn');
     const nameInput = document.getElementById('new-preset-name') as HTMLInputElement;
-    const listEl = document.getElementById('presets-list')!;
-    const header = modal.querySelector('.panel-header') as HTMLElement;
-    const minimizeBtn = modal.querySelector('.minimize-btn') as HTMLElement;
+    const listEl = document.getElementById('presets-list');
 
-    const panelManager = new PanelManager(modal);
-    panelManager.makeDraggable(header);
-    minimizeBtn.addEventListener('click', () => panelManager.minimize());
-    panelManager.makeResizable();
-
-    const openModal = () => {
-        renderPresetsList();
-        modal.classList.remove('hidden');
-        PanelManager.showBackdrop();
+    if (!openBtn || !saveBtn || !nameInput || !listEl) {
+        console.error("One or more required elements for presets panel not found");
+        return;
     };
 
-    const closeModal = () => {
-        modal.classList.add('hidden');
-        PanelManager.hideBackdrop();
-    };
+    panelController.on('show', renderPresetsList);
 
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
+    openBtn.addEventListener('click', () => panelController.show());
 
     saveBtn.addEventListener('click', () => {
         const name = nameInput.value.trim();
@@ -129,7 +129,7 @@ export function initPresetsPanel() {
             const presetToApply = allPresets.find(p => p.id === presetId);
             if (presetToApply) {
                 applyPreset(presetToApply);
-                modal.classList.add('hidden');
+                panelController.hide();
             }
         }
 

@@ -1,10 +1,12 @@
 import { PanelManager } from './panel-manager';
+import { PanelController } from './panel-types';
 
-// A map to hold all our panel managers
-export const panelManagers = new Map<string, PanelManager>();
+// A map to hold all our panel controllers
+export const panelControllers = new Map<string, PanelController>();
 
 /**
- * Initializes all panels, sets up their managers, and establishes global keyboard shortcuts.
+ * Initializes all panels, sets up their controllers, and establishes global keyboard shortcuts.
+ * @deprecated This function appears to be unused and may be dead code.
  */
 export function initPanels() {
     // Define the configuration for each panel
@@ -16,33 +18,22 @@ export function initPanels() {
         { id: 'celestialSelector', name: 'Celestial Selector'}
     ];
 
-    // Instantiate a PanelManager for each panel
+    // Instantiate a PanelController for each panel
     panelConfigs.forEach(config => {
         const panelEl = document.getElementById(config.id);
-        const headerEl = document.getElementById(`${config.id}Header`);
-        const closeEl = document.getElementById(`${config.id}-close`);
-
-        if (panelEl && headerEl) {
-            const manager = new PanelManager(config.id, panelEl, headerEl, closeEl || undefined);
-            panelManagers.set(config.id, manager);
+        if (panelEl) {
+            const controller = PanelManager.createPanel(config.id, config.name, panelEl);
+            panelControllers.set(config.id, controller);
 
             // Add pin button functionality if it exists
-            const pinBtn = document.getElementById(`${config.id}-pin`);
+            const pinBtn = panelEl.querySelector('.pin-btn');
             if (pinBtn) {
                 pinBtn.addEventListener('click', () => {
-                    manager.togglePin();
-                    pinBtn.setAttribute('aria-pressed', String(manager.state.pinned));
+                    controller.togglePin();
+                    pinBtn.setAttribute('aria-pressed', String(controller.isPinned()));
                 });
                 // Set initial state
-                pinBtn.setAttribute('aria-pressed', String(manager.state.pinned));
-            }
-
-            // Add minimize button functionality if it exists
-            const minimizeBtn = document.getElementById(`${config.id}-minimize`);
-            if (minimizeBtn) {
-                minimizeBtn.addEventListener('click', () => {
-                    manager.toggleMinimize();
-                });
+                pinBtn.setAttribute('aria-pressed', String(controller.isPinned()));
             }
 
         } else {
@@ -71,18 +62,18 @@ function setupPanelShortcuts() {
             const panelIds = ['infoPanel', 'mainPanel', 'presetsPanel', 'shortcutsPanel'];
             if (digit >= 1 && digit <= panelIds.length) {
                 event.preventDefault();
-                const manager = panelManagers.get(panelIds[digit - 1]);
-                manager?.toggleVisibility();
+                const controller = panelControllers.get(panelIds[digit - 1]);
+                controller?.toggleVisibility();
             }
         }
 
         // Handle 'Esc' to close the most recently focused panel
         if (event.code === 'Escape') {
-            const mostRecentPanel = PanelManager.getMostRecentlyFocusedPanel();
-            if (mostRecentPanel && !mostRecentPanel.state.pinned) {
+            const mostRecentController = PanelManager.getMostRecentlyFocusedController();
+            if (mostRecentController && !mostRecentController.isPinned()) {
                 event.preventDefault();
                 event.stopPropagation(); // Prevent other 'Esc' listeners from firing
-                mostRecentPanel.hide();
+                mostRecentController.hide();
             }
         }
     });

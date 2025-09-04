@@ -46,17 +46,23 @@ function attachE2EHelpers(app?: AppLike) {
      * Opens a UI panel by its ID.
      * These are the floating panels for settings, visuals, etc.
      */
-    openPanel: (panelId: 'info' | 'visuals' | 'settings' | 'edu') => {
-      // The 'edu' section is inside the main info panel.
-      const effectiveId = panelId === 'edu' ? 'infoPanel' : `${panelId}-panel`;
-      const panel = document.getElementById(effectiveId);
-      if (panel) {
-        panel.classList.remove('hidden');
-        // Instantiating a PanelManager for the element will call `bringToFront()` in its constructor,
-        // ensuring it has the highest z-index and is not obscured.
-        new PanelManager(panel);
+    openPanel: (panelId: 'info' | 'visuals' | 'settings' | 'edu' | 'celestialSelector' | 'presets') => {
+      // Map E2E aliases to the actual IDs used when creating the panels.
+      const panelMap = {
+          info: 'infoPanel',
+          visuals: 'visuals-panel',
+          settings: 'settings-panel',
+          edu: 'infoPanel',
+          celestialSelector: 'celestialSelector',
+          presets: 'presets',
+      };
+      const effectiveId = panelMap[panelId] || panelId;
+
+      const controller = PanelManager.getController(effectiveId);
+      if (controller) {
+        controller.show(); // Ensures it's visible and brought to the front
       } else {
-        console.error(`E2E: Panel with ID "${effectiveId}" not found.`);
+        console.error(`E2E: Panel controller with ID "${effectiveId}" not found.`);
       }
     },
 

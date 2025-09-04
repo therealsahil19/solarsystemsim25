@@ -364,36 +364,26 @@ function debounce(func: (...args: any[]) => void, delay: number) {
 }
 
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
-    const panel = document.getElementById('celestial-selector-panel')!;
-    if (!panel) return;
+    const panelEl = document.getElementById('celestial-selector-panel');
+    if (!panelEl) return;
 
-    const openBtn = document.getElementById('open-celestial-selector-btn')!;
-    const closeBtn = panel.querySelector('#close-celestial-selector-btn') as HTMLElement;
-    const minimizeBtn = panel.querySelector('.minimize-btn') as HTMLElement;
-    const header = panel.querySelector('.panel-header') as HTMLElement;
-
-    const panelManager = new PanelManager(panel, 'celestialSelector.v1');
-    panelManager.makeDraggable(header);
-    const minHeight = window.innerHeight * 0.5;
-    panelManager.makeResizable(300, minHeight);
-
-    const openPanel = () => {
-        panel.classList.remove('hidden');
-        panelManager.bringToFront();
-    };
-    const closePanel = () => panel.classList.add('hidden');
-
-    openBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (panel.classList.contains('hidden')) {
-            openPanel();
-        } else {
-            closePanel();
+    const panelController = PanelManager.createPanel(
+        'celestialSelector',
+        'Celestial Selector',
+        panelEl,
+        {
+            width: 380,
+            height: Math.min(window.innerHeight * 0.8, 800),
         }
-    });
+    );
 
-    closeBtn.addEventListener('click', closePanel);
-    minimizeBtn.addEventListener('click', () => panelManager.minimize());
+    const openBtn = document.getElementById('open-celestial-selector-btn');
+    if (openBtn) {
+        openBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.toggleVisibility();
+        });
+    }
 
     onSelectCallback = (id) => {
         onSelect(id);

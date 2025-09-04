@@ -689,7 +689,7 @@ async function start() {
                 let speed_m_s = 0;
                 if (a_m > 0) {
                     // Default to Sun's mass for planets, or use parent's mass for moons.
-                    const parentMass10e24kg = parent?.mass || celestialBodyData[0].mass!;
+                    const parentMass10e24kg = parent?.data.mass || celestialBodyData[0].mass!;
                     const G = 6.67430e-11;
                     const mu = G * parentMass10e24kg * 1e24;
                     speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m, mu });
