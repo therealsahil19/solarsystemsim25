@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CelestialBody } from '../data';
+import { getAssetUrl } from '../utils/assets';
 import { scaleRingRadius } from '../utils/misc';
 
 function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
@@ -112,7 +113,7 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
     };
 
     textureLoader.load(
-        ringData.texture!,
+        getAssetUrl(ringData.texture!),
         (ringTexture) => {
             ringTexture.colorSpace = THREE.SRGBColorSpace;
             const ringMaterial = new THREE.MeshStandardMaterial({

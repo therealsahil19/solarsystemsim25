@@ -25,6 +25,7 @@ import { initContextualHud } from './ui/contextual-hud';
 import { initOnboardingTour } from './ui/onboarding-tour';
 import { TrailManager } from './orbits/TrailManager';
 import { initTooltips } from './ui/dom';
+import { getAssetUrl } from './utils/assets';
 
 async function start() {
     if (import.meta.env.MODE === 'test') {
@@ -127,14 +128,14 @@ async function start() {
                 color: 0xffff00
             });
             if (bodyData.texture) {
-                const sunTexture = textureLoader.load(bodyData.texture);
+                const sunTexture = textureLoader.load(getAssetUrl(bodyData.texture));
                 bodyMaterial.map = sunTexture;
                 bodyMaterial.emissiveMap = sunTexture;
             }
         } else {
             bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff });
             if (bodyData.texture) {
-                bodyMaterial.map = textureLoader.load(bodyData.texture);
+                bodyMaterial.map = textureLoader.load(getAssetUrl(bodyData.texture));
             }
         }
 
@@ -765,4 +766,4 @@ async function start() {
     }
 }
 
-start();
+window.addEventListener('DOMContentLoaded', start);

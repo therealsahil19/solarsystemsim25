@@ -3,6 +3,9 @@ import checker from 'vite-plugin-checker';
 
 export default defineConfig({
   base: '/solarsystemsim25/',
+  build: {
+    sourcemap: false,
+  },
   server: {
     host: true,
     port: 3000,
