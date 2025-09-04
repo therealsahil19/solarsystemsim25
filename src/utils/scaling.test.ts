@@ -78,13 +78,16 @@ describe('scaling utilities', () => {
     });
 
     it('should handle an invalid preset', () => {
-        const transition: ScaleTransition = {
+        const transition: Partial<ScaleTransition> = {
             active: false,
             progress: 0,
-            fromPreset: 'invalid',
-            toPreset: 'invalid',
         };
-        const displayPosition = calculateDisplayPosition(position, transition);
+        // @ts-expect-error: intentionally passing an invalid ScalePreset to test runtime validation
+        transition.fromPreset = 'invalid';
+        // @ts-expect-error: intentionally passing an invalid ScalePreset to test runtime validation
+        transition.toPreset = 'invalid';
+
+        const displayPosition = calculateDisplayPosition(position, transition as ScaleTransition);
         expect(displayPosition).toEqual(new THREE.Vector3(0, 0, 0));
     });
   });
