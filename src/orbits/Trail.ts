@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { safeSetPositions } from '../utils/three-helpers';
 
 export class Trail {
     line: Line2;
@@ -29,50 +30,15 @@ export class Trail {
     }
 
     updateFromSampledPoints(sampledPositions: THREE.Vector3[]) {
-        // Defensive checks to prevent RangeError
-        if (!sampledPositions || !Array.isArray(sampledPositions)) {
-            console.warn('updateFromSampledPoints: Invalid sampledPositions - not an array or undefined');
-            this.geometry.setPositions([]);
-            return;
-        }
-
-        if (sampledPositions.length < 0) {
-            console.warn('updateFromSampledPoints: sampledPositions.length is negative:', sampledPositions.length);
-            this.geometry.setPositions([]);
+        if (!sampledPositions || sampledPositions.length < 2) {
+            safeSetPositions(this.geometry, []);
             return;
         }
 
         const numPoints = Math.min(this.maxPoints, sampledPositions.length);
 
-        if (numPoints < 2) {
-            this.geometry.setPositions([]);
-            return;
-        }
-
-        // Additional safety check for numPoints
-        if (numPoints <= 0 || !isFinite(numPoints)) {
-            console.warn('updateFromSampledPoints: Invalid numPoints:', numPoints);
-            this.geometry.setPositions([]);
-            return;
-        }
-
-        // Ensure we don't create an array that's too large or negative
-        if (numPoints < 0) {
-            // This is a critical guard. Although other checks should prevent this,
-            // this explicitly stops a negative length from being calculated.
-            console.error(`updateFromSampledPoints: numPoints is negative (${numPoints}), which would cause a crash. Aborting trail update.`);
-            this.geometry.setPositions([]);
-            return;
-        }
-        const positionsArrayLength = numPoints * 3;
-        if (positionsArrayLength < 0 || positionsArrayLength > 1000000) { // Reasonable upper limit
-            console.warn('updateFromSampledPoints: Invalid positionsArrayLength:', positionsArrayLength);
-            this.geometry.setPositions([]);
-            return;
-        }
-
-        const positions = new Float32Array(positionsArrayLength);
-        const colors = new Float32Array(positionsArrayLength);
+        const positions = new Float32Array(numPoints * 3);
+        const colors = new Float32Array(numPoints * 3);
 
         // The tail of the trail is at the beginning of the array (oldest points).
         // We fade the first 5% of the trail to black to simulate fading out.
@@ -88,12 +54,11 @@ export class Trail {
                 positions[i * 3] = 0;
                 positions[i * 3 + 1] = 0;
                 positions[i * 3 + 2] = 0;
-                continue;
+            } else {
+                positions[i * 3] = p.x;
+                positions[i * 3 + 1] = p.y;
+                positions[i * 3 + 2] = p.z;
             }
-
-            positions[i * 3] = p.x;
-            positions[i * 3 + 1] = p.y;
-            positions[i * 3 + 2] = p.z;
 
             let fade = 1.0;
             if (i < fadeEndIndex) {
@@ -106,8 +71,8 @@ export class Trail {
             colors[i * 3 + 2] = this.baseColor.b * fade;
         }
 
-        this.geometry.setPositions(positions);
         this.geometry.setColors(colors);
+        safeSetPositions(this.geometry, positions, { nameForWarnings: 'trail-line' });
     }
 
     updateResolution(x: number, y: number) {

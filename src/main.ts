@@ -26,6 +26,7 @@ import { initOnboardingTour } from './ui/onboarding-tour';
 import { TrailManager } from './orbits/TrailManager';
 import { initTooltips } from './ui/dom';
 import { getAssetUrl } from './utils/assets';
+import { initUserDataIfMissing } from './utils/three-helpers';
 
 async function start() {
     if (import.meta.env.MODE === 'test') {
@@ -297,6 +298,7 @@ async function start() {
             );
         };
         const inst = new THREE.InstancedMesh(geom, material, count);
+        initUserDataIfMissing(inst, { name: 'Asteroid Belt' });
         inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         const distanceScale = 150.0; // 1 AU = 150 meters in the simulation
         const beltMin = 2.2 * distanceScale;
@@ -328,6 +330,7 @@ async function start() {
         const geom = new THREE.SphereGeometry(0.5, 6, 6);
         const mat = new THREE.MeshStandardMaterial({ color: 0x446688, transparent: true, opacity: 0.5 });
         const inst = new THREE.InstancedMesh(geom, mat, count);
+        initUserDataIfMissing(inst, { name: 'Oort Cloud' });
         const dummy = new THREE.Object3D();
         for (let i = 0; i < count; i++) {
             const u = Math.random();
