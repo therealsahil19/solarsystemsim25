@@ -37,14 +37,20 @@ export function keplerToCartesian(el: OrbitalElements, t: number): CartesianStat
   const mu = el.mu ?? 1.32712440018e20;
   const n = meanMotion(el.a_m, mu);
   const M = el.M0_rad + n * (t - el.epoch);
-  const E = solveKepler(M, el.e);
+
+  return keplerToCartesianFromMeanAnomaly(el, M);
+}
+
+export function keplerToCartesianFromMeanAnomaly(el: OrbitalElements, M_rad: number): CartesianState {
+  const E = solveKepler(M_rad, el.e);
   const cosE = Math.cos(E), sinE = Math.sin(E);
 
+  // Position in orbital plane
   const xP = el.a_m * (cosE - el.e);
   const yP = el.a_m * Math.sqrt(1 - el.e ** 2) * sinE;
   const r = Math.sqrt(xP * xP + yP * yP);
 
-  // rotation to inertial coords (classical formula)
+  // Rotation to inertial coords (classical formula)
   const cosO = Math.cos(el.Omega_rad);
   const sinO = Math.sin(el.Omega_rad);
   const cosi = Math.cos(el.i_rad);

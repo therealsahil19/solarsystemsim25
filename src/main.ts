@@ -112,6 +112,7 @@ async function start() {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
         applyDPR();
+        trailManager.updateResolutions(window.innerWidth, window.innerHeight);
     });
 
     // Create all bodies
@@ -199,34 +200,27 @@ async function start() {
 
 
     const orbitManager = new OrbitManager(celestialObjects);
-    orbitManager.init(scene);
+    orbitManager.init(scene, bodyMap);
 
     const trailManager = new TrailManager(celestialObjects, scene);
     trailManager.init();
 
     const physicsWorker = new Worker(new URL('./physics.worker.ts', import.meta.url), { type: 'module' });
 
-    const physicsBodies = celestialObjects
-        .filter(obj => obj.parentId === 'sun' || obj.parentId === null)
-        .map(obj => ({
-            id: obj.id,
-            name: obj.name,
-            semiMajorAxis: obj.semiMajorAxis,
-            eccentricity: obj.eccentricity,
-            orbitalPeriod: obj.orbitalPeriod,
-        }));
-
+    // Send the full data for all celestial objects to the worker.
+    // The worker will handle planets and moons correctly.
     physicsWorker.postMessage({
         command: 'init',
         payload: {
-            bodies: physicsBodies,
+            bodies: celestialObjects,
         }
     });
 
     physicsWorker.onmessage = (e: MessageEvent) => {
         if (e.data.type === 'update') {
             const positions = new Float32Array(e.data.positions);
-            physicsBodies.forEach((body, i) => {
+            // The worker returns positions in the same order as the celestialObjects array we sent it.
+            celestialObjects.forEach((body, i) => {
                 const bodyState = bodyMap.get(body.id);
                 if (bodyState) {
                     bodyState.physicsPosition.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
@@ -631,9 +625,11 @@ async function start() {
             store.getState().setSimTime(newTime);
         }
 
+        // Send the absolute simulation time to the worker.
+        // The worker will handle all time-based physics calculations.
         physicsWorker.postMessage({
             command: 'update',
-            payload: { deltaTime: isPaused ? 0 : (dt / 1000) * timeScale }
+            payload: { simTimeInDays: newTime }
         });
 
         if (simulation.asteroidMaterialUniforms) {
@@ -642,23 +638,9 @@ async function start() {
 
         // Update positions and scales of all celestial objects
         celestialObjects.forEach(obj => {
-            let physicsPosition = obj.physicsPosition;
-
-            if (obj.parentId && obj.parentId !== 'sun') {
-                const parent = bodyMap.get(obj.parentId);
-                if (parent) {
-                    const moonAngle = (2 * Math.PI * newTime) / obj.orbitalPeriod;
-                    const semiMajorAxisAu = (obj.semiMajorAxisKm || 0) / KM_PER_AU;
-                    const moonRelativePos = new THREE.Vector3(
-                        semiMajorAxisAu * Math.cos(moonAngle),
-                        0,
-                        semiMajorAxisAu * Math.sin(moonAngle)
-                    );
-                    physicsPosition = parent.physicsPosition.clone().add(moonRelativePos);
-                }
-            }
-
-            const displayPosition = calculateDisplayPosition(physicsPosition, scaleTransition);
+            // obj.physicsPosition is now the definitive, AU-based position calculated by the worker.
+            // We just need to scale it for rendering.
+            const displayPosition = calculateDisplayPosition(obj.physicsPosition, scaleTransition);
             obj.group.position.copy(displayPosition);
 
             const displayRadius = getDisplayRadius(obj.radius, scaleTransition);
@@ -691,23 +673,39 @@ async function start() {
         if (store.getState().selectedBodyId) {
             const selectedBody = celestialObjects.find(c => c.id === store.getState().selectedBodyId);
             if (selectedBody && selectedBody.name !== 'Sun') {
-                const planetAngle = (2 * Math.PI * store.getState().simTime) / selectedBody.orbitalPeriod;
-                const a_au = selectedBody.semiMajorAxis;
-                const e = selectedBody.eccentricity;
-                const r_au = a_au * (1 - e * e) / (1 + e * Math.cos(planetAngle));
+                const parent = bodyMap.get(selectedBody.parentId!);
+                const parentPosition = parent ? parent.physicsPosition : new THREE.Vector3(0, 0, 0);
+
+                // Calculate current distance from parent in AU
+                const r_au = selectedBody.physicsPosition.distanceTo(parentPosition);
                 const r_km = r_au * KM_PER_AU;
                 const r_m = r_au * AU_TO_M;
+
+                // Get semi-major axis for speed calculation
+                const a_au = selectedBody.parentId === 'sun' ? selectedBody.semiMajorAxis : (selectedBody.semiMajorAxisKm || 0) / KM_PER_AU;
                 const a_m = a_au * AU_TO_M;
-                const speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m });
+
+                // Calculate speed
+                let speed_m_s = 0;
+                if (a_m > 0) {
+                    // Default to Sun's mass for planets, or use parent's mass for moons.
+                    const parentMass10e24kg = parent?.mass || celestialBodyData[0].mass!;
+                    const G = 6.67430e-11;
+                    const mu = G * parentMass10e24kg * 1e24;
+                    speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m, mu });
+                }
+
                 const distanceUnit = store.getState().distanceUnit;
                 dom.cardStats.textContent = `Dist: ${formatDistance(r_km, distanceUnit)} • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
+
             } else if (selectedBody) {
                 dom.cardStats.textContent = 'At the center of the solar system';
             }
         }
 
+        orbitManager.update(scaleTransition);
         orbitManager.updateLODs(camera, 800);
-        trailManager.update();
+        trailManager.update(scaleTransition);
 
         celestialObjects.forEach(obj => {
             if (obj.mesh instanceof LOD) {
