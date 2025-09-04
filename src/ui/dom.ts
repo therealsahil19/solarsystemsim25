@@ -52,6 +52,9 @@ export const btnFrame = document.getElementById('btn-frame') as HTMLButtonElemen
 export const btnFollow = document.getElementById('btn-follow') as HTMLButtonElement;
 export const btnOrbit = document.getElementById('btn-orbit') as HTMLButtonElement;
 
+export const performancePreset = document.getElementById('performance-preset') as HTMLSelectElement;
+export const controlsPanel = document.getElementById('mainPanel') as HTMLDivElement;
+
 export function initTooltips() {
     let tooltip: HTMLDivElement | null = null;
 
