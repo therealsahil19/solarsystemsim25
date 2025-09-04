@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Simulator</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <script type="module" crossorigin src="/solarsystemsim25/assets/index-ZoRR8mn-.js"></script>
+  <script type="module" crossorigin src="/solarsystemsim25/assets/index-DXi2EZyU.js"></script>
   <link rel="stylesheet" crossorigin href="/solarsystemsim25/assets/index-DIJba_F3.css">
 </head>
 <body>
@@ -285,6 +285,24 @@
                 </div>
             </div>
             <button id="help-button" class="btn help-btn">?</button>
+
+            <!-- Help Overlay -->
+            <div id="help-overlay" class="overlay hidden" role="dialog" aria-label="Help and Shortcuts">
+                <div class="overlay-content">
+                    <header class="overlay-header">
+                        <h2>Help & Shortcuts</h2>
+                        <button id="help-overlay-close" class="overlay-close-btn" aria-label="Close help">&times;</button>
+                    </header>
+                    <div class="overlay-body">
+                        <!-- Content will be populated by shortcuts-panel.ts -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Access Toolbar -->
+            <div id="quick-access-toolbar" class="quick-access-toolbar hidden">
+                <!-- Buttons will be populated by quick-access-toolbar.ts -->
+            </div>
         </div>
     </div>
     <div id="body-tooltip" class="tooltip hidden"></div>
