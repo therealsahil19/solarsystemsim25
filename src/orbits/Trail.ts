@@ -49,8 +49,23 @@ export class Trail {
             return;
         }
 
-        const positions = new Float32Array(numPoints * 3);
-        const colors = new Float32Array(numPoints * 3);
+        // Additional safety check for numPoints
+        if (numPoints <= 0 || !isFinite(numPoints)) {
+            console.warn('updateFromSampledPoints: Invalid numPoints:', numPoints);
+            this.geometry.setPositions([]);
+            return;
+        }
+
+        // Ensure we don't create an array that's too large or negative
+        const positionsArrayLength = numPoints * 3;
+        if (positionsArrayLength < 0 || positionsArrayLength > 1000000) { // Reasonable upper limit
+            console.warn('updateFromSampledPoints: Invalid positionsArrayLength:', positionsArrayLength);
+            this.geometry.setPositions([]);
+            return;
+        }
+
+        const positions = new Float32Array(positionsArrayLength);
+        const colors = new Float32Array(positionsArrayLength);
 
         // The tail of the trail is at the beginning of the array (oldest points).
         // We fade the first 5% of the trail to black to simulate fading out.

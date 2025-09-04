@@ -41,12 +41,21 @@ export function setupInteractions(
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                const { name, radius } = hovered.userData.data;
+                // Add defensive check for userData.data
+                const userData = hovered.userData;
+                const data = userData?.data;
+                const name = data?.name;
+                const radius = data?.radius;
 
-                tooltipElement.innerHTML = `<strong>${name}</strong><br>Radius: ${radius.toLocaleString()} km`;
-                tooltipElement.style.left = `${event.clientX + 15}px`;
-                tooltipElement.style.top = `${event.clientY + 15}px`;
-                tooltipElement.classList.remove('hidden');
+                if (name && typeof radius === 'number') {
+                    tooltipElement.innerHTML = `<strong>${name}</strong><br>Radius: ${radius.toLocaleString()} km`;
+                    tooltipElement.style.left = `${event.clientX + 15}px`;
+                    tooltipElement.style.top = `${event.clientY + 15}px`;
+                    tooltipElement.classList.remove('hidden');
+                } else {
+                    console.warn('Object missing valid userData.data:', hovered);
+                    tooltipElement.classList.add('hidden');
+                }
             } else {
                 tooltipElement.classList.add('hidden');
             }
