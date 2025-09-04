@@ -1,5 +1,5 @@
 import { camera, controls, renderer } from '../scene';
-import { store } from '../state/store';
+import store from '../state/store';
 import { Preset, PanelState, getAllPresets, addPreset, deletePreset } from '../state/presets';
 import { v4 as uuidv4 } from 'uuid';
 import { PanelManager } from './panel-manager';

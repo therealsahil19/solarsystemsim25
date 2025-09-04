@@ -1,4 +1,4 @@
-import { store } from '../state/store';
+import store, { AppState } from '../state/store';
 import { DistanceUnit } from '../utils/units';
 import { sliderToTimeScale, timeScaleToSlider, TimeScaleConfig } from '../utils/timeScaleMap';
 
@@ -131,7 +131,7 @@ function initVisualsPanel() {
     });
 
     // Subscribe to store changes to keep UI in sync
-    store.subscribe((state) => {
+    store.subscribe((state: AppState) => {
         if (trailsEnabledToggle.checked !== state.trailsEnabled) {
             trailsEnabledToggle.checked = state.trailsEnabled;
         }
@@ -153,7 +153,7 @@ function initGlobalControls() {
     });
 
     // Subscribe to store changes to keep UI in sync (e.g., when a preset is loaded)
-    store.subscribe((state) => {
+    store.subscribe((state: AppState) => {
         if (distanceUnitSelect.value !== state.distanceUnit) {
             distanceUnitSelect.value = state.distanceUnit;
         }

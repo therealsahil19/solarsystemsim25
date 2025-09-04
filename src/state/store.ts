@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { DistanceUnit } from '../utils/units';
@@ -38,7 +38,7 @@ export interface AppState {
   setPerfPreset: (preset: 'auto' | 'low' | 'medium' | 'high') => void;
 }
 
-export const useStore = create<AppState>()(
+const store = createStore<AppState>()(
   subscribeWithSelector(
     immer((set) => ({
       selectedBodyId: 'sun',
@@ -66,4 +66,22 @@ export const useStore = create<AppState>()(
   )
 );
 
-export const store = useStore;
+export default store;
+
+export const getState = store.getState;
+export const setState = store.setState;
+export const subscribe = store.subscribe;
+
+export function subscribeToSelector<T>(
+  selector: (s: AppState) => T,
+  cb: (next: T, prev: T | undefined) => void
+) {
+  let prev = selector(store.getState());
+  return store.subscribe((state) => {
+    const next = selector(state);
+    if (next !== prev) {
+      cb(next, prev);
+      prev = next;
+    }
+  });
+}

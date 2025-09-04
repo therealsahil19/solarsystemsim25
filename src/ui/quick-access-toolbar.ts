@@ -1,4 +1,4 @@
-import { store } from '../state/store';
+import store from '../state/store';
 import { quickAccessToolbar } from './dom';
 
 const QUICK_ACCESS_BODIES = ['Sun', 'Earth', 'Mars', 'Jupiter'];

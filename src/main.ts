@@ -12,7 +12,7 @@ import { createCelestialBodySelector } from './ui/celestial-selector';
 import { setupInteractions } from './interactions';
 import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
 import { OrbitManager } from './orbits/OrbitManager';
-import { store, ScalePreset } from './state/store';
+import store, { ScalePreset } from './state/store';
 import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
