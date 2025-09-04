@@ -1,12 +1,18 @@
 import { PanelManager } from './panel-manager';
 import { PanelController } from './panel-types';
 
-// A map to hold all our panel controllers
+/**
+ * A map that holds all created `PanelController` instances, keyed by their panel ID.
+ * This provides a central place to access any panel's controller.
+ */
 export const panelControllers = new Map<string, PanelController>();
 
 /**
- * Initializes all panels, sets up their controllers, and establishes global keyboard shortcuts.
- * @deprecated This function appears to be unused and may be dead code.
+ * Initializes all UI panels defined in the application.
+ * It uses the `PanelManager` to create a controller for each panel and sets up
+ * event listeners for common controls like pinning.
+ * @deprecated This function appears to be unused and may be part of a legacy implementation.
+ * The current implementation seems to initialize panels individually in their own modules.
  */
 export function initPanels() {
     // Define the configuration for each panel
@@ -46,17 +52,19 @@ export function initPanels() {
 }
 
 /**
- * Sets up keyboard event listeners for panel-related actions.
+ * Sets up global keyboard event listeners for common panel-related actions,
+ * such as toggling panels with number keys or closing them with the Escape key.
+ * @private
  */
 function setupPanelShortcuts() {
     window.addEventListener('keydown', (event) => {
-        // Ignore shortcuts if user is typing in an input field
+        // Ignore shortcuts if the user is typing in an input field.
         const target = event.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
             return;
         }
 
-        // Handle Ctrl + [1-4] for toggling panels
+        // Handle Ctrl + [1-4] for toggling panels.
         if (event.ctrlKey && event.code.startsWith('Digit')) {
             const digit = parseInt(event.code.replace('Digit', ''), 10);
             const panelIds = ['infoPanel', 'mainPanel', 'presetsPanel', 'shortcutsPanel'];
@@ -67,12 +75,12 @@ function setupPanelShortcuts() {
             }
         }
 
-        // Handle 'Esc' to close the most recently focused panel
+        // Handle 'Esc' to close the most recently focused, non-pinned panel.
         if (event.code === 'Escape') {
             const mostRecentController = PanelManager.getMostRecentlyFocusedController();
             if (mostRecentController && !mostRecentController.isPinned()) {
                 event.preventDefault();
-                event.stopPropagation(); // Prevent other 'Esc' listeners from firing
+                event.stopPropagation(); // Prevent other 'Esc' listeners from firing.
                 mostRecentController.hide();
             }
         }

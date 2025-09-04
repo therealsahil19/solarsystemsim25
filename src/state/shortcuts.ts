@@ -1,12 +1,22 @@
+/**
+ * Defines the structure for a keyboard shortcut binding.
+ */
 export interface ShortcutBinding {
+    /** The `KeyboardEvent.code` value for the key (e.g., 'KeyW', 'Space'). */
     code: string;
+    /** Whether the Shift key must be pressed. */
     shiftKey?: boolean;
+    /** Whether the Ctrl key must be pressed. */
     ctrlKey?: boolean;
+    /** Whether the Alt key must be pressed. */
     altKey?: boolean;
+    /** A user-friendly string to display for this shortcut (e.g., 'Shift + W'). */
     display: string;
 }
 
-// A comprehensive list of all possible actions
+/**
+ * A comprehensive list of all possible actions that can be triggered by a shortcut.
+ */
 export type ShortcutAction =
     | 'toggle-pause'
     | 'toggle-debug-hud'
@@ -31,8 +41,15 @@ export type ShortcutAction =
     | 'select-body-8'
     | 'select-body-9';
 
+/**
+ * A map that associates `ShortcutAction` strings with their corresponding `ShortcutBinding`.
+ */
 export type ShortcutMap = { [action in ShortcutAction]?: ShortcutBinding };
 
+/**
+ * The default shortcut configuration for the application.
+ * @private
+ */
 const defaultShortcuts: ShortcutMap = {
     'toggle-pause': { code: 'Space', display: 'Space' },
     'toggle-debug-hud': { code: 'Backquote', display: '`' },
@@ -58,10 +75,24 @@ const defaultShortcuts: ShortcutMap = {
     'select-body-9': { code: 'Digit9', display: '9' },
 };
 
+/**
+ * The key used to store custom shortcut settings in `localStorage`.
+ * @private
+ */
 const LOCAL_STORAGE_KEY = 'solar-system-shortcuts';
 
+/**
+ * The current, in-memory representation of the shortcut map.
+ * @private
+ */
 let currentShortcuts: ShortcutMap = { ...defaultShortcuts };
 
+/**
+ * Loads custom shortcuts from `localStorage` and merges them with the defaults.
+ * This ensures that the app starts with the user's saved preferences, while
+ * also accommodating any new shortcuts added to the default map.
+ * @private
+ */
 function loadShortcuts() {
     try {
         const storedShortcuts = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -76,6 +107,10 @@ function loadShortcuts() {
     }
 }
 
+/**
+ * Saves the current shortcut map to `localStorage`.
+ * @private
+ */
 function saveShortcuts() {
     try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentShortcuts));
@@ -84,10 +119,20 @@ function saveShortcuts() {
     }
 }
 
+/**
+ * Returns a read-only version of the current shortcut map.
+ * @returns The current `ShortcutMap`.
+ */
 export function getShortcuts(): Readonly<ShortcutMap> {
     return currentShortcuts;
 }
 
+/**
+ * Sets a new binding for a specific shortcut action and saves it to `localStorage`.
+ * If the new binding is already in use by another action, it will be un-assigned from the old action.
+ * @param action The action to re-bind.
+ * @param binding The new shortcut binding.
+ */
 export function setShortcut(action: ShortcutAction, binding: ShortcutBinding) {
     // Before setting a new shortcut, we must ensure no other action uses the same binding.
     // If it does, we should un-assign it from the old action.
@@ -108,6 +153,9 @@ export function setShortcut(action: ShortcutAction, binding: ShortcutBinding) {
     saveShortcuts();
 }
 
+/**
+ * Resets all shortcuts to their default values and clears them from `localStorage`.
+ */
 export function resetShortcuts() {
     currentShortcuts = { ...defaultShortcuts };
     localStorage.removeItem(LOCAL_STORAGE_KEY);

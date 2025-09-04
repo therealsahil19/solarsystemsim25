@@ -2,6 +2,10 @@ import store, { AppState } from '../state/store';
 import { DistanceUnit } from '../utils/units';
 import { sliderToTimeScale, timeScaleToSlider, TimeScaleConfig } from '../utils/timeScaleMap';
 
+/**
+ * The default configuration for mapping the time slider's linear value to the exponential time scale.
+ * @private
+ */
 const DEFAULT_TIME_CFG: TimeScaleConfig = {
   minNonZero: 1e-6,
   midScale: 100,
@@ -9,6 +13,12 @@ const DEFAULT_TIME_CFG: TimeScaleConfig = {
   pauseThreshold: 1e-7
 };
 
+/**
+ * Formats a time scale value into a human-readable string (e.g., "1.0x", "2.5 y/s").
+ * @param scale The time scale value.
+ * @returns A formatted string.
+ * @private
+ */
 function formatTimeScaleFriendly(scale: number): string {
   if (scale === 0) return 'Paused';
   if (scale === 1) return '1x';
@@ -20,20 +30,32 @@ function formatTimeScaleFriendly(scale: number): string {
   return `${scale.toFixed(1)}x`;
 }
 
+/**
+ * Formats the simulation time (in days) into a readable UTC date string.
+ * @param simTime The simulation time in days.
+ * @returns A formatted date string.
+ * @private
+ */
 function formatTimestamp(simTime: number): string {
     const date = new Date(new Date(2025, 0, 1).getTime() + simTime * 1000);
     return date.toUTCString().substring(5, 25); // Simple formatting
 }
 
+/**
+ * Initializes all controls within the main settings panel by calling the
+ * specific initializer for each section.
+ */
 export function initMainPanel() {
-    // The tab logic has been removed.
-    // The init functions for the controls are still called from main.ts,
-    // but the container setup is no longer needed here.
     initTimeControls();
     initVisualsPanel();
     initGlobalControls();
 }
 
+/**
+ * Initializes all UI elements related to time control, such as the play/pause
+ * button, time scale slider, and step buttons. It connects them to the global store.
+ * @private
+ */
 function initTimeControls() {
     const playPauseBtn = document.getElementById('play-pause-btn') as HTMLButtonElement;
     const slider = document.getElementById('time-scale-slider') as HTMLInputElement;
@@ -44,6 +66,7 @@ function initTimeControls() {
     const stepBackwardBtn = document.getElementById('time-step-backward') as HTMLButtonElement;
     const tooltip = document.getElementById('time-scale-tooltip') as HTMLDivElement;
 
+    /** Updates the position and content of the time scale slider's tooltip. */
     function updateSliderTooltip() {
         const value = parseFloat(slider.value);
         const min = parseFloat(slider.min);
@@ -58,6 +81,7 @@ function initTimeControls() {
         tooltip.textContent = displayValue;
     }
 
+    /** Updates the entire time control UI based on the current state from the store. */
     function updateUiFromState() {
         const { isPaused, timeScale, simTime } = store.getState();
         playPauseBtn.textContent = isPaused ? '▶' : '❚❚';
@@ -113,6 +137,10 @@ function initTimeControls() {
     store.subscribe(updateUiFromState);
 }
 
+/**
+ * Initializes the "Visuals" panel controls, such as the trail toggle and length slider.
+ * @private
+ */
 function initVisualsPanel() {
     const trailsEnabledToggle = document.getElementById('trails-enabled-toggle') as HTMLInputElement;
     const trailLengthSlider = document.getElementById('trail-length-slider') as HTMLInputElement;
@@ -141,6 +169,10 @@ function initVisualsPanel() {
     });
 }
 
+/**
+ * Initializes global controls, such as the distance unit selector.
+ * @private
+ */
 function initGlobalControls() {
     const distanceUnitSelect = document.getElementById('distance-unit-select') as HTMLSelectElement;
 

@@ -1,6 +1,6 @@
 import { getShortcuts, setShortcut, ShortcutAction, ShortcutBinding } from '../state/shortcuts';
 
-// A more user-friendly mapping for action IDs to labels
+/** A mapping from `ShortcutAction` IDs to user-friendly labels for display in the UI. @private */
 const actionLabels: { [key in ShortcutAction]?: string } = {
     'toggle-pause': 'Play/Pause Simulation',
     'toggle-debug-hud': 'Toggle Debug Info',
@@ -26,6 +26,7 @@ const actionLabels: { [key in ShortcutAction]?: string } = {
     'select-body-9': 'Select Neptune',
 };
 
+/** A mapping from `ShortcutAction` IDs to more detailed tooltips. @private */
 const actionTooltips: { [key in ShortcutAction]?: string } = {
     'frame-selected': 'Focus the camera on the currently selected planet or moon.',
     'frame-advance': 'If paused, advances the simulation by a single frame.',
@@ -33,11 +34,19 @@ const actionTooltips: { [key in ShortcutAction]?: string } = {
     'fine-step-backward': 'Nudges the simulation time backward by a small amount.',
 };
 
+/** The action currently being remapped by the user. @private */
 let activeRemapAction: ShortcutAction | null = null;
+/** The original text of the "Remap" button before remapping starts. @private */
 let originalButtonText: string = '';
 
+/**
+ * Formats a `ShortcutBinding` object into a human-readable string (e.g., "Ctrl + Shift + R").
+ * @param binding The shortcut binding to format.
+ * @returns A formatted string for display.
+ * @private
+ */
 function formatBindingForDisplay(binding: ShortcutBinding): string {
-    let parts: string[] = [];
+    const parts: string[] = [];
     if (binding.ctrlKey) parts.push('Ctrl');
     if (binding.altKey) parts.push('Alt');
     if (binding.shiftKey) parts.push('Shift');
@@ -53,12 +62,19 @@ function formatBindingForDisplay(binding: ShortcutBinding): string {
     return parts.join(' + ');
 }
 
+/**
+ * Handles the `keydown` event when in remapping mode. Captures the new key combination,
+ * saves it, and finishes the remapping process.
+ * @param event The `KeyboardEvent`.
+ * @private
+ */
 function handleRemap(event: KeyboardEvent) {
     event.preventDefault();
     event.stopPropagation();
 
     if (!activeRemapAction) return;
 
+    // Allow canceling with Escape
     if (event.code === 'Escape') {
         finishRemap();
         return;
@@ -77,8 +93,15 @@ function handleRemap(event: KeyboardEvent) {
     finishRemap();
 }
 
+/**
+ * Initiates the key remapping process for a given action.
+ * @param action The `ShortcutAction` to remap.
+ * @param button The button element that was clicked to start the process.
+ * @private
+ */
 function startRemap(action: ShortcutAction, button: HTMLButtonElement) {
     if (activeRemapAction) {
+        // If another remap was in progress, restore its button text
         const oldButton = document.querySelector(`[data-action="${activeRemapAction}"]`) as HTMLButtonElement | null;
         if(oldButton) oldButton.textContent = originalButtonText;
     }
@@ -89,12 +112,20 @@ function startRemap(action: ShortcutAction, button: HTMLButtonElement) {
     window.addEventListener('keydown', handleRemap, { capture: true });
 }
 
+/**
+ * Finishes the remapping process by removing the event listener and re-rendering the list.
+ * @private
+ */
 function finishRemap() {
     window.removeEventListener('keydown', handleRemap, { capture: true });
     activeRemapAction = null;
     renderShortcutsList();
 }
 
+/**
+ * Renders the list of shortcuts into the shortcuts panel.
+ * @param filter An optional string to filter the list of shortcuts by their labels.
+ */
 export function renderShortcutsList(filter: string = '') {
     const shortcuts = getShortcuts();
     const container = document.getElementById('shortcuts-list');
@@ -138,6 +169,10 @@ export function renderShortcutsList(filter: string = '') {
     }
 }
 
+/**
+ * Initializes the shortcuts panel, setting up the search input and listeners
+ * to re-render the list when the panel is shown.
+ */
 export function initShortcutsPanel() {
     const searchInput = document.getElementById('help-search-input') as HTMLInputElement;
     if (searchInput) {
@@ -146,7 +181,7 @@ export function initShortcutsPanel() {
         });
     }
 
-    // When the overlay is opened, clear the search and re-render
+    // When the help overlay is opened, clear the search, re-render the full list, and focus the input.
     const helpOverlay = document.getElementById('help-overlay');
     if(helpOverlay) {
         const observer = new MutationObserver((mutations) => {

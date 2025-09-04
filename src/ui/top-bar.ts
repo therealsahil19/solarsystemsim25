@@ -1,27 +1,49 @@
 import store, { AppState, ScalePreset } from '../state/store';
 
-// --- DOM Element References ---
+// --- Module-level variables for DOM Element References ---
+/** @private */
 let moreMenuBtn: HTMLButtonElement;
+/** @private */
 let moreMenuContent: HTMLDivElement;
+/** @private */
 let topBar: HTMLElement;
+/** @private */
 let appContainer: HTMLElement;
+/** @private */
 let scaleControlGroup: HTMLDivElement;
+/** @private */
 let scalePresetSelect: HTMLSelectElement;
+/** @private */
 let scaleBadge: HTMLSpanElement;
+/** @private */
 let timeSliderGroup: HTMLElement;
+/** @private */
 let timePresetGroup: HTMLElement;
+/** @private */
 let visualsBtn: HTMLElement;
+/** @private */
 let settingsBtn: HTMLElement;
+/** @private */
 let githubLink: HTMLElement;
 
 // --- Original Parent Elements for Responsive Moves ---
+/** @private */
 let visualsBtnParent: HTMLElement;
+/** @private */
 let settingsBtnParent: HTMLElement;
+/** @private */
 let githubLinkParent: HTMLElement;
+/** @private */
 let timeSliderGroupParent: HTMLElement;
+/** @private */
 let timePresetGroupParent: HTMLElement;
+/** @private */
 let scaleControlGroupParent: HTMLElement;
 
+/**
+ * Caches references to all necessary DOM elements for the top bar and its responsive behavior.
+ * @private
+ */
 function cacheDOMElements() {
     moreMenuBtn = document.getElementById('more-menu-toggle') as HTMLButtonElement;
     moreMenuContent = document.getElementById('more-menu-content') as HTMLDivElement;
@@ -36,7 +58,7 @@ function cacheDOMElements() {
     settingsBtn = document.getElementById('settings-btn') as HTMLElement;
     githubLink = document.getElementById('github-link') as HTMLElement;
 
-    // Store original parents
+    // Store original parents to move elements back on larger screens
     visualsBtnParent = visualsBtn.parentNode as HTMLElement;
     settingsBtnParent = settingsBtn.parentNode as HTMLElement;
     githubLinkParent = githubLink.parentNode as HTMLElement;
@@ -45,11 +67,17 @@ function cacheDOMElements() {
     scaleControlGroupParent = scaleControlGroup.parentNode as HTMLElement;
 }
 
+/**
+ * Handles the responsive layout of the top bar. On smaller screens, it moves
+ * less critical controls into a "More" dropdown menu. On larger screens, it
+ * moves them back to their original positions.
+ * @private
+ */
 function handleResponsiveLayout() {
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
-        // Move to More Menu if they aren't already there
+        // Move controls to the "More" menu if they aren't already there
         if (!moreMenuContent.contains(timeSliderGroup)) moreMenuContent.appendChild(timeSliderGroup);
         if (!moreMenuContent.contains(timePresetGroup)) moreMenuContent.appendChild(timePresetGroup);
         if (!moreMenuContent.contains(visualsBtn)) moreMenuContent.appendChild(visualsBtn);
@@ -58,14 +86,13 @@ function handleResponsiveLayout() {
         if (!moreMenuContent.contains(scaleControlGroup)) moreMenuContent.appendChild(scaleControlGroup);
         moreMenuBtn.classList.remove('hidden');
     } else {
-        // Move back to original positions
+        // Move controls back to their original positions in the top bar
         timeSliderGroupParent.appendChild(timeSliderGroup);
         timePresetGroupParent.appendChild(timePresetGroup);
 
         const moreMenuContainer = document.getElementById('more-menu-container')!;
         visualsBtnParent.insertBefore(visualsBtn, moreMenuContainer);
         settingsBtnParent.insertBefore(settingsBtn, moreMenuContainer);
-        // Insert scale control before github link
         scaleControlGroupParent.insertBefore(scaleControlGroup, githubLink);
         githubLinkParent.insertBefore(githubLink, moreMenuContainer);
 
@@ -76,11 +103,20 @@ function handleResponsiveLayout() {
     updateAppPadding();
 }
 
+/**
+ * Adjusts the top padding of the main app container to prevent its content
+ * from being obscured by the top bar.
+ * @private
+ */
 function updateAppPadding() {
     const topBarHeight = topBar.offsetHeight;
     appContainer.style.paddingTop = `${topBarHeight}px`;
 }
 
+/**
+ * Sets up all necessary event listeners for the top bar controls.
+ * @private
+ */
 function setupEventListeners() {
     moreMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -93,13 +129,14 @@ function setupEventListeners() {
         store.getState().setScalePreset(preset);
     });
 
+    // Subscribe to the global store to keep the UI in sync with the state
     store.subscribe((state: AppState) => {
         const preset = state.scalePreset;
         if (scalePresetSelect.value !== preset) {
             scalePresetSelect.value = preset;
         }
 
-        // Update badge text based on preset
+        // Update the scale badge text based on the current preset
         switch (preset) {
             case 'realistic':
                 scaleBadge.textContent = '1:1 Scale';
@@ -113,7 +150,7 @@ function setupEventListeners() {
         }
     });
 
-    // Improved click-outside-to-close logic
+    // Add a global click listener to close the "More" menu when clicking outside of it.
     document.addEventListener('click', (e) => {
         const target = e.target as Node;
         if (!moreMenuContent.classList.contains('hidden') && !moreMenuContent.contains(target) && !moreMenuBtn.contains(target)) {
@@ -124,6 +161,10 @@ function setupEventListeners() {
     window.addEventListener('resize', handleResponsiveLayout);
 }
 
+/**
+ * Initializes the top bar component by caching DOM elements, setting up
+ * event listeners, and running an initial responsive layout check.
+ */
 export function initTopBar() {
     cacheDOMElements();
     setupEventListeners();
