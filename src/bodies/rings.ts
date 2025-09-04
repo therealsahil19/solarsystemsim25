@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CelestialBody } from '../data';
 import { getAssetUrl } from '../utils/assets';
 import { scaleRingRadius } from '../utils/misc';
+import { initUserDataIfMissing } from '../utils/three-helpers';
 
 function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
     const ringData = p_data.rings!;
@@ -55,6 +56,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.02,
             0.05
         );
+        initUserDataIfMissing(mainRing, { name: `${p_data.name} Main Ring` });
         ringGroup.add(mainRing);
     }
 
@@ -67,6 +69,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.02,
             0.02
         );
+        initUserDataIfMissing(haloRing, { name: `${p_data.name} Halo Ring` });
         ringGroup.add(haloRing);
     }
 
@@ -79,6 +82,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.015,
             0.01
         );
+        initUserDataIfMissing(gossamerRing, { name: `${p_data.name} Gossamer Ring` });
         ringGroup.add(gossamerRing);
     });
 }
@@ -109,6 +113,7 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
             metalness: 0.1,
         });
         const rings = new THREE.Mesh(ringGeometry, fallbackMaterial);
+        initUserDataIfMissing(rings, { name: `${p_data.name} Rings (Fallback)` });
         ringGroup.add(rings);
     };
 
@@ -126,6 +131,7 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
                 metalness: 0.1,
             });
             const rings = new THREE.Mesh(ringGeometry, ringMaterial);
+            initUserDataIfMissing(rings, { name: `${p_data.name} Rings` });
             ringGroup.add(rings);
         },
         undefined,
@@ -178,6 +184,7 @@ function createUranusRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         const outerRadius = scaleRingRadius(band.outerRadius);
         const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 128);
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        initUserDataIfMissing(ring, { name: `${p_data.name} Ring (${band.type})` });
         ringGroup.add(ring);
     });
 }
@@ -225,6 +232,7 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         const outerRadius = scaleRingRadius(band.outerRadius);
         const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 256);
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        initUserDataIfMissing(ring, { name: `${p_data.name} Ring (${band.type})` });
         ringGroup.add(ring);
     });
 
@@ -237,7 +245,7 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         metalness: 0.2,
     });
 
-    ringData.arcs!.forEach(arc => {
+    ringData.arcs!.forEach((arc, index) => {
         const innerRadius = scaleRingRadius(arc.innerRadius);
         const outerRadius = scaleRingRadius(arc.outerRadius);
         const arcGeometry = new THREE.RingGeometry(
@@ -249,6 +257,7 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             arc.thetaLength
         );
         const arcMesh = new THREE.Mesh(arcGeometry, arcMaterial);
+        initUserDataIfMissing(arcMesh, { name: `${p_data.name} Ring Arc ${index + 1}` });
         ringGroup.add(arcMesh);
     });
 }

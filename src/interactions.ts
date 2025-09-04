@@ -3,6 +3,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import * as dom from './ui/dom';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { showHud } from './ui/contextual-hud';
+import { warnOnce } from './utils/three-helpers';
 
 // The simulation object is now simpler, as most state is in the store.
 export type Simulation = {
@@ -41,9 +42,7 @@ export function setupInteractions(
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                // Add defensive check for userData.data
-                const userData = hovered.userData;
-                const data = userData?.data;
+                const data = hovered.userData?.data;
                 const name = data?.name;
                 const radius = data?.radius;
 
@@ -53,7 +52,7 @@ export function setupInteractions(
                     tooltipElement.style.top = `${event.clientY + 15}px`;
                     tooltipElement.classList.remove('hidden');
                 } else {
-                    console.warn('Object missing valid userData.data:', hovered);
+                    warnOnce(hovered.uuid, 'Object missing valid userData.data:', hovered);
                     tooltipElement.classList.add('hidden');
                 }
             } else {
@@ -84,8 +83,11 @@ export function setupInteractions(
 
         if (intersects.length > 0) {
             const clicked = intersects[0].object;
-            onBodySelected(clicked.userData.name);
-            showHud(clicked, camera);
+            const bodyName = clicked.userData?.data?.name;
+            if (bodyName) {
+                onBodySelected(bodyName);
+                showHud(clicked, camera);
+            }
         } else {
             const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
             const intersection = new THREE.Vector3();
@@ -130,8 +132,9 @@ export function setupInteractions(
     }
 
     dom.btnFrame.addEventListener('click', () => {
-        if (simulation.selectedObject) {
-            onBodySelected(simulation.selectedObject.userData.name);
+        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        if (bodyName) {
+            onBodySelected(bodyName);
             triggerButtonFlash(dom.btnFrame);
         }
     });
@@ -152,8 +155,9 @@ export function setupInteractions(
     });
 
     dom.btnOrbit.addEventListener('click', () => {
-        if (!simulation.selectedObject) return;
-        const bodyName = simulation.selectedObject.userData.name;
+        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        if (!bodyName) return;
+
         const orbit = orbits.find(o => o.userData.name === bodyName);
         if (orbit) {
             orbit.visible = !orbit.visible;
