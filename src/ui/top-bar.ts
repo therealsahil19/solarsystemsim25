@@ -8,11 +8,12 @@ let appContainer: HTMLElement;
 let scaleControlGroup: HTMLDivElement;
 let scalePresetSelect: HTMLSelectElement;
 let scaleBadge: HTMLSpanElement;
+let timeSliderGroup: HTMLElement;
+let timePresetGroup: HTMLElement;
+let visualsBtn: HTMLElement;
+let settingsBtn: HTMLElement;
+let githubLink: HTMLElement;
 
-feat/responsive-design-overhaul
-// Store elements to be moved and their original parents
-const movableElements = new Map<HTMLElement, HTMLElement>();
-=======
 // --- Original Parent Elements for Responsive Moves ---
 let visualsBtnParent: HTMLElement;
 let settingsBtnParent: HTMLElement;
@@ -20,7 +21,6 @@ let githubLinkParent: HTMLElement;
 let timeSliderGroupParent: HTMLElement;
 let timePresetGroupParent: HTMLElement;
 let scaleControlGroupParent: HTMLElement;
-main
 
 function cacheDOMElements() {
     moreMenuBtn = document.getElementById('more-menu-toggle') as HTMLButtonElement;
@@ -30,14 +30,12 @@ function cacheDOMElements() {
     scaleControlGroup = document.getElementById('scale-control-group') as HTMLDivElement;
     scalePresetSelect = document.getElementById('scale-preset-select') as HTMLSelectElement;
     scaleBadge = document.getElementById('scale-badge') as HTMLSpanElement;
+    timeSliderGroup = document.getElementById('time-control-group') as HTMLElement;
+    timePresetGroup = document.getElementById('time-preset-group') as HTMLElement;
+    visualsBtn = document.getElementById('visuals-btn') as HTMLElement;
+    settingsBtn = document.getElementById('settings-btn') as HTMLElement;
+    githubLink = document.getElementById('github-link') as HTMLElement;
 
-feat/responsive-design-overhaul
-    // Find all elements that should be hidden on mobile and moved to the menu
-    const elementsToMove = document.querySelectorAll('.mobile-hide');
-    elementsToMove.forEach(el => {
-        movableElements.set(el as HTMLElement, el.parentNode as HTMLElement);
-    });
-=======
     // Store original parents
     visualsBtnParent = visualsBtn.parentNode as HTMLElement;
     settingsBtnParent = settingsBtn.parentNode as HTMLElement;
@@ -45,30 +43,12 @@ feat/responsive-design-overhaul
     timeSliderGroupParent = timeSliderGroup.parentNode as HTMLElement;
     timePresetGroupParent = timePresetGroup.parentNode as HTMLElement;
     scaleControlGroupParent = scaleControlGroup.parentNode as HTMLElement;
-main
 }
 
 function handleResponsiveLayout() {
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
-feat/responsive-design-overhaul
-        // Move elements to the slide-out menu
-        movableElements.forEach((_originalParent, el) => {
-            if (!moreMenuContent.contains(el)) {
-                moreMenuContent.appendChild(el);
-            }
-        });
-    } else {
-        // Move elements back to their original parents
-        movableElements.forEach((originalParent, el) => {
-            if (!originalParent.contains(el)) {
-                originalParent.appendChild(el);
-            }
-        });
-        // Ensure the menu is closed when resizing to desktop
-        topBar.classList.remove('is-menu-open');
-=======
         // Move to More Menu if they aren't already there
         if (!moreMenuContent.contains(timeSliderGroup)) moreMenuContent.appendChild(timeSliderGroup);
         if (!moreMenuContent.contains(timePresetGroup)) moreMenuContent.appendChild(timePresetGroup);
@@ -92,7 +72,6 @@ feat/responsive-design-overhaul
 
         moreMenuBtn.classList.add('hidden');
         moreMenuContent.classList.add('hidden'); // Ensure menu is closed when resizing to desktop
-main
     }
     updateAppPadding();
 }
@@ -105,12 +84,10 @@ function updateAppPadding() {
 function setupEventListeners() {
     moreMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isMenuOpen = topBar.classList.toggle('is-menu-open');
-        moreMenuContent.classList.toggle('hidden', !isMenuOpen);
+        const isMenuOpen = !moreMenuContent.classList.contains('hidden');
+        moreMenuContent.classList.toggle('hidden', isMenuOpen);
     });
 
-feat/responsive-design-overhaul
-=======
     scalePresetSelect.addEventListener('change', (e) => {
         const preset = (e.target as HTMLSelectElement).value as ScalePreset;
         store.getState().setScalePreset(preset);
@@ -137,11 +114,9 @@ feat/responsive-design-overhaul
     });
 
     // Improved click-outside-to-close logic
-main
     document.addEventListener('click', (e) => {
         const target = e.target as Node;
-        if (topBar.classList.contains('is-menu-open') && !moreMenuContent.contains(target) && !moreMenuBtn.contains(target)) {
-            topBar.classList.remove('is-menu-open');
+        if (!moreMenuContent.classList.contains('hidden') && !moreMenuContent.contains(target) && !moreMenuBtn.contains(target)) {
             moreMenuContent.classList.add('hidden');
         }
     });

@@ -26,30 +26,12 @@ export class PanelManager {
     private isDragging = false;
     private dragStartX = 0;
     private dragStartY = 0;
-feat/responsive-design-overhaul
-    private panelStartX = 0;
-    private panelStartY = 0;
-    private storageKey: string | null = null;
-=======
-main
 
     // Bound event listeners
     private boundOnDragStart: (e: MouseEvent) => void;
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
-feature/UI-UX-improvements
-    private static snapThreshold = 30;
-    private static snapGlows: { [key: string]: HTMLElement } = {};
-
-    constructor(panel: HTMLElement) {
-=======
-feat/responsive-design-overhaul
-    constructor(panel: HTMLElement, storageKey: string | null = null) {
-main
-        this.panel = panel;
-        this.storageKey = storageKey;
-=======
     constructor(
         public id: string,
         private panel: HTMLElement,
@@ -60,7 +42,6 @@ main
         this.state = this.loadState();
 
         this.boundOnDragStart = this.onDragStart.bind(this);
-main
         this.boundOnDragMove = this.onDragMove.bind(this);
         this.boundOnDragEnd = this.onDragEnd.bind(this);
 
@@ -68,19 +49,6 @@ main
     }
 
     private init() {
-feat/responsive-design-overhaul
-        this.bringToFront();
-        this.panel.addEventListener('mousedown', () => this.bringToFront());
-feature/UI-UX-improvements
-        if (!PanelManager.snapGlows['top']) {
-            PanelManager.snapGlows['top'] = document.getElementById('snap-glow-top')!;
-            PanelManager.snapGlows['right'] = document.getElementById('snap-glow-right')!;
-            PanelManager.snapGlows['bottom'] = document.getElementById('snap-glow-bottom')!;
-            PanelManager.snapGlows['left'] = document.getElementById('snap-glow-left')!;
-        }
-=======
-        this.loadState();
-=======
         this.applyState();
         this.makeDraggable();
         this.makeResizable();
@@ -139,7 +107,6 @@ feature/UI-UX-improvements
 
         this.panel.classList.toggle('pinned', this.state.pinned);
         this.panel.classList.toggle('minimized', this.state.minimized);
-main
     }
 
     public toggleMinimize() {
@@ -153,7 +120,6 @@ main
         this.applyState();
         this.updateFocus();
         this.saveState();
-      main
     }
 
     public hide() {
@@ -269,55 +235,6 @@ main
         const winHeight = window.innerHeight;
         let activeSnap: PanelSnapEdge = null;
 
-feature/UI-UX-improvements
-        // --- Snapping and Glow Logic ---
-        const { snapThreshold } = PanelManager;
-        let snapX = false, snapY = false;
-
-        // Hide all glows initially
-        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
-
-        // Left edge
-        if (newLeft < snapThreshold) {
-            newLeft = 0;
-            snapX = true;
-            PanelManager.snapGlows.left.classList.add('visible');
-        }
-        // Right edge
-        if (newLeft + rect.width > winWidth - snapThreshold) {
-            newLeft = winWidth - rect.width;
-            snapX = true;
-            PanelManager.snapGlows.right.classList.add('visible');
-        }
-        // Top edge
-        if (newTop < snapThreshold) {
-            newTop = 0;
-            snapY = true;
-            PanelManager.snapGlows.top.classList.add('visible');
-        }
-        // Bottom edge
-        if (newTop + rect.height > winHeight - snapThreshold) {
-            newTop = winHeight - rect.height;
-            snapY = true;
-            PanelManager.snapGlows.bottom.classList.add('visible');
-        }
-
-        // Boundary checks
-        if (newLeft < 0) newLeft = 0;
-        if (newTop < 0) newTop = 0;
-        if (newLeft + rect.width > winWidth) newLeft = winWidth - rect.width;
-        if (newTop + rect.height > winHeight) newTop = winHeight - rect.height;
-
-
-        this.panel.style.left = `${newLeft}px`;
-        this.panel.style.top = `${newTop}px`;
-    }
-
-    private onDragEnd() {
-        this.isDragging = false;
-        document.removeEventListener('mousemove', this.boundOnDragMove);
-        // 'mouseup' listener is removed in onDragStart with { once: true }
-=======
         if (this.state.x < SNAP_THRESHOLD) activeSnap = 'left';
         else if (this.state.x + this.state.w > winWidth - SNAP_THRESHOLD) activeSnap = 'right';
         else if (this.state.y < SNAP_THRESHOLD) activeSnap = 'top';
@@ -351,18 +268,7 @@ feature/UI-UX-improvements
         }
         this.snapGlow.className = `snap-glow ${edge} visible`;
     }
-main
 
-feat/responsive-design-overhaul
-        this.header!.style.cursor = 'grab';
-        document.body.style.userSelect = '';
-feature/UI-UX-improvements
-
-        // Hide all glows
-        Object.values(PanelManager.snapGlows).forEach(el => el.classList.remove('visible'));
-=======
-        this.saveState();
-=======
     private static hideSnapPreview() {
         if (this.snapGlow) {
             this.snapGlow.className = 'snap-glow';
@@ -372,8 +278,6 @@ feature/UI-UX-improvements
     private flashSnapConfirmation() {
         this.panel.classList.add('snap-flash');
         setTimeout(() => this.panel.classList.remove('snap-flash'), 150);
-main
-main
     }
 
     // =================================================================
@@ -441,55 +345,4 @@ main
         document.body.style.cursor = `${dir}-resize`;
         document.body.style.userSelect = 'none';
     }
-feat/responsive-design-overhaul
-
-    public static showBackdrop() {
-        if (!this.backdrop) {
-            this.backdrop = document.createElement('div');
-            this.backdrop.className = 'modal-backdrop';
-            document.body.appendChild(this.backdrop);
-        }
-        this.backdrop.style.display = 'block';
-        document.body.classList.add('modal-open');
-    }
-
-    public static hideBackdrop() {
-        if (this.backdrop) {
-            this.backdrop.style.display = 'none';
-        }
-        document.body.classList.remove('modal-open');
-    }
-
-    private saveState() {
-        if (!this.storageKey) return;
-        const state = {
-            left: this.panel.style.left,
-            top: this.panel.style.top,
-            width: this.panel.style.width,
-            height: this.panel.style.height,
-        };
-        try {
-            localStorage.setItem(this.storageKey, JSON.stringify(state));
-        } catch (e) {
-            console.error("Failed to save panel state to localStorage", e);
-        }
-    }
-
-    private loadState() {
-        if (!this.storageKey) return;
-        try {
-            const storedState = localStorage.getItem(this.storageKey);
-            if (storedState) {
-                const state = JSON.parse(storedState);
-                if (state.left) this.panel.style.left = state.left;
-                if (state.top) this.panel.style.top = state.top;
-                if (state.width) this.panel.style.width = state.width;
-                if (state.height) this.panel.style.height = state.height;
-            }
-        } catch (e) {
-            console.error("Failed to load panel state from localStorage", e);
-        }
-    }
-=======
-main
 }

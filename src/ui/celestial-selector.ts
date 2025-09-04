@@ -1,7 +1,7 @@
 import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
-import Fuse, { FuseResult } from 'fuse.js';
+import Fuse from 'fuse.js';
 import { store } from '../state/store';
 import { PanelManager } from './panel-manager';
 
@@ -372,46 +372,22 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     const minimizeBtn = panel.querySelector('.minimize-btn') as HTMLElement;
     const header = panel.querySelector('.panel-header') as HTMLElement;
 
-feature/UI-UX-improvements
-    const panelManager = new PanelManager(panel);
+    const panelManager = new PanelManager(panel, 'celestialSelector.v1');
     panelManager.makeDraggable(header);
-    panelManager.makeResizable();
-
-    const openPanel = () => {
-        panel.classList.remove('hidden');
-        (panelManager as any).bringToFront();
-=======
-    const panelManager = new PanelManager(modal, 'celestialSelector.v1');
-    panelManager.makeDraggable(header);
-    minimizeBtn.addEventListener('click', () => panelManager.minimize());
-    // Per user request, min height is 50vh, but PanelManager deals in px.
-    // This is a reasonable approximation. A more robust solution might involve
-    // converting vh to px on resize, but this is sufficient for now.
     const minHeight = window.innerHeight * 0.5;
     panelManager.makeResizable(300, minHeight);
 
     const openPanel = () => {
-        modalContainer.classList.remove('hidden');
-main
+        panel.classList.remove('hidden');
+        panelManager.bringToFront();
     };
     const closePanel = () => panel.classList.add('hidden');
 
-feature/UI-UX-improvements
     openBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (panel.classList.contains('hidden')) {
             openPanel();
         } else {
-=======
-    const closePanel = () => {
-        modalContainer.classList.add('hidden');
-    };
-
-    openBtn.addEventListener('click', openPanel);
-    closeBtn.addEventListener('click', closePanel);
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-main
             closePanel();
         }
     });
@@ -421,11 +397,6 @@ main
 
     onSelectCallback = (id) => {
         onSelect(id);
-feature/UI-UX-improvements
-        // We don't close the panel anymore since it's a persistent panel
-=======
-        // Do not close the panel on selection, allow user to browse
-main
     };
 
     treeNodes = buildTree(bodies);
@@ -496,7 +467,7 @@ main
     searchInput.addEventListener('input', debounce(() => filterTree(), 300));
 
     const categories: (CelestialBodyType | 'all')[] = ['all', 'star', 'planet', 'moon'];
-
+    const categoryTabs = document.getElementById('category-tabs')!;
     categories.forEach(category => {
         const tab = document.createElement('button');
         tab.className = 'category-tab';
@@ -512,11 +483,11 @@ main
 
         tab.addEventListener('click', () => {
             currentFilterType = category;
-            categoryTabsContainer.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            categoryTabs.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             filterTree();
         });
-        categoryTabsContainer.appendChild(tab);
+        categoryTabs.appendChild(tab);
     });
 
     const viewRadios = document.querySelectorAll<HTMLInputElement>('input[name="selector-view"]');

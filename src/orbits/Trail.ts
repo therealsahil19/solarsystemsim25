@@ -1,72 +1,74 @@
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 
 export class Trail {
-  positions: Float32Array;
-  alphas: Float32Array;
-  geom: THREE.BufferGeometry;
-  material: THREE.ShaderMaterial;
-  line: THREE.Line;
-  maxPoints: number;
+    line: Line2;
+    material: LineMaterial;
+    geometry: LineGeometry;
+    private maxPoints: number;
+    private baseColor: THREE.Color;
 
-  constructor(maxPoints: number, color = new THREE.Color(0xffffff)) {
-    this.maxPoints = maxPoints;
-    this.positions = new Float32Array(maxPoints * 3);
-    this.alphas = new Float32Array(maxPoints);
-    this.geom = new THREE.BufferGeometry();
-    this.geom.setAttribute('position', new THREE.BufferAttribute(this.positions, 3).setUsage(THREE.DynamicDrawUsage));
-    this.geom.setAttribute('alpha', new THREE.BufferAttribute(this.alphas, 1).setUsage(THREE.DynamicDrawUsage));
+    constructor(maxPoints: number, color = new THREE.Color(0xffffff)) {
+        this.maxPoints = maxPoints;
+        this.baseColor = color;
 
-    this.material = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: { uColor: { value: color } },
-      vertexShader: `
-        attribute float alpha;
-        varying float vAlpha;
-        void main() {
-          vAlpha = alpha;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        varying float vAlpha;
-        void main() {
-          if (vAlpha < 0.01) discard;
-          gl_FragColor = vec4(uColor, vAlpha);
-        }
-      `
-    });
+        this.geometry = new LineGeometry();
+        this.material = new LineMaterial({
+            color: 0xffffff, // This will be multiplied by vertex colors
+            linewidth: 1, // in pixels
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.4, // Base opacity as requested by user
+            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+        });
 
-    this.line = new THREE.Line(this.geom, this.material);
-    this.line.frustumCulled = false;
-  }
-
-  updateFromSampledPoints(sampledPositions: THREE.Vector3[], fadePower = 1.0) {
-    const N = Math.min(this.maxPoints, sampledPositions.length);
-    for (let i = 0; i < N; i++) {
-      // The shader expects newest point first for the fade effect
-      const p = sampledPositions[sampledPositions.length - N + i];
-      const idx = i * 3;
-      this.positions[idx] = p.x;
-      this.positions[idx + 1] = p.y;
-      this.positions[idx + 2] = p.z;
-
-      const alpha = Math.pow(1.0 - (i / (N - 1)), fadePower);
-      this.alphas[i] = alpha;
+        this.line = new Line2(this.geometry, this.material);
+        this.line.frustumCulled = false;
     }
 
-    // Hide unused points by setting alpha to 0
-    for (let i = N; i < this.maxPoints; i++) {
-        this.alphas[i] = 0;
+    updateFromSampledPoints(sampledPositions: THREE.Vector3[]) {
+        const numPoints = Math.min(this.maxPoints, sampledPositions.length);
+
+        if (numPoints < 2) {
+            this.geometry.setPositions([]);
+            return;
+        }
+
+        const positions = new Float32Array(numPoints * 3);
+        const colors = new Float32Array(numPoints * 3);
+
+        // The tail of the trail is at the beginning of the array (oldest points).
+        // We fade the first 5% of the trail to black to simulate fading out.
+        const fadeEndIndex = Math.ceil(numPoints * 0.05);
+
+        for (let i = 0; i < numPoints; i++) {
+            const p = sampledPositions[i];
+            positions[i * 3] = p.x;
+            positions[i * 3 + 1] = p.y;
+            positions[i * 3 + 2] = p.z;
+
+            let fade = 1.0;
+            if (i < fadeEndIndex) {
+                // Linearly fade in from the start of the tail
+                fade = i / fadeEndIndex;
+            }
+
+            colors[i * 3] = this.baseColor.r * fade;
+            colors[i * 3 + 1] = this.baseColor.g * fade;
+            colors[i * 3 + 2] = this.baseColor.b * fade;
+        }
+
+        this.geometry.setPositions(positions);
+        this.geometry.setColors(colors);
     }
 
-    (this.geom.attributes.position as THREE.BufferAttribute).needsUpdate = true;
-    (this.geom.attributes.alpha as THREE.BufferAttribute).needsUpdate = true;
-    this.geom.setDrawRange(0, N);
-  }
+    updateResolution(x: number, y: number) {
+        this.material.resolution.set(x, y);
+    }
 
-  setVisible(visible: boolean) {
-      this.line.visible = visible;
-  }
+    setVisible(visible: boolean) {
+        this.line.visible = visible;
+    }
 }
