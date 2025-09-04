@@ -57,6 +57,13 @@ export class Trail {
         }
 
         // Ensure we don't create an array that's too large or negative
+        if (numPoints < 0) {
+            // This is a critical guard. Although other checks should prevent this,
+            // this explicitly stops a negative length from being calculated.
+            console.error(`updateFromSampledPoints: numPoints is negative (${numPoints}), which would cause a crash. Aborting trail update.`);
+            this.geometry.setPositions([]);
+            return;
+        }
         const positionsArrayLength = numPoints * 3;
         if (positionsArrayLength < 0 || positionsArrayLength > 1000000) { // Reasonable upper limit
             console.warn('updateFromSampledPoints: Invalid positionsArrayLength:', positionsArrayLength);
