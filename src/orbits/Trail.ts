@@ -29,6 +29,19 @@ export class Trail {
     }
 
     updateFromSampledPoints(sampledPositions: THREE.Vector3[]) {
+        // Defensive checks to prevent RangeError
+        if (!sampledPositions || !Array.isArray(sampledPositions)) {
+            console.warn('updateFromSampledPoints: Invalid sampledPositions - not an array or undefined');
+            this.geometry.setPositions([]);
+            return;
+        }
+
+        if (sampledPositions.length < 0) {
+            console.warn('updateFromSampledPoints: sampledPositions.length is negative:', sampledPositions.length);
+            this.geometry.setPositions([]);
+            return;
+        }
+
         const numPoints = Math.min(this.maxPoints, sampledPositions.length);
 
         if (numPoints < 2) {
@@ -45,6 +58,17 @@ export class Trail {
 
         for (let i = 0; i < numPoints; i++) {
             const p = sampledPositions[i];
+
+            // Check if the point is a valid Vector3
+            if (!p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.z !== 'number') {
+                console.warn(`updateFromSampledPoints: Invalid point at index ${i}:`, p);
+                // Use fallback coordinates to avoid breaking the trail
+                positions[i * 3] = 0;
+                positions[i * 3 + 1] = 0;
+                positions[i * 3 + 2] = 0;
+                continue;
+            }
+
             positions[i * 3] = p.x;
             positions[i * 3 + 1] = p.y;
             positions[i * 3 + 2] = p.z;

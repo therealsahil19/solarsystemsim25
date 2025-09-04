@@ -61,8 +61,25 @@ export class TrailManager {
             }
 
             // Scale points and update trail geometry
-            const scaledPoints = history.map(p => calculateDisplayPosition(p.position, scaleTransition));
-            trail.updateFromSampledPoints(scaledPoints);
+            const scaledPoints = history
+                .filter(p => p && p.position && (typeof p.position.x === 'number') && (typeof p.position.y === 'number') && (typeof p.position.z === 'number'))
+                .map(p => {
+                    try {
+                        return calculateDisplayPosition(p.position, scaleTransition);
+                    } catch (error) {
+                        console.warn('TrailManager.update: Error calculating display position:', error, p);
+                        return new THREE.Vector3(0, 0, 0);
+                    }
+                });
+
+            // Final safety check before passing to trail
+            if (scaledPoints.length > 0 && scaledPoints.some(p => !p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.z !== 'number')) {
+                console.warn('TrailManager.update: Invalid scaled points detected, filtering them out');
+                const validPoints = scaledPoints.filter(p => p && typeof p.x === 'number' && typeof p.y === 'number' && typeof p.z === 'number');
+                trail.updateFromSampledPoints(validPoints);
+            } else {
+                trail.updateFromSampledPoints(scaledPoints);
+            }
         });
     }
 

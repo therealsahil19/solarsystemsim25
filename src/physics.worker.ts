@@ -28,13 +28,20 @@ function updatePhysics(dt: number) {
 }
 
 function postPositions() {
-    if (!bodies.length) {
+    if (!bodies || !Array.isArray(bodies) || bodies.length <= 0) {
+        console.warn('postPositions: Invalid or empty bodies array:', bodies);
         return;
     }
 
-    const positions = new Float32Array(bodies.length * 3);
+    const validBodies = bodies.filter(body => body && typeof body.name === 'string' && typeof body.semiMajorAxis === 'number' && body.semiMajorAxis >= 0);
 
-    bodies.forEach((body, i) => {
+    if (validBodies.length !== bodies.length) {
+        console.warn('postPositions: Filtered out invalid bodies. Original count:', bodies.length, 'Valid count:', validBodies.length);
+    }
+
+    const positions = new Float32Array(validBodies.length * 3);
+
+    validBodies.forEach((body, i) => {
         if (body.name === 'Sun') {
             positions[i * 3 + 0] = 0;
             positions[i * 3 + 1] = 0;
