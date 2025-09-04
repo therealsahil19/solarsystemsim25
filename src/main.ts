@@ -207,12 +207,19 @@ async function start() {
 
     const physicsWorker = new Worker(new URL('./physics.worker.ts', import.meta.url), { type: 'module' });
 
-    // Send the full data for all celestial objects to the worker.
-    // The worker will handle planets and moons correctly.
+    // Send serializable body data to the worker - exclude THREE.js objects
+    // The worker will handle all celestial objects correctly.
+    const workerBodies = celestialObjects.map(body => ({
+        name: body.name,
+        semiMajorAxis: body.semiMajorAxis,
+        eccentricity: body.eccentricity,
+        orbitalPeriod: body.orbitalPeriod,
+    }));
+
     physicsWorker.postMessage({
         command: 'init',
         payload: {
-            bodies: celestialObjects,
+            bodies: workerBodies,
         }
     });
 

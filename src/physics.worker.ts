@@ -16,20 +16,14 @@ self.onmessage = (e: MessageEvent) => {
     if (command === 'init') {
         bodies = payload.bodies;
     } else if (command === 'update') {
-        accumulator += payload.deltaTime;
-
-        while (accumulator >= FIXED_DT) {
-            updatePhysics(FIXED_DT);
-            accumulator -= FIXED_DT;
-        }
-
+        // Use absolute simulation time from main thread
+        simulationTime = payload.simTimeInDays;
         postPositions();
     }
 };
 
 function updatePhysics(dt: number) {
-    // In this simple simulation, we just advance the global time.
-    // A more complex simulation would update velocities, etc. here.
+    // Not used anymore, keeping for compatibility
     simulationTime += dt;
 }
 
