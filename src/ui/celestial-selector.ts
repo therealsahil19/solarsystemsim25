@@ -2,7 +2,7 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse from 'fuse.js';
-import { store } from '../state/store';
+import store from '../state/store';
 import { PanelManager } from './panel-manager';
 
 type ViewMode = 'hierarchy' | 'type';

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CelestialBody } from '../data';
-import { store } from '../state/store';
+import store from '../state/store';
 import { calculateDisplayPosition, ScaleTransition } from '../utils/scaling';
 import { keplerToCartesianFromMeanAnomaly, OrbitalElements as KeplerOrbitalElements } from './kepler';
 import { KM_PER_AU } from '../utils/units';

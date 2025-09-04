@@ -5,7 +5,7 @@ import { celestialBodyData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
 import { renderShortcutsList } from './ui/shortcuts-panel';
-import { store } from './state/store';
+import store from './state/store';
 import { Simulation } from './interactions';
 
 export function setupKeyboardShortcuts(

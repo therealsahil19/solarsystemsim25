@@ -1,4 +1,4 @@
-import { store, ScalePreset } from '../state/store';
+import store, { AppState, ScalePreset } from '../state/store';
 
 // --- DOM Element References ---
 let moreMenuBtn: HTMLButtonElement;
@@ -93,7 +93,7 @@ function setupEventListeners() {
         store.getState().setScalePreset(preset);
     });
 
-    store.subscribe((state) => {
+    store.subscribe((state: AppState) => {
         const preset = state.scalePreset;
         if (scalePresetSelect.value !== preset) {
             scalePresetSelect.value = preset;
