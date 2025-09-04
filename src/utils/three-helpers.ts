@@ -1,22 +1,42 @@
 // src/utils/three-helpers.ts
 // Minimal, defensive helpers for Three.js arrays and userData handling.
 
+/**
+ * A type representing any Three.js geometry-like object that has an optional
+ * `setPositions` method and a `visible` property. This is used for objects
+ * like `LineGeometry` from `three/examples/jsm/lines/LineGeometry`.
+ * @private
+ */
 type AnyGeometryWithSetPositions = { setPositions?: (p: any) => void; visible?: boolean; };
 
-// Warn once per key (uuid or custom string)
+/**
+ * A Set to keep track of keys for which a warning has already been issued.
+ * @private
+ */
 const _warned = new Set<string>();
+
+/**
+ * Displays a console warning only once for a given key.
+ * Subsequent calls with the same key will be ignored.
+ * @param key A unique string identifier for the warning.
+ * @param args The arguments to pass to `console.warn`.
+ */
 export function warnOnce(key: string, ...args: any[]) {
   if (_warned.has(key)) return;
   _warned.add(key);
-  // eslint-disable-next-line no-console
+
   console.warn(...args);
 }
 
 /**
- * Safe wrapper for LineGeometry / LineSegmentsGeometry setPositions.
- * - positions may be Array<number> or Float32Array.
- * - If isSegments = true, we require length % 6 === 0 (pairs).
- * - Otherwise require length % 3 === 0 (xyz triplets).
+ * A safe wrapper for updating the positions of a `LineGeometry` or `LineSegmentsGeometry`.
+ * It performs several checks to prevent errors, such as validating the positions array length.
+ * If the input is invalid, it hides the geometry and logs a warning.
+ * @param geometry The geometry object to update (must have a `setPositions` method).
+ * @param positions The array of positions (e.g., `[x1, y1, z1, x2, y2, z2, ...]`). Can be an `Array<number>` or `Float32Array`.
+ * @param opts Optional parameters.
+ * @param opts.isSegments If true, validates that the positions array length is a multiple of 6 (for line segments). Defaults to false.
+ * @param opts.nameForWarnings A name to use in warning messages for easier debugging. Defaults to 'geometry'.
  */
 export function safeSetPositions(
   geometry: AnyGeometryWithSetPositions,
@@ -62,7 +82,10 @@ export function safeSetPositions(
 }
 
 /**
- * Ensure object has userData.data (optionally fill with defaultData)
+ * Ensures that a Three.js object has a `userData` property and a `userData.data` property.
+ * If `userData` or `userData.data` is missing, it initializes them.
+ * @param obj The Three.js object (e.g., Mesh, Group, etc.).
+ * @param defaultData An object to set as `userData.data` if it doesn't already exist. Defaults to an empty object.
  */
 export function initUserDataIfMissing(obj: any, defaultData: any = {}) {
   if (!obj) return;

@@ -12,7 +12,7 @@ import { createCelestialBodySelector } from './ui/celestial-selector';
 import { setupInteractions } from './interactions';
 import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
 import { OrbitManager } from './orbits/OrbitManager';
-import store, { ScalePreset } from './state/store';
+import store from './state/store';
 import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
@@ -24,25 +24,37 @@ import { setupQuickAccessToolbar } from './ui/quick-access-toolbar';
 import { initContextualHud } from './ui/contextual-hud';
 import { initOnboardingTour } from './ui/onboarding-tour';
 import { TrailManager } from './orbits/TrailManager';
-import { initTooltips } from './ui/dom';
 import { getAssetUrl } from './utils/assets';
 import { initUserDataIfMissing } from './utils/three-helpers';
 
+/**
+ * The main entry point for the application. This asynchronous function sets up the entire
+ * scene, initializes all managers and UI components, and starts the animation loop.
+ */
 async function start() {
+    // Dynamically import E2E testing hooks if in test mode.
     if (import.meta.env.MODE === 'test') {
         await import('./e2e-hooks');
     }
 
+    /** The default duration for camera focus animations in milliseconds. */
     const CAMERA_FOCUS_DEFAULT_MS = 700;
 
     initScene(dom.canvas);
     const textureLoader = new THREE.TextureLoader();
 
+    // --- Data Structures for Scene Objects ---
+    /** An array holding all celestial body objects with their 3D and physics data. */
     const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D; physicsPosition: THREE.Vector3 })[] = [];
+    /** An array of all `THREE.Object3D` instances that are selectable by the user. */
     const selectableObjects: THREE.Object3D[] = [];
+    /** A map from body ID to its full scene object for quick lookups. */
     const bodyMap = new Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D, physicsPosition: THREE.Vector3 }>();
+    /** A reference to the Sun's `THREE.Object3D`. */
     let sun: THREE.Object3D | undefined;
 
+    // --- Local Simulation State ---
+    /** A mutable object holding state related to user interaction and camera targets. */
     const simulation = {
         selectedObject: null as THREE.Object3D | null,
         focusTarget: null as THREE.Object3D | null,
@@ -55,6 +67,7 @@ async function start() {
         selectedGlow: null as THREE.Mesh | null,
     };
 
+    /** A mutable object holding the state for transitions between scaling presets. */
     const scaleTransition: ScaleTransition = {
         active: false,
         progress: 0,
@@ -62,6 +75,7 @@ async function start() {
         toPreset: store.getState().scalePreset,
     };
 
+    /** An object for managing dynamic performance adjustments. */
     const perfState = {
         MAX_DPR: 1.75,
         MIN_SCALE: 0.5,
@@ -70,21 +84,27 @@ async function start() {
         evalInterval: 1000,
         lastEval: performance.now(),
         evalWindow: 60,
-        upperMs: 22,
-        lowerMs: 13,
+        upperMs: 22, // Corresponds to ~45 FPS
+        lowerMs: 13, // Corresponds to ~75 FPS
         step: 0.1,
     };
 
+    /** Pre-defined performance settings for different quality levels. */
     const performancePresets = {
         low: { MAX_DPR: 1.0, dynamicScale: 0.75, shadowMapSize: 512 },
         medium: { MAX_DPR: 1.5, dynamicScale: 0.9, shadowMapSize: 1024 },
         high: { MAX_DPR: 2.0, dynamicScale: 1.0, shadowMapSize: 4096 },
     };
 
+    /**
+     * Sets the performance preset for the application, adjusting quality settings.
+     * @param presetName The name of the preset to apply.
+     * @private
+     */
     function setPerformancePreset(presetName: 'auto' | 'low' | 'medium' | 'high') {
         store.getState().setPerfPreset(presetName);
         if (presetName === 'auto') {
-            perfState.MAX_DPR = 1.75;
+            perfState.MAX_DPR = 1.75; // Reset to default for auto mode
         } else {
             const preset = performancePresets[presetName];
             if (!preset) return;
@@ -104,11 +124,16 @@ async function start() {
         applyDPR();
     }
 
+    /**
+     * Applies the current device pixel ratio (DPR) to the renderer, considering performance settings.
+     * @private
+     */
     function applyDPR() {
         const dpr = Math.min(window.devicePixelRatio || 1, perfState.MAX_DPR) * perfState.dynamicScale;
         renderer.setPixelRatio(dpr);
     }
 
+    // --- Event Listeners ---
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -117,11 +142,13 @@ async function start() {
         trailManager.updateResolutions(window.innerWidth, window.innerHeight);
     });
 
-    // Create all bodies
+    // --- Object Creation ---
+    // Create all celestial bodies, their meshes, materials, and associated objects.
     celestialBodyData.forEach(bodyData => {
         const bodyGroup = new THREE.Group();
         let bodyMaterial;
 
+        // Special material for the Sun to make it emissive
         if (bodyData.name === 'Sun') {
             bodyMaterial = new THREE.MeshStandardMaterial({
                 emissive: 0xffff00,
@@ -140,14 +167,13 @@ async function start() {
             }
         }
 
+        // Use Level of Detail (LOD) to improve performance
         const lod = new LOD();
-
         const lodLevels = [
             { segments: 64, distance: 0 },
             { segments: 32, distance: 20 },
             { segments: 16, distance: 100 },
         ];
-
         for (const level of lodLevels) {
             const geometry = new THREE.SphereGeometry(1, level.segments, level.segments);
             const mesh = new THREE.Mesh(geometry, bodyMaterial);
@@ -155,7 +181,6 @@ async function start() {
             mesh.receiveShadow = bodyData.name !== 'Sun';
             lod.addLevel(mesh, level.distance);
         }
-
         const bodyMesh = lod;
 
         if (bodyData.name === 'Sun') {
@@ -163,6 +188,7 @@ async function start() {
             sun!.add(pointLight);
         }
 
+        // Create a glow effect for selected objects
         const glowColor = bodyData.name === 'Sun' ? 0xffd700 : getGlowColor(bodyData.color);
         const glowMaterial = new THREE.MeshBasicMaterial({
             color: glowColor,
@@ -170,13 +196,11 @@ async function start() {
             opacity: 0.7,
             side: THREE.BackSide,
         });
-        const glowMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(1.2, 32, 32),
-            glowMaterial
-        );
+        const glowMesh = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), glowMaterial);
         glowMesh.visible = false;
         bodyMesh.add(glowMesh);
 
+        // Store important data in the mesh's `userData` property
         bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData, glowMesh };
         bodyGroup.add(bodyMesh);
 
@@ -188,7 +212,7 @@ async function start() {
         createPlanetRings(bodyData, bodyGroup, textureLoader);
     });
 
-    // Parent moons to their planets and add planets/sun to the scene
+    // Parent moons to their planets and add all top-level objects to the scene
     celestialObjects.forEach(obj => {
         if (obj.parentId && obj.parentId !== 'sun' && obj.parentId !== null) {
             const parent = bodyMap.get(obj.parentId);
@@ -200,35 +224,25 @@ async function start() {
         }
     });
 
-
+    // --- Manager Initialization ---
     const orbitManager = new OrbitManager(celestialObjects);
     orbitManager.init(scene, bodyMap);
 
     const trailManager = new TrailManager(celestialObjects, scene);
     trailManager.init();
 
+    // --- Physics Worker Setup ---
     const physicsWorker = new Worker(new URL('./physics.worker.ts', import.meta.url), { type: 'module' });
-
-    // Send serializable body data to the worker - exclude THREE.js objects
-    // The worker will handle all celestial objects correctly.
     const workerBodies = celestialObjects.map(body => ({
         name: body.name,
         semiMajorAxis: body.semiMajorAxis,
         eccentricity: body.eccentricity,
         orbitalPeriod: body.orbitalPeriod,
     }));
-
-    physicsWorker.postMessage({
-        command: 'init',
-        payload: {
-            bodies: workerBodies,
-        }
-    });
-
+    physicsWorker.postMessage({ command: 'init', payload: { bodies: workerBodies } });
     physicsWorker.onmessage = (e: MessageEvent) => {
         if (e.data.type === 'update') {
             const positions = new Float32Array(e.data.positions);
-            // The worker returns positions in the same order as the celestialObjects array we sent it.
             celestialObjects.forEach((body, i) => {
                 const bodyState = bodyMap.get(body.id);
                 if (bodyState) {
@@ -238,6 +252,8 @@ async function start() {
         }
     };
 
+    // --- State Management ---
+    // Subscribe to changes in the scale preset to trigger smooth transitions
     let previousPreset = store.getState().scalePreset;
     store.subscribe((state) => {
         if (state.scalePreset !== previousPreset) {
@@ -248,16 +264,15 @@ async function start() {
 
             gsap.to(scaleTransition, {
                 progress: 1,
-                duration: 0.2, // 200ms ease-out
+                duration: 0.2,
                 ease: 'power2.out',
-                onComplete: () => {
-                    scaleTransition.active = false;
-                },
+                onComplete: () => { scaleTransition.active = false; },
             });
             previousPreset = state.scalePreset;
         }
     });
 
+    /** Creates a static, starry background. @private */
     function createStarryBackground() {
         const starVertices = [];
         for (let i = 0; i < 10000; i++) {
@@ -273,11 +288,13 @@ async function start() {
         scene.add(stars);
     }
 
+    /** Creates a procedurally generated asteroid belt between Mars and Jupiter. @private */
     function createAsteroidBelt() {
         const count = 5000;
         const geom = new THREE.SphereGeometry(0.05, 6, 6);
         const material = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
         const uniforms = { u_time: { value: 0 } };
+        // Modify the shader to add orbital motion to each asteroid instance
         material.onBeforeCompile = shader => {
             shader.uniforms.u_time = uniforms.u_time;
             shader.vertexShader = `
@@ -300,7 +317,7 @@ async function start() {
         const inst = new THREE.InstancedMesh(geom, material, count);
         initUserDataIfMissing(inst, { name: 'Asteroid Belt' });
         inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        const distanceScale = 150.0; // 1 AU = 150 meters in the simulation
+        const distanceScale = 150.0;
         const beltMin = 2.2 * distanceScale;
         const beltMax = 3.2 * distanceScale;
         const instanceParams = new Float32Array(count * 4);
@@ -324,6 +341,7 @@ async function start() {
         simulation.asteroidMaterialUniforms = uniforms;
     }
 
+    /** Creates a representation of the Oort cloud at the edge of the system. @private */
     function createOortCloud() {
         const count = 1000;
         const oortRadius = 1500;
@@ -352,6 +370,12 @@ async function start() {
     createAsteroidBelt();
     createOortCloud();
 
+    // --- Camera and Interaction Logic ---
+    /**
+     * Clamps the camera's zoom levels and near/far planes for a given celestial body.
+     * @param bodyMesh The mesh of the body to clamp the zoom for.
+     * @private
+     */
     function clampZoomForBody(bodyMesh: THREE.Object3D) {
         const box = new THREE.Box3().setFromObject(bodyMesh);
         const sphere = box.getBoundingSphere(new THREE.Sphere());
@@ -364,6 +388,10 @@ async function start() {
         camera.updateProjectionMatrix();
     }
 
+    /**
+     * Cancels any currently active camera tween animation.
+     * @private
+     */
     function cancelActiveCameraTween() {
         if ((window as any)._activeCameraTween) {
             (window as any)._activeCameraTween.stop?.();
@@ -371,6 +399,12 @@ async function start() {
         }
     }
 
+    /**
+     * Smoothly moves and zooms the camera to frame a target object.
+     * @param object3D The `THREE.Object3D` to frame.
+     * @param opts Optional settings for duration and fit offset.
+     * @private
+     */
     function frameObject(object3D: THREE.Object3D, opts: { duration?: number; fitOffset?: number } = {}) {
         const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const DEFAULT = { duration: CAMERA_FOCUS_DEFAULT_MS, fitOffset: 1.2 };
@@ -399,14 +433,19 @@ async function start() {
         (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
     }
 
+    /**
+     * Handles the selection of a celestial body, updating state and camera.
+     * @param id The ID of the selected body.
+     * @private
+     */
     function onBodySelected(id: string) {
         const selectedObject = selectableObjects.find(obj => obj.userData.id === id);
         if (!selectedObject) return;
 
+        // Manage selection glow effect
         if (simulation.selectedGlow) {
             simulation.selectedGlow.visible = false;
         }
-
         const { glowMesh } = selectedObject.userData;
         if (glowMesh) {
             glowMesh.visible = true;
@@ -424,6 +463,10 @@ async function start() {
     createCelestialBodySelector(celestialBodyData, onBodySelected);
     initInfoPanel();
 
+    /**
+     * Resets the entire simulation to its initial state.
+     * @private
+     */
     function resetSimulation() {
         store.getState().setSimTime(0);
         if (sun) simulation.focusTarget = sun;
@@ -442,6 +485,7 @@ async function start() {
     setupInteractions(camera, selectableObjects, sun, simulation, onBodySelected, controls, resetSimulation, allOrbits);
     setupKeyboardShortcuts(simulation, [], onBodySelected, camera, controls);
 
+    // --- UI Event Listeners ---
     (dom.shadowToggle as HTMLInputElement).addEventListener('change', () => {
         const isEnabled = (dom.shadowToggle as HTMLInputElement).checked;
         renderer.shadowMap.enabled = isEnabled;
@@ -457,6 +501,7 @@ async function start() {
     });
     setPerformancePreset((dom.performancePreset as HTMLSelectElement).value as 'auto' | 'low' | 'medium' | 'high');
 
+    // Automatically pause the simulation when the window loses focus or is hidden
     let visibilityPaused = false;
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -484,6 +529,15 @@ async function start() {
         }
     });
 
+    /**
+     * A helper function to create and append a stat row to a container in the info panel.
+     * @param container The parent element.
+     * @param label The label for the stat.
+     * @param value The value of the stat.
+     * @param unit The unit for the stat.
+     * @param tooltip An optional tooltip string.
+     * @private
+     */
     function addStat(container: HTMLElement, label: string, value: string | number, unit: string = '', tooltip: string | null = null) {
         if (value === undefined || value === null) return;
 
@@ -496,7 +550,7 @@ async function start() {
 
         const span = document.createElement('span');
         span.textContent = `${value} ${unit}`;
-    span.dataset.testid = 'stat-value';
+        span.dataset.testid = 'stat-value';
 
         if (tooltip) {
             const tooltipSpan = document.createElement('span');
@@ -514,6 +568,7 @@ async function start() {
         container.appendChild(row);
     }
 
+    // Subscribe to the global store to update the UI when the selected body changes.
     store.subscribe((state) => {
         const selectedBody = celestialObjects.find(c => c.id === state.selectedBodyId);
         if (selectedBody) {
@@ -536,23 +591,19 @@ async function start() {
             const color = `#${material.color.getHexString()}`;
             updateInfoPanelColor(color);
 
-            // --- Populate New Info Panel ---
+            // Populate the main info panel with data
             dom.infoImage.src = data.edu?.image || '';
             dom.infoImage.alt = `Image of ${data.name}`;
             dom.infoLink.href = data.edu?.readMoreUrl || '#';
             dom.infoShortDesc.textContent = data.edu?.shortDescription || '';
 
-            // Clear previous stats
             dom.infoBasicStats.innerHTML = '';
             dom.infoOrbitalChars.innerHTML = '';
-
-            // Basic Stats
             addStat(dom.infoBasicStats, 'Radius', data.radius.toLocaleString(), 'km');
             addStat(dom.infoBasicStats, 'Mass', data.mass, 'x 10^24 kg');
             addStat(dom.infoBasicStats, 'Density', data.density, 'kg/m³');
             addStat(dom.infoBasicStats, 'Gravity', data.surfaceGravity, 'm/s²');
 
-            // Orbital Characteristics
             const distanceInKm = type === 'moon' ? (data.semiMajorAxisKm || 0) : data.semiMajorAxis * KM_PER_AU;
             const distanceUnit = store.getState().distanceUnit;
             addStat(dom.infoOrbitalChars, 'Orbital Period', data.orbitalPeriod, 'days');
@@ -560,15 +611,14 @@ async function start() {
             addStat(dom.infoOrbitalChars, 'Eccentricity', data.eccentricity.toFixed(4));
             addStat(dom.infoOrbitalChars, 'Inclination', data.inclination, '°');
 
-            // Handle Exact Mode panel
+            // Populate the "Exact Mode" panel with high-precision orbital elements
             const exactModeContainer = document.getElementById('info-exact-mode')!;
             const exactModeToggle = document.getElementById('exact-mode-toggle')!;
             const exactModeContent = document.getElementById('exact-mode-content')!;
 
             if (data.orbitalElements) {
                 exactModeContainer.classList.remove('hidden');
-                exactModeContent.innerHTML = ''; // Clear previous content
-
+                exactModeContent.innerHTML = '';
                 const elements = {
                     'Semi-Major Axis': `${(data.orbitalElements.aKm / KM_PER_AU).toFixed(4)} AU`,
                     'Eccentricity': data.orbitalElements.e.toFixed(6),
@@ -578,7 +628,6 @@ async function start() {
                     'Mean Anomaly at Epoch': `${data.orbitalElements.meanAnomalyDeg.toFixed(4)}°`,
                     'Epoch': data.orbitalElements.epochISO.split('T')[0],
                 };
-
                 for (const [key, value] of Object.entries(elements)) {
                     const strong = document.createElement('strong');
                     strong.textContent = `${key}:`;
@@ -587,9 +636,7 @@ async function start() {
                     exactModeContent.appendChild(strong);
                     exactModeContent.appendChild(span);
                 }
-
                 exactModeToggle.onclick = () => exactModeContent.classList.toggle('hidden');
-
             } else {
                 exactModeContainer.classList.add('hidden');
             }
@@ -597,6 +644,7 @@ async function start() {
             (dom.infoPanel as HTMLElement).classList.remove('hidden');
             (dom.freeCameraButton as HTMLElement).classList.remove('hidden');
 
+            // Notify E2E tests that the body has been rendered
             if ((window as any).__E2E__) {
                 (window as any).__E2E__.lastSelected = selectedBody.id;
                 window.dispatchEvent(new CustomEvent('e2e:body-rendered', { detail: { id: selectedBody.id } }));
@@ -610,11 +658,17 @@ async function start() {
         _lastTime?: number;
     }
 
+    /**
+     * The main animation loop, called every frame by `requestAnimationFrame`.
+     * @param time The current time, provided by `requestAnimationFrame`.
+     */
     const animate: Animate = (time) => {
         requestAnimationFrame(animate);
         const now = time || performance.now();
         const dt = now - (animate._lastTime || now);
         animate._lastTime = now;
+
+        // --- Dynamic Performance Adjustment ---
         const buf = perfState.frameTimes;
         buf.push(dt);
         if (buf.length > perfState.evalWindow) buf.shift();
@@ -630,35 +684,27 @@ async function start() {
             }
         }
 
+        // --- Time and Physics Update ---
         const { timeScale, isPaused, simTime } = store.getState();
         const newTime = isPaused ? simTime : simTime + (dt / 1000) * timeScale;
         if (!isPaused) {
             store.getState().setSimTime(newTime);
         }
-
-        // Send the absolute simulation time to the worker.
-        // The worker will handle all time-based physics calculations.
-        physicsWorker.postMessage({
-            command: 'update',
-            payload: { simTimeInDays: newTime }
-        });
+        physicsWorker.postMessage({ command: 'update', payload: { simTimeInDays: newTime } });
 
         if (simulation.asteroidMaterialUniforms) {
             simulation.asteroidMaterialUniforms.u_time.value = newTime;
         }
 
-        // Update positions and scales of all celestial objects
+        // --- Object Position and Scale Updates ---
         celestialObjects.forEach(obj => {
-            // obj.physicsPosition is now the definitive, AU-based position calculated by the worker.
-            // We just need to scale it for rendering.
             const displayPosition = calculateDisplayPosition(obj.physicsPosition, scaleTransition);
             obj.group.position.copy(displayPosition);
-
             const displayRadius = getDisplayRadius(obj.radius, scaleTransition);
             obj.mesh.scale.set(displayRadius, displayRadius, displayRadius);
         });
 
-
+        // --- Camera Control ---
         if (simulation.focusTarget) {
             if (simulation.focusTarget === sun) {
                 cameraTarget.set(0, 0, 0);
@@ -669,7 +715,6 @@ async function start() {
                 controls.target.lerp(cameraTarget, 0.05);
             }
         }
-
         if (simulation.followTarget) {
             const targetPosition = new THREE.Vector3();
             simulation.followTarget.getWorldPosition(targetPosition);
@@ -681,57 +726,49 @@ async function start() {
             dom.btnFollow.setAttribute('aria-pressed', 'false');
         }
 
+        // --- UI Updates ---
         if (store.getState().selectedBodyId) {
             const selectedBody = celestialObjects.find(c => c.id === store.getState().selectedBodyId);
             if (selectedBody && selectedBody.name !== 'Sun') {
                 const parent = bodyMap.get(selectedBody.parentId!);
                 const parentPosition = parent ? parent.physicsPosition : new THREE.Vector3(0, 0, 0);
-
-                // Calculate current distance from parent in AU
                 const r_au = selectedBody.physicsPosition.distanceTo(parentPosition);
                 const r_km = r_au * KM_PER_AU;
                 const r_m = r_au * AU_TO_M;
-
-                // Get semi-major axis for speed calculation
                 const a_au = selectedBody.parentId === 'sun' ? selectedBody.semiMajorAxis : (selectedBody.semiMajorAxisKm || 0) / KM_PER_AU;
                 const a_m = a_au * AU_TO_M;
-
-                // Calculate speed
                 let speed_m_s = 0;
                 if (a_m > 0) {
-                    // Default to Sun's mass for planets, or use parent's mass for moons.
                     const parentMass10e24kg = parent?.data.mass || celestialBodyData[0].mass!;
                     const G = 6.67430e-11;
                     const mu = G * parentMass10e24kg * 1e24;
                     speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m, mu });
                 }
-
                 const distanceUnit = store.getState().distanceUnit;
                 dom.cardStats.textContent = `Dist: ${formatDistance(r_km, distanceUnit)} • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
-
             } else if (selectedBody) {
                 dom.cardStats.textContent = 'At the center of the solar system';
             }
         }
 
+        // --- Manager and Effect Updates ---
         orbitManager.update(scaleTransition);
         orbitManager.updateLODs(camera, 800);
         trailManager.update(scaleTransition);
-
         celestialObjects.forEach(obj => {
             if (obj.mesh instanceof LOD) {
                 (obj.mesh as LOD).update(camera);
             }
         });
-
         if (simulation.selectedGlow) {
-            const pulseTime = time * 0.001 * (2 * Math.PI) / 1.2; // 1.2s cycle
-            const scale = 1.3 + Math.sin(pulseTime) * 0.1; // 1.2 to 1.4
-            const opacity = 0.7 + Math.sin(pulseTime) * 0.2; // 0.5 to 0.9
+            const pulseTime = time * 0.001 * (2 * Math.PI) / 1.2;
+            const scale = 1.3 + Math.sin(pulseTime) * 0.1;
+            const opacity = 0.7 + Math.sin(pulseTime) * 0.2;
             simulation.selectedGlow.scale.set(scale, scale, scale);
             (simulation.selectedGlow.material as THREE.MeshBasicMaterial).opacity = opacity;
         }
 
+        // --- Final Render ---
         TWEEN.update(time);
         controls.update();
         renderer.render(scene, camera);
@@ -739,6 +776,7 @@ async function start() {
 
     animate(0);
 
+    // --- Final UI Initializations ---
     initShortcutsPanel();
     initPresetsPanel();
     initMainPanel();
@@ -748,25 +786,18 @@ async function start() {
     initOnboardingTour();
 
     // --- E2E and App Readiness Notification ---
-    // This should be the last thing to run.
-
-    // We need to pass some parts of the app to the E2E hooks.
     const app = {
         store: store,
         renderer: {
             trails: trailManager
         },
-        // We can't easily expose a preset applier without refactoring,
-        // so the setPreset helper will not work, but tests drive the UI anyway.
     };
-
-    // Notify E2E hooks (if they are loaded) that the app is ready.
     if ((window as any).__e2eNotifyReady) {
         (window as any).__e2eNotifyReady(app);
     } else {
-        // Fallback for non-test environments, just set the ready flag.
         (window as any).__APP_READY = true;
     }
 }
 
+// Start the application once the DOM is fully loaded.
 window.addEventListener('DOMContentLoaded', start);

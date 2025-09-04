@@ -1,18 +1,29 @@
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css'; // Import default theme
 
+/** The key used in localStorage to track if the user has completed the tour. @private */
 const TOUR_STORAGE_KEY = 'solarsim.tour.v1.completed';
+/** The Shepherd.js tour instance. @private */
 let tour: any;
 
+/**
+ * Checks localStorage to see if the user has already completed the tour.
+ * @returns `true` if the tour has been completed, `false` otherwise.
+ * @private
+ */
 function isTourCompleted(): boolean {
     try {
         return localStorage.getItem(TOUR_STORAGE_KEY) === 'true';
     } catch (e) {
         console.error("Could not access localStorage for tour status:", e);
-        return true; // Assume completed if localStorage is unavailable
+        return true; // Assume completed if localStorage is unavailable to prevent nagging.
     }
 }
 
+/**
+ * Marks the tour as completed in localStorage.
+ * @private
+ */
 function markTourAsCompleted() {
     try {
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
@@ -21,6 +32,10 @@ function markTourAsCompleted() {
     }
 }
 
+/**
+ * Sets up the Shepherd.js tour instance and defines all the steps.
+ * @private
+ */
 function setupTourSteps() {
     tour = new Shepherd.Tour({
         useModalOverlay: true,
@@ -44,7 +59,7 @@ function setupTourSteps() {
         buttons: [
             { text: 'Back', action: tour.back },
             { text: 'Next', action: () => {
-                // Programmatically open the panel for the next step
+                // Programmatically open the panel for the next step.
                 document.getElementById('open-celestial-selector-btn')?.click();
                 tour.next();
             }}
@@ -107,20 +122,27 @@ function setupTourSteps() {
         ]
     });
 
+    // Mark the tour as completed if the user finishes or cancels it.
     tour.on('complete', markTourAsCompleted);
     tour.on('cancel', markTourAsCompleted);
 }
 
+/**
+ * Initializes the onboarding tour feature.
+ * This function sets up the tour steps and decides whether to start the tour
+ * automatically based on the user's history. It also adds a "Relaunch Tour"
+ * button to the help panel.
+ */
 export function initOnboardingTour() {
     setupTourSteps();
 
-    // Start tour automatically if it's the user's first visit
+    // Start tour automatically if it's the user's first visit.
     if (!isTourCompleted()) {
-        // A small delay to ensure the UI is fully rendered
+        // A small delay to ensure the UI is fully rendered and animations are settled.
         setTimeout(() => tour.start(), 1000);
     }
 
-    // Add a button to the help panel to restart the tour
+    // Add a button to the help panel to allow users to restart the tour manually.
     const helpPanel = document.getElementById('help-overlay');
     if (helpPanel) {
         const relaunchButton = document.createElement('button');
@@ -128,7 +150,7 @@ export function initOnboardingTour() {
         relaunchButton.className = 'btn';
         relaunchButton.style.marginTop = '15px';
         relaunchButton.addEventListener('click', () => {
-            // We need to close the help panel before starting the tour
+            // We need to close the help panel before starting the tour.
             const closeHelpBtn = document.getElementById('help-overlay-close');
             closeHelpBtn?.click();
             tour.start();

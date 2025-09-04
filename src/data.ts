@@ -1,76 +1,143 @@
 import * as THREE from 'three';
 
-// New interfaces from user spec
+/**
+ * Defines the classical orbital elements for a celestial body, used for high-precision orbit calculations.
+ */
 export interface OrbitalElements {
+  /** Semi-major axis in kilometers. */
   aKm: number;
+  /** Eccentricity of the orbit (unitless). */
   e: number;
+  /** Inclination of the orbit in degrees. */
   iDeg: number;
-  lanDeg: number;       // Ω
-  argPeriDeg: number;   // ω
-  meanAnomalyDeg: number; // M0 at epoch
+  /** Longitude of the ascending node (Ω) in degrees. */
+  lanDeg: number;
+  /** Argument of periapsis (ω) in degrees. */
+  argPeriDeg: number;
+  /** Mean anomaly at epoch (M₀) in degrees. */
+  meanAnomalyDeg: number;
+  /** The reference date and time for these elements in ISO 8601 format. */
   epochISO: string;
 }
 
+/**
+ * Defines the structure for educational content associated with a celestial body.
+ */
 export interface EduContent {
+  /** A short, one-sentence description. */
   shortDescription?: string;
+  /** A longer, more detailed description. */
   longDescription?: string;
+  /** URL or path to a thumbnail image. */
   thumbnail?: string;
+  /** URL or path to a main, high-resolution image. */
   image?: string;
+  /** URL to an external page (e.g., Wikipedia) for more information. */
   readMoreUrl?: string;
+  /** The source of the information (e.g., 'Wikipedia'). */
   sourceName?: string;
+  /** The license under which the content is provided (e.g., 'CC BY-SA 3.0'). */
   license?: string;
 }
 
+/**
+ * Defines a single, continuous band within a planet's ring system.
+ */
 export interface RingBand {
+  /** The inner radius of the band in kilometers. */
   innerRadius: number;
+  /** The outer radius of the band in kilometers. */
   outerRadius: number;
+  /** An optional type identifier for the band (e.g., 'main', 'gossamer'). */
   type?: string;
 }
 
+/**
+ * Defines a bright, clumpy arc within a planet's ring system (e.g., Neptune's rings).
+ */
 export interface RingArc {
+  /** The inner radius of the arc in kilometers. */
   innerRadius: number;
+  /** The outer radius of the arc in kilometers. */
   outerRadius: number;
+  /** The start angle of the arc in radians. */
   thetaStart: number;
+  /** The angular length of the arc in radians. */
   thetaLength: number;
 }
 
+/**
+ * Defines the complete ring system for a planet.
+ */
 export interface Rings {
+  /** A string identifier for the type of ring system (e.g., 'saturn', 'jupiter'). */
   type: string;
+  /** The base color of the rings. */
   color: number | string;
+  /** An array of `RingBand` objects that make up the system. */
   bands: RingBand[];
+  /** An optional path to a texture file for the rings. */
   texture?: string;
+  /** An optional array of `RingArc` objects for planets with ring arcs. */
   arcs?: RingArc[];
 }
 
+/**
+ * The main interface for all celestial bodies in the simulation.
+ * It contains physical properties, orbital parameters, and optional data for rings and educational content.
+ */
 export interface CelestialBody {
+  /** A unique string identifier for the body (e.g., 'earth', 'moon'). */
   id: string;
+  /** The ID of the parent body this object orbits, or `null` for the central star. */
   parentId: string | null;
+  /** The display name of the body (e.g., 'Earth'). */
   name: string;
-  radius: number; // in km
-  mass?: number; // in 10^24 kg
-  surfaceGravity?: number; // in m/s^2
-  density?: number; // in kg/m^3
-  inclination?: number; // orbital inclination in degrees
+  /** The equatorial radius of the body in kilometers. */
+  radius: number;
+  /** The mass of the body in 10^24 kilograms. */
+  mass?: number;
+  /** The average surface gravity in m/s². */
+  surfaceGravity?: number;
+  /** The average density in kg/m³. */
+  density?: number;
+  /** The orbital inclination in degrees, relative to the ecliptic plane. */
+  inclination?: number;
+  /** A hex color code for UI elements and simple representations. */
   color: number;
-  semiMajorAxis: number; // In AU for planets, can be 0 for moons
-  orbitalPeriod: number; // In days
+  /** The semi-major axis of the orbit in Astronomical Units (AU). For moons, this is often 0 as `semiMajorAxisKm` is used instead. */
+  semiMajorAxis: number;
+  /** The orbital period (sidereal period) in Earth days. */
+  orbitalPeriod: number;
+  /** The eccentricity of the orbit (0 is a perfect circle). */
   eccentricity: number;
+  /** An optional path to a texture file for the body's surface. */
   texture?: string;
+  /** An optional `Rings` object describing the body's ring system. */
   rings?: Rings;
+  /** The axial tilt of the body in degrees. */
   axialTilt?: number;
-  semiMajorAxisKm?: number; // For moons, this is the primary distance. For planets, it's derived.
+  /** The semi-major axis of a moon's orbit in kilometers. */
+  semiMajorAxisKm?: number;
 
-  // New optional fields
+  /** Optional high-precision orbital elements for more accurate calculations. */
   orbitalElements?: OrbitalElements;
+  /** Optional educational content for display in the UI. */
   edu?: EduContent;
 
-  // Runtime properties, not part of the static data
+  // --- Runtime properties, not part of the static data ---
+  /** A runtime reference to the `THREE.Group` for this body. @internal */
   group?: THREE.Group;
+  /** A runtime reference to the `THREE.Object3D` (Mesh/LOD) for this body. @internal */
   mesh?: THREE.Object3D;
+  /** A runtime reference to the `THREE.Line` object representing the static orbit path. @internal */
   orbit?: THREE.Line;
 }
 
-// Renamed from planetData to reflect that it contains all bodies.
+/**
+ * The master array containing all static data for every celestial body in the simulation.
+ * This is the primary source of truth for the physical and orbital properties of planets, moons, and the sun.
+ */
 export const celestialBodyData: CelestialBody[] = [
     { id: 'sun', parentId: null, name: 'Sun', radius: 696340, mass: 1988500, density: 1408, surfaceGravity: 274, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1, eccentricity: 0,
         edu: {

@@ -1,26 +1,49 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import { Backdrop } from './backdrop';
 import { PanelController, PanelOptions } from './panel-types';
 
+/** The edge of the screen a panel can snap to. */
 type PanelSnapEdge = 'left' | 'right' | 'top' | 'bottom' | null;
 
+/**
+ * Represents the complete state of a panel, including position, size, and behavior flags.
+ * This state is persisted to localStorage.
+ */
 export type PanelState = {
+    /** The x-coordinate of the panel's top-left corner. */
     x: number;
+    /** The y-coordinate of the panel's top-left corner. */
     y: number;
+    /** The width of the panel in pixels. */
     w: number;
+    /** The height of the panel in pixels. */
     h: number;
+    /** Whether the panel is currently visible. */
     visible: boolean;
+    /** The edge the panel is currently snapped to, or null if not snapped. */
     snapped: PanelSnapEdge;
+    /** Whether the panel is pinned, preventing it from being dragged. */
     pinned: boolean;
+    /** Whether the panel is minimized. */
     minimized: boolean;
+    /** The timestamp of the last time the panel was focused, used for z-indexing. */
     lastFocused: number;
 };
 
+/** The distance from a screen edge (in px) to start showing the snap preview. */
 const SNAP_THRESHOLD = 32;
+/** The distance from a screen edge (in px) to commit the snap. */
 const SNAP_DISTANCE = 16;
+/** The distance the mouse must move away from a snapped edge to unsnap the panel. */
 const UNSNAP_DISTANCE = 24;
 
-// Helper function to create a controller from an instance
+/**
+ * Creates a public-facing `PanelController` from a `PanelManager` instance.
+ * This acts as an adapter, exposing only the safe, public methods for controlling a panel.
+ * @param instance The internal `PanelManager` instance.
+ * @returns A `PanelController` object.
+ * @private
+ */
 function createController(instance: PanelManager): PanelController {
     return {
         id: instance.id,
@@ -42,8 +65,15 @@ function createController(instance: PanelManager): PanelController {
     };
 }
 
+/**
+ * Manages the state and behavior of all UI panels.
+ * This class provides a complete windowing system, including dragging, resizing,
+ * snapping, pinning, and focus management. It uses a static factory pattern
+ * (`createPanel`) to create and manage panel instances.
+ */
 export class PanelManager {
     private static highestZIndex = 1000;
+    /** A map of all active PanelManager instances, keyed by their ID. */
     public static panels: Map<string, PanelManager> = new Map();
     private static controllers: Map<string, PanelController> = new Map();
     private static snapGlow: HTMLElement;
@@ -56,13 +86,21 @@ export class PanelManager {
 
     private events = new Map<string, Array<() => void>>();
 
-    // Bound event listeners
+    // Bound event listeners for cleanup
     private boundOnDragStart: (e: MouseEvent) => void;
     private boundOnDragMove: (e: MouseEvent) => void;
     private boundOnDragEnd: () => void;
 
-    // --- NEW STATIC API ---
+    // --- STATIC API ---
 
+    /**
+     * The main factory method for creating a new managed panel.
+     * @param id A unique identifier for the panel.
+     * @param title The title of the panel (reserved for future use).
+     * @param panelEl The root HTML element of the panel.
+     * @param options Configuration options for the panel.
+     * @returns A `PanelController` to interact with the newly created panel.
+     */
     public static createPanel(
         id: string,
         title: string, // Title is not used yet, but good for future use
@@ -96,6 +134,11 @@ export class PanelManager {
         return controller;
     }
 
+    /**
+     * Retrieves the controller for an existing panel.
+     * @param id The ID of the panel.
+     * @returns The `PanelController` if found, otherwise `undefined`.
+     */
     public static getController(id: string): PanelController | undefined {
         return this.controllers.get(id);
     }
@@ -132,14 +175,15 @@ export class PanelManager {
         this.panel.addEventListener('mousedown', () => this.updateFocus(), true);
     }
 
+    /** Unregisters the panel and removes its element from the DOM. */
     public destroy() {
-        // Unregister and remove from DOM
         PanelManager.panels.delete(this.id);
         PanelManager.controllers.delete(this.id);
         this.panel.remove();
         this.emit('close');
     }
 
+    /** Registers an event listener for panel events. */
     public on(event: string, cb: () => void) {
         if (!this.events.has(event)) {
             this.events.set(event, []);
@@ -151,6 +195,7 @@ export class PanelManager {
         this.events.get(event)?.forEach(cb => cb());
     }
 
+    /** Returns the root HTML element for the panel. */
     public getPanelElement(): HTMLElement {
         return this.panel;
     }
@@ -199,6 +244,7 @@ export class PanelManager {
         return { ...defaultState, ...optionsState, ...loadedState };
     }
 
+    /** Saves the current state of the panel to localStorage. */
     public saveState() {
         localStorage.setItem(`solarsim.panel.${this.id}`, JSON.stringify(this.state));
     }
@@ -218,6 +264,7 @@ export class PanelManager {
         this.panel.classList.toggle('minimized', this.state.minimized);
     }
 
+    /** Toggles the minimized state of the panel. */
     public toggleMinimize() {
         this.state.minimized = !this.state.minimized;
         this.applyState();
@@ -225,6 +272,7 @@ export class PanelManager {
         this.emit('minimize');
     }
 
+    /** Makes the panel visible and brings it into focus. */
     public show() {
         if (this.state.visible) {
             this.updateFocus(); // Still bring to front if already visible
@@ -240,6 +288,7 @@ export class PanelManager {
         this.emit('show');
     }
 
+    /** Hides the panel. */
     public hide() {
         if (!this.state.visible) return;
         this.state.visible = false;
@@ -251,6 +300,7 @@ export class PanelManager {
         this.emit('hide');
     }
 
+    /** Toggles the visibility of the panel. */
     public toggleVisibility() {
         if (this.state.visible) {
             this.hide();
@@ -263,6 +313,7 @@ export class PanelManager {
     // Focus Management
     // =================================================================
 
+    /** Brings the panel to the front by increasing its z-index and updates its focus timestamp. */
     public updateFocus() {
         this.state.lastFocused = Date.now();
         this.panel.style.zIndex = String(++PanelManager.highestZIndex);
@@ -270,6 +321,10 @@ export class PanelManager {
         this.emit('focus');
     }
 
+    /**
+     * Finds the controller for the panel that was most recently focused by the user.
+     * @returns The `PanelController` for the most recently focused panel, or `null` if no panels are visible.
+     */
     public static getMostRecentlyFocusedController(): PanelController | null {
         const visiblePanels = Array.from(PanelManager.panels.values()).filter(p => p.state.visible);
         if (visiblePanels.length === 0) return null;
@@ -282,6 +337,7 @@ export class PanelManager {
     // Pinning
     // =================================================================
 
+    /** Toggles the pinned state of the panel, preventing it from being dragged. */
     public togglePin() {
         this.state.pinned = !this.state.pinned;
         this.panel.classList.toggle('pinned', this.state.pinned);
@@ -299,6 +355,7 @@ export class PanelManager {
 
     private onDragStart(e: MouseEvent) {
         if (e.button !== 0 || this.state.pinned) return;
+        // Ignore clicks on interactive elements within the header
         if ((e.target as HTMLElement).closest('button, input, select, textarea')) {
             return;
         }
@@ -318,6 +375,7 @@ export class PanelManager {
         this.header.style.cursor = 'grabbing';
         document.body.style.userSelect = 'none';
 
+        // If starting a drag from a snapped position, check if we should unsnap
         if (this.state.snapped) {
             const checkUnsnap = (moveEvent: MouseEvent) => {
                 const dx = Math.abs(moveEvent.clientX - this.dragStartX);
@@ -365,6 +423,7 @@ export class PanelManager {
         const winHeight = window.innerHeight;
         let activeSnap: PanelSnapEdge = null;
 
+        // Check if panel is close to any edge
         if (this.state.x < SNAP_THRESHOLD) activeSnap = 'left';
         else if (this.state.x + this.state.w > winWidth - SNAP_THRESHOLD) activeSnap = 'right';
         else if (this.state.y < SNAP_THRESHOLD) activeSnap = 'top';
@@ -373,6 +432,7 @@ export class PanelManager {
         PanelManager.hideSnapPreview();
         if (activeSnap) {
             PanelManager.showSnapPreview(activeSnap);
+            // Check if panel is close enough to commit the snap
             if (
                 (activeSnap === 'left' && this.state.x < SNAP_DISTANCE) ||
                 (activeSnap === 'right' && this.state.x + this.state.w > winWidth - SNAP_DISTANCE) ||
