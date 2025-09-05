@@ -27,6 +27,7 @@ import { initOnboardingTour } from './ui/onboarding-tour';
 import { TrailManager } from './orbits/TrailManager';
 import { getAssetUrl } from './utils/assets';
 import { initUserDataIfMissing } from './utils/three-helpers';
+import { LayoutManager } from './ui/layout-manager';
 
 /**
  * The main entry point for the application. This asynchronous function sets up the entire
@@ -537,7 +538,7 @@ async function start() {
             simulation.focusTarget = selectedBody.mesh;
             simulation.selectedObject = selectedBody.mesh;
 
-            infoPanelManager.updateContent(selectedBody);
+            infoPanelManager.updateContent({ data: selectedBody, mesh: selectedBody.mesh });
 
             const { data } = selectedBody.mesh.userData;
             dom.smallInfoCard.classList.remove('hidden');
@@ -688,6 +689,9 @@ async function start() {
     setupQuickAccessToolbar();
     initContextualHud();
     initOnboardingTour();
+
+    // Initialize the main layout manager
+    new LayoutManager().init();
 
     // --- E2E and App Readiness Notification ---
     const app = {
