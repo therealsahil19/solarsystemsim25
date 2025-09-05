@@ -21,6 +21,8 @@ export interface PanelOptions {
  * This interface provides a consistent way to interact with and manage panels,
  * regardless of their specific content or implementation.
  */
+import { PanelState } from "./panel-manager";
+
 export interface PanelController {
     /** The unique ID of the panel. */
     id: string;
@@ -50,4 +52,8 @@ export interface PanelController {
      * @param cb The callback function to execute when the event occurs.
      */
     on(event: 'focus' | 'minimize' | 'close' | 'show' | 'hide', cb: () => void): void;
+    /** Returns the current state of the panel. */
+    getState(): PanelState;
+    /** Sets the position of the panel. */
+    setPosition(x: number, y: number): void;
 }
