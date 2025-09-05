@@ -105,16 +105,16 @@ export class InfoPanelManager {
         dom.infoBasicStats.innerHTML = '';
         dom.infoOrbitalChars.innerHTML = '';
         this.addStat(dom.infoBasicStats, 'Radius', body.radius.toLocaleString(), 'km');
-        this.addStat(dom.infoBasicStats, 'Mass', body.mass, 'x 10^24 kg');
-        this.addStat(dom.infoBasicStats, 'Density', body.density, 'kg/m³');
-        this.addStat(dom.infoBasicStats, 'Gravity', body.surfaceGravity, 'm/s²');
+        this.addStat(dom.infoBasicStats, 'Mass', body.mass ?? 'N/A', 'x 10^24 kg');
+        this.addStat(dom.infoBasicStats, 'Density', body.density ?? 'N/A', 'kg/m³');
+        this.addStat(dom.infoBasicStats, 'Gravity', body.surfaceGravity ?? 'N/A', 'm/s²');
 
         const type = body.parentId === 'sun' || body.parentId === null ? 'planet' : 'moon';
         const distanceInKm = type === 'moon' ? (body.semiMajorAxisKm || 0) : body.semiMajorAxis * KM_PER_AU;
-        this.addStat(dom.infoOrbitalChars, 'Orbital Period', body.orbitalPeriod, 'days');
+        this.addStat(dom.infoOrbitalChars, 'Orbital Period', body.orbitalPeriod ?? 'N/A', 'days');
         this.addStat(dom.infoOrbitalChars, 'Semi-Major Axis', distanceInKm.toLocaleString(), 'km', 'The average distance from its parent body.');
-        this.addStat(dom.infoOrbitalChars, 'Eccentricity', body.eccentricity.toFixed(4));
-        this.addStat(dom.infoOrbitalChars, 'Inclination', body.inclination, '°');
+        this.addStat(dom.infoOrbitalChars, 'Eccentricity', (body.eccentricity ?? 'N/A').toString());
+        this.addStat(dom.infoOrbitalChars, 'Inclination', body.inclination ?? 'N/A', '°');
 
         // Populate the "Exact Mode" panel with high-precision orbital elements
         const exactModeContainer = document.getElementById('info-exact-mode')!;
