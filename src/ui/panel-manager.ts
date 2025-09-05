@@ -62,6 +62,8 @@ function createController(instance: PanelManager): PanelController {
         togglePin: () => instance.togglePin(),
         isPinned: () => instance.state.pinned,
         on: (event, cb) => instance.on(event, cb),
+        getState: () => instance.state,
+        setPosition: (x: number, y: number) => instance.setPosition(x, y),
     };
 }
 
@@ -307,6 +309,18 @@ export class PanelManager {
         } else {
             this.show();
         }
+    }
+
+    /**
+     * Programmatically sets the position of the panel.
+     * @param x The new x-coordinate.
+     * @param y The new y-coordinate.
+     */
+    public setPosition(x: number, y: number) {
+        this.state.x = x;
+        this.state.y = y;
+        this.applyState();
+        this.saveState();
     }
 
     // =================================================================

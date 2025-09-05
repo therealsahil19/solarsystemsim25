@@ -10,9 +10,10 @@ import { createPlanetRings } from './bodies/rings';
 import { calculateDisplayPosition, getDisplayRadius, ScaleTransition } from './utils/scaling';
 import { createCelestialBodySelector } from './ui/celestial-selector';
 import { setupInteractions } from './interactions';
-import { initInfoPanel, updateInfoPanelColor } from './ui/info-panel';
+import { updateInfoPanelColor } from './ui/info-panel';
 import { OrbitManager } from './orbits/OrbitManager';
 import store from './state/store';
+import { InfoPanelManager } from './ui/info-panel-manager';
 import { setupKeyboardShortcuts } from './keyboard';
 import * as dom from './ui/dom';
 import { instantaneousOrbitalSpeed } from './orbits/kepler';
@@ -460,8 +461,8 @@ async function start() {
         clampZoomForBody(selectedObject);
     }
 
+    const infoPanelManager = new InfoPanelManager();
     createCelestialBodySelector(celestialBodyData, onBodySelected);
-    initInfoPanel();
 
     /**
      * Resets the entire simulation to its initial state.
@@ -529,45 +530,6 @@ async function start() {
         }
     });
 
-    /**
-     * A helper function to create and append a stat row to a container in the info panel.
-     * @param container The parent element.
-     * @param label The label for the stat.
-     * @param value The value of the stat.
-     * @param unit The unit for the stat.
-     * @param tooltip An optional tooltip string.
-     * @private
-     */
-    function addStat(container: HTMLElement, label: string, value: string | number, unit: string = '', tooltip: string | null = null) {
-        if (value === undefined || value === null) return;
-
-        const statId = `stat-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-        const row = document.createElement('div');
-        row.setAttribute('data-e2e', statId);
-
-        const strong = document.createElement('strong');
-        strong.textContent = `${label}:`;
-
-        const span = document.createElement('span');
-        span.textContent = `${value} ${unit}`;
-        span.dataset.testid = 'stat-value';
-
-        if (tooltip) {
-            const tooltipSpan = document.createElement('span');
-            tooltipSpan.className = 'tooltip';
-            tooltipSpan.textContent = '(?)';
-            const tooltipText = document.createElement('span');
-            tooltipText.className = 'tooltip-text';
-            tooltipText.textContent = tooltip;
-            tooltipSpan.appendChild(tooltipText);
-            span.appendChild(tooltipSpan);
-        }
-
-        row.appendChild(strong);
-        row.appendChild(span);
-        container.appendChild(row);
-    }
-
     // Subscribe to the global store to update the UI when the selected body changes.
     store.subscribe((state) => {
         const selectedBody = celestialObjects.find(c => c.id === state.selectedBodyId);
@@ -575,73 +537,13 @@ async function start() {
             simulation.focusTarget = selectedBody.mesh;
             simulation.selectedObject = selectedBody.mesh;
 
-            const { data, type } = selectedBody.mesh.userData;
+            infoPanelManager.updateContent(selectedBody);
+
+            const { data } = selectedBody.mesh.userData;
             dom.smallInfoCard.classList.remove('hidden');
             dom.cardTitle.textContent = data.name;
             dom.cardThumb.src = data.edu?.image || data.texture || '';
             dom.cardThumb.alt = `${data.name} thumbnail`;
-            dom.infoName.textContent = data.name;
-
-            let material;
-            if (selectedBody.mesh instanceof LOD) {
-                material = ((selectedBody.mesh as LOD).levels[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
-            } else {
-                material = (selectedBody.mesh as THREE.Mesh).material as THREE.MeshStandardMaterial;
-            }
-            const color = `#${material.color.getHexString()}`;
-            updateInfoPanelColor(color);
-
-            // Populate the main info panel with data
-            dom.infoImage.src = data.edu?.image || '';
-            dom.infoImage.alt = `Image of ${data.name}`;
-            dom.infoLink.href = data.edu?.readMoreUrl || '#';
-            dom.infoShortDesc.textContent = data.edu?.shortDescription || '';
-
-            dom.infoBasicStats.innerHTML = '';
-            dom.infoOrbitalChars.innerHTML = '';
-            addStat(dom.infoBasicStats, 'Radius', data.radius.toLocaleString(), 'km');
-            addStat(dom.infoBasicStats, 'Mass', data.mass, 'x 10^24 kg');
-            addStat(dom.infoBasicStats, 'Density', data.density, 'kg/m³');
-            addStat(dom.infoBasicStats, 'Gravity', data.surfaceGravity, 'm/s²');
-
-            const distanceInKm = type === 'moon' ? (data.semiMajorAxisKm || 0) : data.semiMajorAxis * KM_PER_AU;
-            const distanceUnit = store.getState().distanceUnit;
-            addStat(dom.infoOrbitalChars, 'Orbital Period', data.orbitalPeriod, 'days');
-            addStat(dom.infoOrbitalChars, 'Semi-Major Axis', formatDistance(distanceInKm, distanceUnit), '', 'The average distance from its parent body.');
-            addStat(dom.infoOrbitalChars, 'Eccentricity', data.eccentricity.toFixed(4));
-            addStat(dom.infoOrbitalChars, 'Inclination', data.inclination, '°');
-
-            // Populate the "Exact Mode" panel with high-precision orbital elements
-            const exactModeContainer = document.getElementById('info-exact-mode')!;
-            const exactModeToggle = document.getElementById('exact-mode-toggle')!;
-            const exactModeContent = document.getElementById('exact-mode-content')!;
-
-            if (data.orbitalElements) {
-                exactModeContainer.classList.remove('hidden');
-                exactModeContent.innerHTML = '';
-                const elements = {
-                    'Semi-Major Axis': `${(data.orbitalElements.aKm / KM_PER_AU).toFixed(4)} AU`,
-                    'Eccentricity': data.orbitalElements.e.toFixed(6),
-                    'Inclination': `${data.orbitalElements.iDeg.toFixed(4)}°`,
-                    'Lon. of Asc. Node (Ω)': `${data.orbitalElements.lanDeg.toFixed(4)}°`,
-                    'Arg. of Periapsis (ω)': `${data.orbitalElements.argPeriDeg.toFixed(4)}°`,
-                    'Mean Anomaly at Epoch': `${data.orbitalElements.meanAnomalyDeg.toFixed(4)}°`,
-                    'Epoch': data.orbitalElements.epochISO.split('T')[0],
-                };
-                for (const [key, value] of Object.entries(elements)) {
-                    const strong = document.createElement('strong');
-                    strong.textContent = `${key}:`;
-                    const span = document.createElement('span');
-                    span.textContent = value;
-                    exactModeContent.appendChild(strong);
-                    exactModeContent.appendChild(span);
-                }
-                exactModeToggle.onclick = () => exactModeContent.classList.toggle('hidden');
-            } else {
-                exactModeContainer.classList.add('hidden');
-            }
-
-            (dom.infoPanel as HTMLElement).classList.remove('hidden');
             (dom.freeCameraButton as HTMLElement).classList.remove('hidden');
 
             // Notify E2E tests that the body has been rendered
@@ -649,6 +551,8 @@ async function start() {
                 (window as any).__E2E__.lastSelected = selectedBody.id;
                 window.dispatchEvent(new CustomEvent('e2e:body-rendered', { detail: { id: selectedBody.id } }));
             }
+        } else {
+            infoPanelManager.hide();
         }
     });
 

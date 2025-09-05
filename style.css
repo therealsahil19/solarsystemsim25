@@ -208,6 +208,11 @@ canvas {
     border-radius: 12px;
     box-shadow: 0 8px 40px 0 rgba(0,0,0,0.32);
     padding: 15px;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.panel.fade-out {
+    opacity: 0;
 }
 
 /* --- Dockable Info Panel --- */
