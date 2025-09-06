@@ -1,4 +1,4 @@
-@import 'src/styles/layout.css';
+@import './layout.css';
 
 :root {
     --accent-color: #72C8FF;

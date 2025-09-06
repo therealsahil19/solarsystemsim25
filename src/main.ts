@@ -1,3 +1,4 @@
+import './styles/style.css';
 import * as THREE from 'three';
 import { initScene } from './scene';
 import { createScene } from './app/scene';
