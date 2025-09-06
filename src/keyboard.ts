@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import * as dom from './ui/dom';
+import * as dom from './components/dom';
 import { celestialBodyData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
-import { renderShortcutsList } from './ui/shortcuts-panel';
+import { renderShortcutsList } from './components/shortcuts-panel';
 import store from './state/store';
 import { Simulation } from './interactions';
 

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { initScene } from './scene';
 import { createScene } from './app/scene';
 import * as dom from './components/dom';
