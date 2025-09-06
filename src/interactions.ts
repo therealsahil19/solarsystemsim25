@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import * as dom from './ui/dom';
+import * as dom from './components/dom';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { showHud } from './ui/contextual-hud';
+import { showHud } from './components/contextual-hud';
 import { warnOnce } from './utils/three-helpers';
 
 /**
@@ -88,7 +88,7 @@ export function setupInteractions(
     });
 
     // --- Click Handling ---
-    window.addEventListener('click', (event) => {
+    window.addEventListener('click', (event: MouseEvent) => {
         tooltipElement.classList.add('hidden');
         // Ignore clicks that land on UI elements
         const clickedOnUI = [
@@ -149,7 +149,7 @@ export function setupInteractions(
         simulation.isUserInteracting = false;
     });
 
-    dom.smallInfoCard.addEventListener('click', (e) => {
+    dom.smallInfoCard.addEventListener('click', (e: MouseEvent) => {
         if ((e.target as HTMLElement).tagName !== 'BUTTON') {
             dom.infoPanel.classList.remove('hidden');
         }

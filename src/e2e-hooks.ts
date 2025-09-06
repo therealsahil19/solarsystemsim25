@@ -6,7 +6,7 @@
  * object, allowing test scripts to interact with the application's internal state.
  */
 
-import { PanelManager } from './ui/panel-manager';
+import { PanelManager } from './components/panel-manager';
 
 // --- App Readiness ---
 // This system provides a signal for Playwright to wait for, ensuring the app is fully initialized.
