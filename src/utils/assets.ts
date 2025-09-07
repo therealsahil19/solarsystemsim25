@@ -6,8 +6,7 @@
  * @returns A full, correct path to the asset.
  */
 export function getAssetUrl(path: string): string {
-  // import.meta.env.BASE_URL is a Vite feature that provides the base public path.
-  // It includes a trailing slash, and our asset paths in data.ts do not have a leading slash,
-  // so we can concatenate them directly.
-  return `${import.meta.env.BASE_URL}${path}`;
+  // This uses the `new URL(path, import.meta.url)` pattern, which is the
+  // standard way Vite handles resolving assets in JavaScript/TypeScript.
+  return new URL(`../${path}`, import.meta.url).href;
 }
