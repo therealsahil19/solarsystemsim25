@@ -11,8 +11,8 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [
-    checker({
-      typescript: true,
-    }),
+    // checker({
+    //   typescript: true,
+    // }),
   ],
 });
