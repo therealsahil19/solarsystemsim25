@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { calculateDisplayPosition, getDisplayRadius, ScaleTransition } from './scaling';
-import { ScalePreset } from '../state/store';
 
 describe('scaling utilities', () => {
   describe('calculateDisplayPosition', () => {
@@ -61,7 +60,7 @@ describe('scaling utilities', () => {
         fromPreset: 'realistic',
         toPreset: 'realistic',
       };
-      // @ts-ignore
+      // @ts-expect-error: Testing invalid input
       const displayPosition = calculateDisplayPosition(null, transition);
       expect(displayPosition).toEqual(new THREE.Vector3(0, 0, 0));
     });
