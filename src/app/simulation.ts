@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { LOD } from 'three';
-import { gsap } from 'gsap';
 import { camera, controls, renderer, scene } from '../scene';
 import { CelestialBody, celestialBodyData } from '../data';
 import { AU_TO_M, speedDisplayKmPerS } from '../utils/misc';

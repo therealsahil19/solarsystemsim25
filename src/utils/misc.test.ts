@@ -52,9 +52,9 @@ describe('misc utilities', () => {
     });
 
     it('should handle invalid inputs', () => {
-      // @ts-ignore
+      // @ts-expect-error: Testing invalid input
       expect(speedDisplayKmPerS(null)).toBe('N/A');
-      // @ts-ignore
+      // @ts-expect-error: Testing invalid input
       expect(speedDisplayKmPerS(undefined)).toBe('N/A');
       expect(speedDisplayKmPerS(NaN)).toBe('N/A');
     });

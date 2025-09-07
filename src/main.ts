@@ -14,7 +14,6 @@ import { initOnboardingTour } from './components/onboarding-tour';
 import { LayoutManager } from './components/layout-manager';
 import { createCelestialBodySelector } from './components/celestial-selector';
 import { celestialBodyData } from './data';
-import { InfoPanelManager } from './components/info-panel-manager';
 import { setupKeyboardShortcuts } from './keyboard';
 import { setupInteractions } from './interactions';
 import store from './state/store';
@@ -29,8 +28,6 @@ async function start() {
 
     const { celestialObjects, selectableObjects, bodyMap, sun, asteroidUniforms } = await createScene();
     const simulation = new Simulation(celestialObjects, bodyMap, sun, asteroidUniforms);
-
-    const infoPanelManager = new InfoPanelManager();
 
     function onBodySelected(id: string) {
         simulation.onBodySelected(id, selectableObjects);
