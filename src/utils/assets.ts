@@ -37,16 +37,22 @@ export async function safeLoadTexture(name?: string | null): Promise<THREE.Textu
     return makePlaceholderTexture();
   }
 
-  // Respect Vite's base URL for GH Pages or other base deployments
-  const base = (import.meta as any).env?.BASE_URL ?? '/';
-  // If name already contains a path, you can support that too:
-  const url = `${base}assets/${encodeURIComponent(name)}`;
+  // Normalize common inputs like "/assets/foo.jpg" or "assets/foo.jpg" down to just the filename
+  // because we keep textures under src/assets and resolve them relative to this module.
+  const normalized = name.replace(/^\/?assets\//, '');
+
+  // Let Vite resolve the correct path and prefix with BASE_URL for production
+  // by using the recommended new URL(pattern, import.meta.url) approach.
+  const url = new URL(`../assets/${normalized}`, import.meta.url).href;
 
   return new Promise((resolve) => {
     const loader = new THREE.TextureLoader();
     loader.load(
       url,
-      (tex) => resolve(tex),
+      (tex) => {
+        try { tex.colorSpace = THREE.SRGBColorSpace; } catch {}
+        resolve(tex);
+      },
       undefined,
       (err) => {
         console.error(`[safeLoadTexture] failed to load "${url}". Using placeholder.`, err);

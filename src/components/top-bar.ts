@@ -48,14 +48,16 @@ function cacheDOMElements() {
     moreMenuBtn = document.getElementById('more-menu-toggle') as HTMLButtonElement;
     moreMenuContent = document.getElementById('more-menu-content') as HTMLDivElement;
     topBar = document.getElementById('top-bar') as HTMLElement;
-    appContainer = document.getElementById('app') as HTMLElement;
+    // Matches <div class="app-container"> in index.html
+    appContainer = document.querySelector('.app-container') as HTMLElement;
     scaleControlGroup = document.getElementById('scale-control-group') as HTMLDivElement;
     scalePresetSelect = document.getElementById('scale-preset-select') as HTMLSelectElement;
     scaleBadge = document.getElementById('scale-badge') as HTMLSpanElement;
-    timeSliderGroup = document.getElementById('time-control-group') as HTMLElement;
-    timePresetGroup = document.getElementById('time-preset-group') as HTMLElement;
-    visualsBtn = document.getElementById('visuals-btn') as HTMLElement;
-    settingsBtn = document.getElementById('settings-btn') as HTMLElement;
+    // Matches ids in index.html
+    timeSliderGroup = document.getElementById('time-slider-group') as HTMLElement;
+    timePresetGroup = document.getElementById('time-presets-group') as HTMLElement;
+    visualsBtn = document.getElementById('visuals-toggle-btn') as HTMLElement;
+    settingsBtn = document.getElementById('settings-toggle-btn') as HTMLElement;
     githubLink = document.getElementById('github-link') as HTMLElement;
 
     // Store original parents to move elements back on larger screens
@@ -78,12 +80,12 @@ function handleResponsiveLayout() {
 
     if (isMobile) {
         // Move controls to the "More" menu if they aren't already there
-        if (!moreMenuContent.contains(timeSliderGroup)) moreMenuContent.appendChild(timeSliderGroup);
-        if (!moreMenuContent.contains(timePresetGroup)) moreMenuContent.appendChild(timePresetGroup);
-        if (!moreMenuContent.contains(visualsBtn)) moreMenuContent.appendChild(visualsBtn);
-        if (!moreMenuContent.contains(settingsBtn)) moreMenuContent.appendChild(settingsBtn);
-        if (!moreMenuContent.contains(githubLink)) moreMenuContent.appendChild(githubLink);
-        if (!moreMenuContent.contains(scaleControlGroup)) moreMenuContent.appendChild(scaleControlGroup);
+        if (timeSliderGroup && !moreMenuContent.contains(timeSliderGroup)) moreMenuContent.appendChild(timeSliderGroup);
+        if (timePresetGroup && !moreMenuContent.contains(timePresetGroup)) moreMenuContent.appendChild(timePresetGroup);
+        if (visualsBtn && !moreMenuContent.contains(visualsBtn)) moreMenuContent.appendChild(visualsBtn);
+        if (settingsBtn && !moreMenuContent.contains(settingsBtn)) moreMenuContent.appendChild(settingsBtn);
+        if (githubLink && !moreMenuContent.contains(githubLink)) moreMenuContent.appendChild(githubLink);
+        if (scaleControlGroup && !moreMenuContent.contains(scaleControlGroup)) moreMenuContent.appendChild(scaleControlGroup);
         moreMenuBtn.classList.remove('hidden');
     } else {
         // Move controls back to their original positions in the top bar
@@ -110,7 +112,9 @@ function handleResponsiveLayout() {
  */
 function updateAppPadding() {
     const topBarHeight = topBar.offsetHeight;
-    appContainer.style.paddingTop = `${topBarHeight}px`;
+    if (appContainer) {
+        appContainer.style.paddingTop = `${topBarHeight}px`;
+    }
 }
 
 /**
