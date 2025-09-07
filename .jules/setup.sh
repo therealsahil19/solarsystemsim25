@@ -6,12 +6,12 @@ sudo apt-get update -y
 sudo apt-get install -y libgl1
 sudo apt-get clean -y
 
-# Node toolchain
-corepack enable
-NODE_VERSION=${NODE_VERSION:-18}
-if [[ -f .nvmrc ]]; then NODE_VERSION=$(cat .nvmrc); fi
-nvm install "$NODE_VERSION"
-nvm use "$NODE_VERSION"
+# ──────────────── 2. Node toolchain ───────────────
+# Jules images already ship with Node 18 LTS.
+echo "Using pre-installed Node version:"
+node -v
+npm -v
+
 
 # Dependencies, build, tests, lints
 npm ci
