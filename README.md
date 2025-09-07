@@ -26,6 +26,55 @@ To run the simulation locally, follow these steps:
     ```
 This will open the simulation in your default browser.
 
+## Deploying to GitHub Pages via Actions
+
+This repository deploys to GitHub Pages using the official Actions flow. The workflow lives at `/.github/workflows/deploy.yml` and:
+
+- Builds with Node 20 using `npm ci` and `npm run build` (Vite output to `dist/`).
+- Uploads the build output using `actions/upload-pages-artifact@v3`.
+- Deploys to Pages using `actions/deploy-pages@v4`.
+- Triggers on `push` to `main` and can also be run manually (`workflow_dispatch`).
+
+### One-time repository setup
+
+1. In GitHub, go to `Settings` → `Pages` → set "Build and deployment" to "GitHub Actions".
+2. Ensure Vite’s base path matches your project pages path:
+   - See `vite.config.ts`: `base: '/solarsystemsim25/'` is correct for `https://<you>.github.io/solarsystemsim25/`.
+   - If you switch to a custom domain, set `base: '/'`.
+
+### How to deploy
+
+- Push to `main` (the workflow will build and deploy automatically), or
+- Manually run the workflow from the Actions tab:
+  - Open `Deploy to GitHub Pages` workflow → "Run workflow" → select branch → Run.
+
+### What happens in CI
+
+- A clean runner checks out the repo, installs dependencies, and builds the site.
+- The build output in `dist/` is packaged as an artifact and deployed to the `github-pages` environment.
+- The job summary includes the `page_url` of your deployed site.
+
+Live site URL: https://therealsahil19.github.io/solarsystemsim25/
+
+### If `dist/` was ever committed by mistake
+
+This repo already ignores `dist/` in `.gitignore`. If you ever accidentally committed it, clean it up with:
+
+```sh
+git rm -r --cached dist
+echo "dist/" >> .gitignore
+git add .gitignore
+git commit -m "Stop tracking dist/ (build output)"
+git push
+```
+
+If you use self-hosted runners, start from a clean workspace to avoid leftover files interfering with checkout/build:
+
+```sh
+git reset --hard || true
+git clean -fdx || true
+```
+
 ## Features
 
 ### Core Simulation
