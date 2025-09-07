@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import { LOD } from 'three';
 import { celestialBodyData, CelestialBody } from '../data';
 import { createPlanetRings } from '../bodies/rings';
-import { getAssetUrl } from '../utils/assets';
+import { safeLoadTexture } from '../utils/assets';
 import { getGlowColor } from '../utils/misc';
 import { initUserDataIfMissing } from '../utils/three-helpers';
 import { pointLight, scene } from '../scene';
 
-export function createScene() {
+export async function createScene() {
     const textureLoader = new THREE.TextureLoader();
 
     const celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D; physicsPosition: THREE.Vector3 })[] = [];
@@ -15,26 +15,22 @@ export function createScene() {
     const bodyMap = new Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D, physicsPosition: THREE.Vector3 }>();
     let sun: THREE.Object3D | undefined;
 
-    celestialBodyData.forEach(bodyData => {
+    for (const bodyData of celestialBodyData) {
         const bodyGroup = new THREE.Group();
         let bodyMaterial;
 
         if (bodyData.name === 'Sun') {
+            const texture = await safeLoadTexture(bodyData.texture);
             bodyMaterial = new THREE.MeshStandardMaterial({
                 emissive: 0xffff00,
                 emissiveIntensity: 1.5,
-                color: 0xffff00
+                color: 0xffff00,
+                map: texture,
+                emissiveMap: texture,
             });
-            if (bodyData.texture) {
-                const sunTexture = textureLoader.load(getAssetUrl(bodyData.texture));
-                bodyMaterial.map = sunTexture;
-                bodyMaterial.emissiveMap = sunTexture;
-            }
         } else {
-            bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff });
-            if (bodyData.texture) {
-                bodyMaterial.map = textureLoader.load(getAssetUrl(bodyData.texture));
-            }
+            const map = await safeLoadTexture(bodyData.texture);
+            bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff, map: map });
         }
 
         const lod = new LOD();
@@ -77,7 +73,7 @@ export function createScene() {
         bodyMap.set(bodyData.id, { data: bodyData, group: bodyGroup, mesh: bodyMesh, physicsPosition: celestialObject.physicsPosition });
 
         createPlanetRings(bodyData, bodyGroup, textureLoader);
-    });
+    }
 
     celestialObjects.forEach(obj => {
         if (obj.parentId && obj.parentId !== 'sun' && obj.parentId !== null) {

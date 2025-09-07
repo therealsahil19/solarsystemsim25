@@ -27,7 +27,7 @@ async function start() {
 
     initScene(dom.canvas);
 
-    const { celestialObjects, selectableObjects, bodyMap, sun, asteroidUniforms } = createScene();
+    const { celestialObjects, selectableObjects, bodyMap, sun, asteroidUniforms } = await createScene();
     const simulation = new Simulation(celestialObjects, bodyMap, sun, asteroidUniforms);
 
     const infoPanelManager = new InfoPanelManager();

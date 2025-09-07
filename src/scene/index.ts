@@ -39,6 +39,9 @@ export let controls: OrbitControls;
  * @param canvas The HTMLCanvasElement on which the scene will be rendered.
  */
 export function initScene(canvas: HTMLCanvasElement) {
+    if (!canvas) {
+        throw new Error("FATAL: Canvas element not provided to initScene. App cannot start.");
+    }
     // Set initial camera position
     camera.position.z = 80;
     camera.position.y = 30;

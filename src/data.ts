@@ -139,7 +139,7 @@ export interface CelestialBody {
  * This is the primary source of truth for the physical and orbital properties of planets, moons, and the sun.
  */
 export const celestialBodyData: CelestialBody[] = [
-    { id: 'sun', parentId: null, name: 'Sun', radius: 696340, mass: 1988500, density: 1408, surfaceGravity: 274, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1, eccentricity: 0,
+    { id: 'sun', parentId: null, name: 'Sun', radius: 696340, mass: 1988500, density: 1408, surfaceGravity: 274, color: 0xffff00, semiMajorAxis: 0, orbitalPeriod: 1, eccentricity: 0, texture: null,
         edu: {
             shortDescription: "The Sun is the star at the center of the Solar System. It is a nearly perfect ball of hot plasma, heated to incandescence by nuclear fusion reactions in its core.",
             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/600px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg",
@@ -233,26 +233,26 @@ export const celestialBodyData: CelestialBody[] = [
     },
 
     // Moons
-    { id: 'moon', parentId: 'earth', name: 'Moon', radius: 1737, mass: 0.07346, density: 3344, surfaceGravity: 1.62, inclination: 5.145, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 384400, orbitalPeriod: 27.3, eccentricity: 0.0549,
+    { id: 'moon', parentId: 'earth', name: 'Moon', radius: 1737, mass: 0.07346, density: 3344, surfaceGravity: 1.62, inclination: 5.145, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 384400, orbitalPeriod: 27.3, eccentricity: 0.0549, texture: null,
         edu: {
             shortDescription: "The Moon is Earth's only natural satellite. It is the fifth largest satellite in the Solar System, and the largest and most massive relative to its parent planet.",
             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/600px-FullMoon2010.jpg",
             readMoreUrl: "https://en.wikipedia.org/wiki/Moon"
         }
     },
-    { id: 'io', parentId: 'jupiter', name: 'Io', radius: 1821, color: 0xE5C851, semiMajorAxis: 0, semiMajorAxisKm: 421600, orbitalPeriod: 1.77, eccentricity: 0.0041 },
-    { id: 'europa', parentId: 'jupiter', name: 'Europa', radius: 1560, color: 0x8B7D82, semiMajorAxis: 0, semiMajorAxisKm: 670900, orbitalPeriod: 3.55, eccentricity: 0.009 },
-    { id: 'ganymede', parentId: 'jupiter', name: 'Ganymede', radius: 2634, color: 0x9E978E, semiMajorAxis: 0, semiMajorAxisKm: 1070000, orbitalPeriod: 7.15, eccentricity: 0.0013 },
-    { id: 'callisto', parentId: 'jupiter', name: 'Callisto', radius: 2410, color: 0x5C5C5C, semiMajorAxis: 0, semiMajorAxisKm: 1883000, orbitalPeriod: 16.69, eccentricity: 0.0074 },
-    { id: 'mimas', parentId: 'saturn', name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 185539, orbitalPeriod: 0.94, eccentricity: 0.0196 },
-    { id: 'enceladus', parentId: 'saturn', name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 238042, orbitalPeriod: 1.4, eccentricity: 0.0047 },
-    { id: 'titan', parentId: 'saturn', name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 1221865, orbitalPeriod: 16, eccentricity: 0.0288 },
-    { id: 'iapetus', parentId: 'saturn', name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 3560854, orbitalPeriod: 79.33, eccentricity: 0.0283 },
-    { id: 'miranda', parentId: 'uranus', name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 129846, orbitalPeriod: 1.413, eccentricity: 0.0013 },
-    { id: 'ariel', parentId: 'uranus', name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 190929, orbitalPeriod: 2.520, eccentricity: 0.0012 },
-    { id: 'umbriel', parentId: 'uranus', name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 265986, orbitalPeriod: 4.144, eccentricity: 0.0039 },
-    { id: 'titania', parentId: 'uranus', name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 436298, orbitalPeriod: 8.706, eccentricity: 0.0011 },
-    { id: 'proteus', parentId: 'neptune', name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 117600, orbitalPeriod: 1.122, eccentricity: 0.0005 },
-    { id: 'triton', parentId: 'neptune', name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 354760, orbitalPeriod: -5.877, eccentricity: 0.000016 },
-    { id: 'nereid', parentId: 'neptune', name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 5513400, orbitalPeriod: 360.13, eccentricity: 0.7507 },
+    { id: 'io', parentId: 'jupiter', name: 'Io', radius: 1821, color: 0xE5C851, semiMajorAxis: 0, semiMajorAxisKm: 421600, orbitalPeriod: 1.77, eccentricity: 0.0041, texture: null },
+    { id: 'europa', parentId: 'jupiter', name: 'Europa', radius: 1560, color: 0x8B7D82, semiMajorAxis: 0, semiMajorAxisKm: 670900, orbitalPeriod: 3.55, eccentricity: 0.009, texture: null },
+    { id: 'ganymede', parentId: 'jupiter', name: 'Ganymede', radius: 2634, color: 0x9E978E, semiMajorAxis: 0, semiMajorAxisKm: 1070000, orbitalPeriod: 7.15, eccentricity: 0.0013, texture: null },
+    { id: 'callisto', parentId: 'jupiter', name: 'Callisto', radius: 2410, color: 0x5C5C5C, semiMajorAxis: 0, semiMajorAxisKm: 1883000, orbitalPeriod: 16.69, eccentricity: 0.0074, texture: null },
+    { id: 'mimas', parentId: 'saturn', name: 'Mimas', radius: 198, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 185539, orbitalPeriod: 0.94, eccentricity: 0.0196, texture: null },
+    { id: 'enceladus', parentId: 'saturn', name: 'Enceladus', radius: 250, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 238042, orbitalPeriod: 1.4, eccentricity: 0.0047, texture: null },
+    { id: 'titan', parentId: 'saturn', name: 'Titan', radius: 2575, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 1221865, orbitalPeriod: 16, eccentricity: 0.0288, texture: null },
+    { id: 'iapetus', parentId: 'saturn', name: 'Iapetus', radius: 718, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 3560854, orbitalPeriod: 79.33, eccentricity: 0.0283, texture: null },
+    { id: 'miranda', parentId: 'uranus', name: 'Miranda', radius: 236, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 129846, orbitalPeriod: 1.413, eccentricity: 0.0013, texture: null },
+    { id: 'ariel', parentId: 'uranus', name: 'Ariel', radius: 579, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 190929, orbitalPeriod: 2.520, eccentricity: 0.0012, texture: null },
+    { id: 'umbriel', parentId: 'uranus', name: 'Umbriel', radius: 585, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 265986, orbitalPeriod: 4.144, eccentricity: 0.0039, texture: null },
+    { id: 'titania', parentId: 'uranus', name: 'Titania', radius: 789, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 436298, orbitalPeriod: 8.706, eccentricity: 0.0011, texture: null },
+    { id: 'proteus', parentId: 'neptune', name: 'Proteus', radius: 209, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 117600, orbitalPeriod: 1.122, eccentricity: 0.0005, texture: null },
+    { id: 'triton', parentId: 'neptune', name: 'Triton', radius: 1350, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 354760, orbitalPeriod: -5.877, eccentricity: 0.000016, texture: null },
+    { id: 'nereid', parentId: 'neptune', name: 'Nereid', radius: 170, color: 0xcccccc, semiMajorAxis: 0, semiMajorAxisKm: 5513400, orbitalPeriod: 360.13, eccentricity: 0.7507, texture: null },
 ];

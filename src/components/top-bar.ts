@@ -59,12 +59,12 @@ function cacheDOMElements() {
     githubLink = document.getElementById('github-link') as HTMLElement;
 
     // Store original parents to move elements back on larger screens
-    visualsBtnParent = visualsBtn.parentNode as HTMLElement;
-    settingsBtnParent = settingsBtn.parentNode as HTMLElement;
-    githubLinkParent = githubLink.parentNode as HTMLElement;
-    timeSliderGroupParent = timeSliderGroup.parentNode as HTMLElement;
-    timePresetGroupParent = timePresetGroup.parentNode as HTMLElement;
-    scaleControlGroupParent = scaleControlGroup.parentNode as HTMLElement;
+    if (visualsBtn) visualsBtnParent = visualsBtn.parentNode as HTMLElement;
+    if (settingsBtn) settingsBtnParent = settingsBtn.parentNode as HTMLElement;
+    if (githubLink) githubLinkParent = githubLink.parentNode as HTMLElement;
+    if (timeSliderGroup) timeSliderGroupParent = timeSliderGroup.parentNode as HTMLElement;
+    if (timePresetGroup) timePresetGroupParent = timePresetGroup.parentNode as HTMLElement;
+    if (scaleControlGroup) scaleControlGroupParent = scaleControlGroup.parentNode as HTMLElement;
 }
 
 /**
@@ -87,18 +87,18 @@ function handleResponsiveLayout() {
         moreMenuBtn.classList.remove('hidden');
     } else {
         // Move controls back to their original positions in the top bar
-        timeSliderGroupParent.appendChild(timeSliderGroup);
-        timePresetGroupParent.appendChild(timePresetGroup);
+        if (timeSliderGroupParent && timeSliderGroup) timeSliderGroupParent.appendChild(timeSliderGroup);
+        if (timePresetGroupParent && timePresetGroup) timePresetGroupParent.appendChild(timePresetGroup);
 
-        const moreMenuContainer = document.getElementById('more-menu-container')!;
-        visualsBtnParent.insertBefore(visualsBtn, moreMenuContainer);
-        settingsBtnParent.insertBefore(settingsBtn, moreMenuContainer);
-        scaleControlGroupParent.insertBefore(scaleControlGroup, githubLink);
-        githubLinkParent.insertBefore(githubLink, moreMenuContainer);
+        const moreMenuContainer = document.getElementById('more-menu-container');
+        if (visualsBtnParent && visualsBtn && moreMenuContainer) visualsBtnParent.insertBefore(visualsBtn, moreMenuContainer);
+        if (settingsBtnParent && settingsBtn && moreMenuContainer) settingsBtnParent.insertBefore(settingsBtn, moreMenuContainer);
+        if (scaleControlGroupParent && scaleControlGroup && githubLink) scaleControlGroupParent.insertBefore(scaleControlGroup, githubLink);
+        if (githubLinkParent && githubLink && moreMenuContainer) githubLinkParent.insertBefore(githubLink, moreMenuContainer);
 
 
-        moreMenuBtn.classList.add('hidden');
-        moreMenuContent.classList.add('hidden'); // Ensure menu is closed when resizing to desktop
+        if (moreMenuBtn) moreMenuBtn.classList.add('hidden');
+        if (moreMenuContent) moreMenuContent.classList.add('hidden'); // Ensure menu is closed when resizing to desktop
     }
     updateAppPadding();
 }
