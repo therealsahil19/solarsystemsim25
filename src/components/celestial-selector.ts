@@ -491,22 +491,26 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     render();
 
     // Add Favorites Toggle Button
-    const categoryTabsContainer = document.getElementById('category-tabs')!;
-    const favToggleContainer = document.createElement('div');
-    favToggleContainer.style.padding = "5px 0 10px 5px";
-    favToggleContainer.innerHTML = `
-        <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; font-weight: 500; color: #f0c420;">
-            <input type="checkbox" id="favorites-filter-toggle">
-            Show Favorites Only
-        </label>
-    `;
-    categoryTabsContainer.parentNode!.insertBefore(favToggleContainer, categoryTabsContainer);
+    const categoryTabsContainer = document.getElementById('category-tabs');
+    if (categoryTabsContainer && categoryTabsContainer.parentNode) {
+        const favToggleContainer = document.createElement('div');
+        favToggleContainer.style.padding = "5px 0 10px 5px";
+        favToggleContainer.innerHTML = `
+            <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; font-weight: 500; color: #f0c420;">
+                <input type="checkbox" id="favorites-filter-toggle">
+                Show Favorites Only
+            </label>
+        `;
+        categoryTabsContainer.parentNode.insertBefore(favToggleContainer, categoryTabsContainer);
 
-    const favToggle = document.getElementById('favorites-filter-toggle') as HTMLInputElement;
-    favToggle.addEventListener('change', () => {
-        showFavoritesOnly = favToggle.checked;
-        filterTree();
-    });
+        const favToggle = document.getElementById('favorites-filter-toggle') as HTMLInputElement;
+        if (favToggle) {
+            favToggle.addEventListener('change', () => {
+                showFavoritesOnly = favToggle.checked;
+                filterTree();
+            });
+        }
+    }
 
     celestialSelectorMenu.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
