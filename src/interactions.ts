@@ -57,6 +57,20 @@ export function setupInteractions(
     const tooltipElement = document.getElementById('body-tooltip')!;
     let hoverTimeout: number | undefined;
 
+    /**
+     * Walk up the object hierarchy to find an ancestor that holds userData.data.
+     * Returns that ancestor and its data if found.
+     */
+    function findDataCarrier(obj: THREE.Object3D | null | undefined): { node: THREE.Object3D, data: any } | null {
+        let cur: THREE.Object3D | null | undefined = obj || null;
+        while (cur) {
+            const data = (cur as any).userData?.data;
+            if (data) return { node: cur, data };
+            cur = cur.parent as any;
+        }
+        return null;
+    }
+
     // --- Hover Tooltip Logic ---
     window.addEventListener('pointermove', (event: MouseEvent) => {
         clearTimeout(hoverTimeout);
@@ -68,9 +82,9 @@ export function setupInteractions(
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                const data = hovered.userData?.data;
-                const name = data?.name;
-                const radius = data?.radius;
+                const carrier = findDataCarrier(hovered);
+                const name = carrier?.data?.name;
+                const radius = carrier?.data?.radius;
 
                 if (name && typeof radius === 'number') {
                     tooltipElement.innerHTML = `<strong>${name}</strong><br>Radius: ${radius.toLocaleString()} km`;
@@ -112,7 +126,8 @@ export function setupInteractions(
         if (intersects.length > 0) {
             // Clicked on a celestial body
             const clicked = intersects[0].object;
-            const bodyName = clicked.userData?.data?.name;
+            const carrier = findDataCarrier(clicked);
+            const bodyName = carrier?.data?.name;
             if (bodyName) {
                 onBodySelected(bodyName);
                 showHud(clicked, camera);
@@ -164,7 +179,8 @@ export function setupInteractions(
     }
 
     dom.btnFrame.addEventListener('click', () => {
-        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        const carrier = findDataCarrier(simulation.selectedObject as any);
+        const bodyName = carrier?.data?.name;
         if (bodyName) {
             onBodySelected(bodyName);
             triggerButtonFlash(dom.btnFrame);
@@ -187,7 +203,8 @@ export function setupInteractions(
     });
 
     dom.btnOrbit.addEventListener('click', () => {
-        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        const carrier = findDataCarrier(simulation.selectedObject as any);
+        const bodyName = carrier?.data?.name;
         if (!bodyName) return;
 
         const orbit = orbits.find(o => o.userData.name === bodyName);

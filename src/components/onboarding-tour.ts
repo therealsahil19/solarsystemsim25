@@ -69,14 +69,14 @@ function setupTourSteps() {
     tour.addStep({
         id: 'step-3-favorites',
         text: 'You can search, filter by type, and now filter by your favorite bodies! Click the star to favorite an item.',
-        attachTo: { element: '#celestial-selector-panel', on: 'left' },
+        attachTo: { element: '#celestialSelector', on: 'left' },
         buttons: [
             { text: 'Back', action: () => {
-                document.getElementById('close-celestial-selector-btn')?.click();
+                document.getElementById('celestialSelector-close')?.click();
                 tour.back();
             }},
             { text: 'Next', action: () => {
-                document.getElementById('close-celestial-selector-btn')?.click();
+                document.getElementById('celestialSelector-close')?.click();
                 tour.next();
             }}
         ]

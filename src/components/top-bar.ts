@@ -92,11 +92,13 @@ function handleResponsiveLayout() {
         if (timeSliderGroupParent && timeSliderGroup) timeSliderGroupParent.appendChild(timeSliderGroup);
         if (timePresetGroupParent && timePresetGroup) timePresetGroupParent.appendChild(timePresetGroup);
 
-        const moreMenuContainer = document.getElementById('more-menu-container');
-        if (visualsBtnParent && visualsBtn && moreMenuContainer) visualsBtnParent.insertBefore(visualsBtn, moreMenuContainer);
-        if (settingsBtnParent && settingsBtn && moreMenuContainer) settingsBtnParent.insertBefore(settingsBtn, moreMenuContainer);
-        if (scaleControlGroupParent && scaleControlGroup && githubLink) scaleControlGroupParent.insertBefore(scaleControlGroup, githubLink);
-        if (githubLinkParent && githubLink && moreMenuContainer) githubLinkParent.insertBefore(githubLink, moreMenuContainer);
+        const topBarRight = document.getElementById('top-bar-right');
+        if (topBarRight) {
+            if (visualsBtn && visualsBtn.parentElement !== topBarRight) topBarRight.appendChild(visualsBtn);
+            if (settingsBtn && settingsBtn.parentElement !== topBarRight) topBarRight.appendChild(settingsBtn);
+            if (scaleControlGroup && scaleControlGroup.parentElement !== topBarRight) topBarRight.appendChild(scaleControlGroup);
+            if (githubLink && githubLink.parentElement !== topBarRight) topBarRight.appendChild(githubLink);
+        }
 
 
         if (moreMenuBtn) moreMenuBtn.classList.add('hidden');
