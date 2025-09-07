@@ -447,7 +447,8 @@ function debounce(func: (...args: any[]) => void, delay: number) {
  * @param onSelect The callback function to execute when a user selects a body.
  */
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
-    const panelEl = document.getElementById('celestial-selector-panel');
+    // Matches <div id="celestialSelector" ...> in index.html
+    const panelEl = document.getElementById('celestialSelector');
     if (!panelEl) return;
 
     const panelController = PanelManager.createPanel(
@@ -465,6 +466,32 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
         openBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             panelController.toggleVisibility();
+        });
+    }
+
+    // Wire up panel header buttons to the controller
+    const closeBtn = document.getElementById('celestialSelector-close') as HTMLButtonElement | null;
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.hide();
+        });
+    }
+    const pinBtn = document.getElementById('celestialSelector-pin') as HTMLButtonElement | null;
+    if (pinBtn) {
+        pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.togglePin();
+            pinBtn.setAttribute('aria-pressed', String(panelController.isPinned()));
+        });
+        // initialize aria state
+        pinBtn.setAttribute('aria-pressed', String(panelController.isPinned()));
+    }
+    const minimizeBtn = document.getElementById('celestialSelector-minimize') as HTMLButtonElement | null;
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.setMinimized(!panelController.isMinimized());
         });
     }
 

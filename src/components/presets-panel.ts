@@ -103,11 +103,12 @@ function renderPresetsList() {
  * for saving, applying, and deleting presets.
  */
 export function initPresetsPanel() {
-    const modalEl = document.getElementById('presets-modal');
+    // Matches <div id="presetsPanel" ...> in index.html
+    const modalEl = document.getElementById('presetsPanel');
     if (!modalEl) return;
 
     const panelController = PanelManager.createPanel(
-        'presets',
+        'presetsPanel',
         'Presets',
         modalEl,
         {
@@ -126,6 +127,24 @@ export function initPresetsPanel() {
         console.error("One or more required elements for presets panel not found");
         return;
     };
+
+    // Wire up header buttons
+    const closeBtn = document.getElementById('presetsPanel-close') as HTMLButtonElement | null;
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.hide();
+        });
+    }
+    const pinBtn = document.getElementById('presetsPanel-pin') as HTMLButtonElement | null;
+    if (pinBtn) {
+        pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panelController.togglePin();
+            pinBtn.setAttribute('aria-pressed', String(panelController.isPinned()));
+        });
+        pinBtn.setAttribute('aria-pressed', String(panelController.isPinned()));
+    }
 
     // Re-render the list every time the panel is shown to ensure it's up-to-date.
     panelController.on('show', renderPresetsList);

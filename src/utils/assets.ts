@@ -14,6 +14,7 @@ export function getAssetUrl(path: string): string {
 }
 
 const PLACEHOLDER_CANVAS_SIZE = 16;
+let warnedEmptyName = false;
 
 function makePlaceholderTexture(): THREE.Texture {
   const size = PLACEHOLDER_CANVAS_SIZE;
@@ -33,7 +34,10 @@ function makePlaceholderTexture(): THREE.Texture {
  */
 export async function safeLoadTexture(name?: string | null): Promise<THREE.Texture> {
   if (!name) {
-    console.warn('[safeLoadTexture] called with empty name — returning placeholder texture.');
+    if (!warnedEmptyName) {
+      console.warn('[safeLoadTexture] called with empty name — returning placeholder texture. Further messages suppressed.');
+      warnedEmptyName = true;
+    }
     return makePlaceholderTexture();
   }
 
