@@ -1,12 +1,22 @@
 import * as THREE from 'three';
 import { CelestialBody } from '../data';
 import { scaleRingRadius } from '../utils/misc';
+import saturnRingTextureUrl from '../assets/8k_saturn_ring_alpha.jpg';
+import { initUserDataIfMissing } from '../utils/three-helpers';
 
+/**
+ * Creates the ring system for Jupiter, which consists of faint, dusty rings
+ * represented by particle systems.
+ * @param p_data The celestial body data for Jupiter.
+ * @param planetGroup The `THREE.Group` of the planet to which the rings will be added.
+ * @private
+ */
 function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
     const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
+    // Align rings with the equatorial plane
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
@@ -17,6 +27,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
     const haloRingData = ringData.bands.find(b => b.type === 'halo');
     const gossamerRingsData = ringData.bands.filter(b => b.type === 'gossamer');
 
+    /** Helper to create a ring from a particle system. */
     const createParticleRing = (innerRadiusKm: number, outerRadiusKm: number, particleCount: number, color: string | number, size: number, opacity: number) => {
         const innerRadius = scaleRingRadius(innerRadiusKm);
         const outerRadius = scaleRingRadius(outerRadiusKm);
@@ -26,7 +37,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             const radius = THREE.MathUtils.randFloat(innerRadius, outerRadius);
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            const z = (Math.random() - 0.5) * 0.05;
+            const z = (Math.random() - 0.5) * 0.05; // Small vertical displacement
             vertices.push(x, y, z);
         }
 
@@ -38,7 +49,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             size: size,
             transparent: true,
             opacity: opacity,
-            blending: THREE.AdditiveBlending,
+            blending: THREE.AdditiveBlending, // For a brighter, glowing effect
         });
 
         const points = new THREE.Points(geometry, material);
@@ -54,6 +65,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.02,
             0.05
         );
+        initUserDataIfMissing(mainRing, { name: `${p_data.name} Main Ring` });
         ringGroup.add(mainRing);
     }
 
@@ -66,6 +78,7 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.02,
             0.02
         );
+        initUserDataIfMissing(haloRing, { name: `${p_data.name} Halo Ring` });
         ringGroup.add(haloRing);
     }
 
@@ -78,15 +91,24 @@ function createJupiterRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             0.015,
             0.01
         );
+        initUserDataIfMissing(gossamerRing, { name: `${p_data.name} Gossamer Ring` });
         ringGroup.add(gossamerRing);
     });
 }
 
+/**
+ * Creates the iconic ring system for Saturn using a detailed texture.
+ * @param p_data The celestial body data for Saturn.
+ * @param planetGroup The `THREE.Group` of the planet to which the rings will be added.
+ * @param textureLoader A `THREE.TextureLoader` instance to load the ring texture.
+ * @private
+ */
 function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, textureLoader: THREE.TextureLoader) {
     const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
+    // Align rings with the equatorial plane
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
@@ -97,6 +119,7 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
     const outerRadius = scaleRingRadius(ringData.bands[ringData.bands.length - 1].outerRadius);
     const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 256);
 
+    /** Creates a simple, non-textured ring as a fallback if the texture fails to load. */
     const createFallbackRing = () => {
         console.warn(`Saturn's ring texture failed to load. Creating a fallback non-textured ring.`);
         const fallbackMaterial = new THREE.MeshStandardMaterial({
@@ -108,11 +131,12 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
             metalness: 0.1,
         });
         const rings = new THREE.Mesh(ringGeometry, fallbackMaterial);
+        initUserDataIfMissing(rings, { name: `${p_data.name} Rings (Fallback)` });
         ringGroup.add(rings);
     };
 
     textureLoader.load(
-        ringData.texture!,
+        saturnRingTextureUrl,
         (ringTexture) => {
             ringTexture.colorSpace = THREE.SRGBColorSpace;
             const ringMaterial = new THREE.MeshStandardMaterial({
@@ -125,26 +149,36 @@ function createSaturnRings(p_data: CelestialBody, planetGroup: THREE.Group, text
                 metalness: 0.1,
             });
             const rings = new THREE.Mesh(ringGeometry, ringMaterial);
+            initUserDataIfMissing(rings, { name: `${p_data.name} Rings` });
             ringGroup.add(rings);
         },
-        undefined,
+        undefined, // onProgress callback (not used)
         () => {
-            createFallbackRing();
+            createFallbackRing(); // onError callback
         }
     );
 }
 
+/**
+ * Creates the narrow, dark ring system for Uranus.
+ * Uses a procedurally generated noise texture to simulate the thin bands.
+ * @param p_data The celestial body data for Uranus.
+ * @param planetGroup The `THREE.Group` of the planet to which the rings will be added.
+ * @private
+ */
 function createUranusRings(p_data: CelestialBody, planetGroup: THREE.Group) {
     const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
+    // Align rings with the equatorial plane
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
         ringGroup.rotation.z = tiltInRadians;
     }
 
+    // Create a procedural noise texture for the alpha map to give the rings a subtle texture
     const noiseCanvas = document.createElement('canvas');
     const noiseContext = noiseCanvas.getContext('2d')!;
     noiseCanvas.width = 128;
@@ -172,26 +206,36 @@ function createUranusRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         alphaMap: noiseTexture
     });
 
+    // Create each ring band as a separate mesh
     ringData.bands.forEach(band => {
         const innerRadius = scaleRingRadius(band.innerRadius);
         const outerRadius = scaleRingRadius(band.outerRadius);
         const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 128);
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        initUserDataIfMissing(ring, { name: `${p_data.name} Ring (${band.type})` });
         ringGroup.add(ring);
     });
 }
 
+/**
+ * Creates the clumpy and arc-like ring system for Neptune.
+ * @param p_data The celestial body data for Neptune.
+ * @param planetGroup The `THREE.Group` of the planet to which the rings will be added.
+ * @private
+ */
 function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
     const ringData = p_data.rings!;
     const ringGroup = new THREE.Group();
     planetGroup.add(ringGroup);
 
+    // Align rings with the equatorial plane
     ringGroup.rotation.x = Math.PI / 2;
     if (p_data.axialTilt) {
         const tiltInRadians = p_data.axialTilt * (Math.PI / 180);
         ringGroup.rotation.z = tiltInRadians;
     }
 
+    // Create a procedural noise texture to simulate the clumpy nature of the main rings
     const noiseCanvas = document.createElement('canvas');
     const noiseContext = noiseCanvas.getContext('2d')!;
     noiseCanvas.width = 256;
@@ -219,14 +263,17 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         alphaMap: noiseTexture,
     });
 
+    // Create the main, continuous-but-clumpy ring bands
     ringData.bands.forEach(band => {
         const innerRadius = scaleRingRadius(band.innerRadius);
         const outerRadius = scaleRingRadius(band.outerRadius);
         const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 256);
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        initUserDataIfMissing(ring, { name: `${p_data.name} Ring (${band.type})` });
         ringGroup.add(ring);
     });
 
+    // Create the bright, distinct arcs
     const arcMaterial = new THREE.MeshStandardMaterial({
         color: new THREE.Color(ringData.color).multiplyScalar(1.8),
         side: THREE.DoubleSide,
@@ -236,7 +283,7 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
         metalness: 0.2,
     });
 
-    ringData.arcs!.forEach(arc => {
+    ringData.arcs!.forEach((arc, index) => {
         const innerRadius = scaleRingRadius(arc.innerRadius);
         const outerRadius = scaleRingRadius(arc.outerRadius);
         const arcGeometry = new THREE.RingGeometry(
@@ -244,14 +291,22 @@ function createNeptuneRings(p_data: CelestialBody, planetGroup: THREE.Group) {
             outerRadius,
             128,
             1,
-            arc.thetaStart,
-            arc.thetaLength
+            arc.thetaStart, // Start angle
+            arc.thetaLength // Sweep angle
         );
         const arcMesh = new THREE.Mesh(arcGeometry, arcMaterial);
+        initUserDataIfMissing(arcMesh, { name: `${p_data.name} Ring Arc ${index + 1}` });
         ringGroup.add(arcMesh);
     });
 }
 
+/**
+ * A dispatcher function that creates the appropriate ring system for a given planet.
+ * It checks the planet's data and calls the corresponding specialized function.
+ * @param p_data The celestial body data for the planet.
+ * @param planetGroup The `THREE.Group` of the planet to which the rings will be added.
+ * @param textureLoader A `THREE.TextureLoader` instance, needed for rings that use textures (like Saturn's).
+ */
 export function createPlanetRings(p_data: CelestialBody, planetGroup: THREE.Group, textureLoader: THREE.TextureLoader) {
     if (!p_data.rings) return;
 

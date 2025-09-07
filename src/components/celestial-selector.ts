@@ -5,20 +5,39 @@ import Fuse from 'fuse.js';
 import store from '../state/store';
 import { PanelManager } from './panel-manager';
 
+/** Defines the two main view modes for the selector: hierarchical tree or flat list grouped by type. */
 type ViewMode = 'hierarchy' | 'type';
+/** The data structure used by Fuse.js for searching. */
 type FuseDataItem = CelestialBody & { type: CelestialBodyType };
 
+// --- Module-level state ---
+/** @private The root nodes of the celestial body tree. */
 let treeNodes: TreeNode[] = [];
-let allNodes: TreeNode[] = [];
-let flatNodeMap = new Map<string, TreeNode>();
+/** @private A flat list of all tree nodes for easier iteration. */
+const allNodes: TreeNode[] = [];
+/** @private A map from node ID to the corresponding TreeNode object for quick lookups. */
+const flatNodeMap = new Map<string, TreeNode>();
+/** @private The Fuse.js instance for fuzzy searching. */
 let fuse: Fuse<FuseDataItem>;
+/** @private The ID of the currently focused node for keyboard navigation. */
 let activeNodeId: string | null = null;
+/** @private The currently active view mode. */
 let currentView: ViewMode = 'hierarchy';
+/** @private The callback function to execute when a body is selected. */
 let onSelectCallback: (id: string) => void;
+/** @private The currently selected filter category. */
 let currentFilterType: CelestialBodyType | 'all' = 'all';
+/** @private A set of IDs for bodies that the user has favorited. */
 const favoritedIds = new Set<string>();
+/** @private A flag indicating whether to show only favorited items. */
 let showFavoritesOnly = false;
 
+/**
+ * Creates a favorite button for a tree node.
+ * @param node The tree node to create the button for.
+ * @returns An HTMLButtonElement for favoriting.
+ * @private
+ */
 function createFavoriteButton(node: TreeNode): HTMLButtonElement {
     const favoriteBtn = document.createElement('button');
     favoriteBtn.className = 'favorite-btn';
@@ -42,6 +61,12 @@ function createFavoriteButton(node: TreeNode): HTMLButtonElement {
     return favoriteBtn;
 }
 
+/**
+ * Creates a span element to display the type of a celestial body.
+ * @param node The tree node.
+ * @returns An HTMLSpanElement displaying the type.
+ * @private
+ */
 function createTypeSpan(node: TreeNode): HTMLSpanElement {
     const typeSpan = document.createElement('span');
     typeSpan.className = 'node-type';
@@ -49,6 +74,12 @@ function createTypeSpan(node: TreeNode): HTMLSpanElement {
     return typeSpan;
 }
 
+/**
+ * Renders a single list item for the "group by type" view.
+ * @param node The tree node to render.
+ * @returns An HTMLLIElement representing the node.
+ * @private
+ */
 function renderListItem(node: TreeNode): HTMLLIElement {
     const li = document.createElement('li');
     li.dataset.id = node.id;
@@ -96,7 +127,12 @@ function renderListItem(node: TreeNode): HTMLLIElement {
     return li;
 }
 
-
+/**
+ * Renders a single node and its children for the hierarchical tree view.
+ * @param node The tree node to render.
+ * @returns An HTMLLIElement representing the node and its subtree.
+ * @private
+ */
 function renderNode(node: TreeNode): HTMLLIElement {
     const li = document.createElement('li');
     li.dataset.id = node.id;
@@ -162,6 +198,10 @@ function renderNode(node: TreeNode): HTMLLIElement {
     return li;
 }
 
+/**
+ * Renders the entire selector content in "hierarchy" view mode.
+ * @private
+ */
 function renderHierarchyView() {
     const ul = document.createElement('ul');
     ul.className = 'tree-root';
@@ -170,6 +210,10 @@ function renderHierarchyView() {
     celestialSelectorMenu.appendChild(ul);
 }
 
+/**
+ * Renders the entire selector content in "group by type" view mode.
+ * @private
+ */
 function renderByTypeView() {
     const nodesByType = new Map<CelestialBodyType, TreeNode[]>();
     allNodes.forEach(node => {
@@ -210,6 +254,10 @@ function renderByTypeView() {
     });
 }
 
+/**
+ * Main render function that clears the current view and re-renders it based on the active mode.
+ * @private
+ */
 function render() {
     celestialSelectorMenu.innerHTML = '';
     if (currentView === 'hierarchy') {
@@ -220,7 +268,10 @@ function render() {
     filterTree();
 }
 
-
+/**
+ * Updates the visibility of DOM elements in the hierarchy view based on node state.
+ * @private
+ */
 function updateDomVisibility() {
     flatNodeMap.forEach(node => {
         if (node.element) {
@@ -242,6 +293,10 @@ function updateDomVisibility() {
     updateSelectionFromState();
 }
 
+/**
+ * Filters the displayed nodes based on the current search query, type filter, and favorites toggle.
+ * @private
+ */
 function filterTree() {
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
     const query = searchInput.value;
@@ -282,17 +337,17 @@ function filterTree() {
             let current = flatNodeMap.get(id);
             while(current) {
                 current.visible = true;
-                if (!noFilters) { // Expand only when filters are active
+                if (!noFilters) { // Expand parents only when filters are active
                     current.expanded = true;
                 }
                 current = current.parent || undefined;
             }
         });
         if (noFilters) {
-             allNodes.forEach(n => n.expanded = false);
+             allNodes.forEach(n => n.expanded = false); // Collapse all when filters are cleared
         }
         updateDomVisibility();
-    } else {
+    } else { // Type view
         allNodes.forEach(node => {
             if (node.element) {
                 node.element.style.display = finalVisibleIds.has(node.id) ? '' : 'none';
@@ -308,6 +363,11 @@ function filterTree() {
     }
 }
 
+/**
+ * Gets a flat list of all currently visible nodes in the hierarchy view for keyboard navigation.
+ * @returns An array of `TreeNode` objects.
+ * @private
+ */
 function getVisibleNodes(): TreeNode[] {
     if (currentView === 'type') return []; // Disable keyboard nav for type view for now
 
@@ -326,6 +386,11 @@ function getVisibleNodes(): TreeNode[] {
     return visible;
 }
 
+/**
+ * Sets the currently active/focused node for keyboard navigation.
+ * @param nodeId The ID of the node to activate, or null to deactivate all.
+ * @private
+ */
 function setActiveNode(nodeId: string | null) {
     if (activeNodeId) {
         flatNodeMap.get(activeNodeId)?.element?.classList.remove('focused');
@@ -340,6 +405,10 @@ function setActiveNode(nodeId: string | null) {
     }
 }
 
+/**
+ * Updates the 'selected' class on nodes based on the global state from the Zustand store.
+ * @private
+ */
 function updateSelectionFromState() {
     const { selectedBodyId } = store.getState();
     flatNodeMap.forEach((node) => {
@@ -353,6 +422,13 @@ function updateSelectionFromState() {
     });
 }
 
+/**
+ * A standard debounce utility function.
+ * @param func The function to debounce.
+ * @param delay The debounce delay in milliseconds.
+ * @returns A debounced version of the function.
+ * @private
+ */
 function debounce(func: (...args: any[]) => void, delay: number) {
     let timeoutId: number;
     return (...args: any[]) => {
@@ -363,6 +439,13 @@ function debounce(func: (...args: any[]) => void, delay: number) {
     };
 }
 
+/**
+ * Initializes the entire celestial body selector component.
+ * This function builds the data tree, sets up the Fuse.js search,
+ * renders the initial view, and attaches all necessary event listeners.
+ * @param bodies The flat array of `CelestialBody` data.
+ * @param onSelect The callback function to execute when a user selects a body.
+ */
 export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (id:string) => void): void {
     const panelEl = document.getElementById('celestial-selector-panel');
     if (!panelEl) return;
@@ -408,22 +491,26 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     render();
 
     // Add Favorites Toggle Button
-    const categoryTabsContainer = document.getElementById('category-tabs')!;
-    const favToggleContainer = document.createElement('div');
-    favToggleContainer.style.padding = "5px 0 10px 5px";
-    favToggleContainer.innerHTML = `
-        <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; font-weight: 500; color: #f0c420;">
-            <input type="checkbox" id="favorites-filter-toggle">
-            Show Favorites Only
-        </label>
-    `;
-    categoryTabsContainer.parentNode!.insertBefore(favToggleContainer, categoryTabsContainer);
+    const categoryTabsContainer = document.getElementById('category-tabs');
+    if (categoryTabsContainer && categoryTabsContainer.parentNode) {
+        const favToggleContainer = document.createElement('div');
+        favToggleContainer.style.padding = "5px 0 10px 5px";
+        favToggleContainer.innerHTML = `
+            <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; font-weight: 500; color: #f0c420;">
+                <input type="checkbox" id="favorites-filter-toggle">
+                Show Favorites Only
+            </label>
+        `;
+        categoryTabsContainer.parentNode.insertBefore(favToggleContainer, categoryTabsContainer);
 
-    const favToggle = document.getElementById('favorites-filter-toggle') as HTMLInputElement;
-    favToggle.addEventListener('change', () => {
-        showFavoritesOnly = favToggle.checked;
-        filterTree();
-    });
+        const favToggle = document.getElementById('favorites-filter-toggle') as HTMLInputElement;
+        if (favToggle) {
+            favToggle.addEventListener('change', () => {
+                showFavoritesOnly = favToggle.checked;
+                filterTree();
+            });
+        }
+    }
 
     celestialSelectorMenu.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;

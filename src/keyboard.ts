@@ -1,13 +1,22 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import * as dom from './ui/dom';
+import * as dom from './components/dom';
 import { celestialBodyData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
-import { renderShortcutsList } from './ui/shortcuts-panel';
+import { renderShortcutsList } from './components/shortcuts-panel';
 import store from './state/store';
 import { Simulation } from './interactions';
 
+/**
+ * Sets up the global keyboard shortcut listeners for the application.
+ *
+ * @param simulation The mutable simulation state object.
+ * @param orbits An array of all orbit line objects (currently unused but available).
+ * @param onBodySelected A callback function to execute when a celestial body is selected via a shortcut.
+ * @param camera The main `THREE.PerspectiveCamera`.
+ * @param controls The `OrbitControls` instance.
+ */
 export function setupKeyboardShortcuts(
     simulation: Simulation,
     orbits: THREE.Line[],
@@ -15,6 +24,11 @@ export function setupKeyboardShortcuts(
     camera: THREE.PerspectiveCamera,
     controls: OrbitControls,
 ) {
+    /**
+     * Smoothly tweens the camera to frame a specific 3D object.
+     * @param bodyMesh The `THREE.Object3D` to frame.
+     * @private
+     */
     function frameObject(bodyMesh: THREE.Object3D | null) {
         if (!bodyMesh) return;
         const sphere = new THREE.Box3().setFromObject(bodyMesh).getBoundingSphere(new THREE.Sphere());
@@ -29,7 +43,13 @@ export function setupKeyboardShortcuts(
             .start();
     }
 
+    /**
+     * The main action dispatcher. Takes a `ShortcutAction` and executes the corresponding logic.
+     * @param action The `ShortcutAction` to perform.
+     * @private
+     */
     const handleKeyAction = (action: ShortcutAction) => {
+        // Handle selecting bodies by number keys (1-9)
         if (action.startsWith('select-body-')) {
             const index = parseInt(action.split('-')[2], 10) - 1;
             if (celestialBodyData[index]) {
@@ -45,19 +65,18 @@ export function setupKeyboardShortcuts(
             case 'toggle-debug-hud': dom.debugHUD.classList.toggle('hidden'); break;
             case 'reset-time': dom.resetButton.click(); break;
             case 'toggle-shadows': (dom.shadowToggle as HTMLInputElement).click(); break;
-            case 'increase-speed': {
+            case 'increase-speed':
                 setTimeScale(timeScale * 1.5);
                 break;
-            }
-            case 'decrease-speed': {
+            case 'decrease-speed':
                 setTimeScale(timeScale / 1.5);
                 break;
-            }
-            case 'toggle-trails':
-                // This will be handled by the visuals panel logic later
+            case 'toggle-trails': {
+                // Programmatically click the UI toggle to keep state consistent
                 const toggle = document.getElementById('trails-enabled-toggle') as HTMLInputElement;
-                if(toggle) toggle.click();
+                if (toggle) toggle.click();
                 break;
+            }
             case 'frame-selected': frameObject(simulation.selectedObject); break;
             case 'toggle-help':
                 renderShortcutsList();
@@ -83,7 +102,9 @@ export function setupKeyboardShortcuts(
         dom.helpOverlay.classList.add('hidden');
     });
 
+    // The main keyboard event listener
     window.addEventListener('keydown', (event) => {
+        // Ignore shortcuts if the user is typing in an input field
         if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
             return;
         }
@@ -91,6 +112,7 @@ export function setupKeyboardShortcuts(
         const shortcuts = getShortcuts();
         let actionToPerform: ShortcutAction | null = null;
 
+        // Find which action, if any, matches the current key press
         for (const action in shortcuts) {
             const binding = shortcuts[action as ShortcutAction];
             if (binding) {

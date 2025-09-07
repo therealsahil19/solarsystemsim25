@@ -4,8 +4,19 @@ import { Preset, PanelState, getAllPresets, addPreset, deletePreset } from '../s
 import { v4 as uuidv4 } from 'uuid';
 import { PanelManager } from './panel-manager';
 
-const PANEL_STATE_KEY = 'solarsim.panel.v1'; // Duplicated from info-panel, should be shared
+/**
+ * The localStorage key for panel state.
+ * @private
+ * @todo This is duplicated from info-panel and should be centralized.
+ */
+const PANEL_STATE_KEY = 'solarsim.panel.v1';
 
+/**
+ * Captures the current state of the simulation and returns it as a `Preset` object.
+ * @param name The name for the new preset.
+ * @returns A `Preset` object representing the current application state.
+ * @private
+ */
 function captureCurrentState(name: string): Preset {
     const panelState: PanelState = JSON.parse(localStorage.getItem(PANEL_STATE_KEY) || '{}');
     const { simTime, timeScale, isPaused, selectedBodyId, perfPreset } = store.getState();
@@ -32,10 +43,15 @@ function captureCurrentState(name: string): Preset {
     };
 }
 
+/**
+ * Applies a given preset to the application, restoring the saved state.
+ * @param preset The `Preset` object to apply.
+ * @private
+ */
 function applyPreset(preset: Preset) {
-    // Apply panel state
+    // Apply panel state by reloading. This is a simple but effective method.
     localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(preset.panel));
-    window.location.reload(); // Simple way to apply panel state, could be improved later
+    window.location.reload();
 
     // Apply camera state
     camera.position.fromArray(preset.camera.position);
@@ -59,6 +75,10 @@ function applyPreset(preset: Preset) {
     }
 }
 
+/**
+ * Renders the list of available presets (both built-in and user-created) into the panel.
+ * @private
+ */
 function renderPresetsList() {
     const listEl = document.getElementById('presets-list')!;
     listEl.innerHTML = '';
@@ -78,6 +98,10 @@ function renderPresetsList() {
     });
 }
 
+/**
+ * Initializes the presets panel, creating its controller and setting up all event listeners
+ * for saving, applying, and deleting presets.
+ */
 export function initPresetsPanel() {
     const modalEl = document.getElementById('presets-modal');
     if (!modalEl) return;
@@ -103,6 +127,7 @@ export function initPresetsPanel() {
         return;
     };
 
+    // Re-render the list every time the panel is shown to ensure it's up-to-date.
     panelController.on('show', renderPresetsList);
 
     openBtn.addEventListener('click', () => panelController.show());

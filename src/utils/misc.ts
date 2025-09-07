@@ -1,3 +1,10 @@
+/**
+ * Scales a distance in Astronomical Units (AU) to a display-friendly value.
+ * This function uses a non-linear scale to make the solar system easier to view.
+ * It separates the inner planets, asteroid belt, and outer planets with gaps.
+ * @param au The distance in AU.
+ * @returns The scaled distance for display.
+ */
 export function scaleDistance(au: number): number {
     if (au === 0) return 0; // Sun is at the center
 
@@ -28,20 +35,36 @@ export function scaleDistance(au: number): number {
     return outerStart + (au - 3.5) * 30;
 }
 
+/**
+ * Scales the radius of a celestial body for display.
+ * Uses a square root scale to make smaller bodies more visible relative to larger ones.
+ * @param radius The actual radius of the body in kilometers.
+ * @returns The scaled radius for display.
+ */
 export function scaleBodyRadius(radius: number): number {
     const scale = 0.018;
     return scale * Math.sqrt(radius);
 }
 
-// This is a placeholder for a more sophisticated ring scaling function.
-// The values are divided by a constant to bring them into a similar
-// scale as the planet radii in the simulation.
+/**
+ * Scales the radius of a planet's rings for display.
+ * @param radiusKm The actual radius of the rings in kilometers.
+ * @returns The scaled radius for display.
+ */
 export function scaleRingRadius(radiusKm: number): number {
     return radiusKm / 8000;
 }
 
+/**
+ * The number of meters in one Astronomical Unit (AU).
+ */
 export const AU_TO_M = 1.496e11;
 
+/**
+ * Formats a speed in meters per second to a string in kilometers per second.
+ * @param speed_m_s The speed in meters per second.
+ * @returns A formatted string (e.g., "12.34 km/s") or "N/A" if the input is invalid.
+ */
 export function speedDisplayKmPerS(speed_m_s: number): string {
   if (typeof speed_m_s !== 'number' || !isFinite(speed_m_s)) {
     return 'N/A';
@@ -49,6 +72,12 @@ export function speedDisplayKmPerS(speed_m_s: number): string {
   return (speed_m_s / 1000).toFixed(2) + ' km/s';
 }
 
+/**
+ * Determines a suitable glow color based on the luminance of a given hex color.
+ * This is used to create a visible glow around a selected celestial body.
+ * @param hexColor The hex color of the celestial body.
+ * @returns A hex color for the glow effect.
+ */
 export function getGlowColor(hexColor: number): number {
     const r = (hexColor >> 16) & 255;
     const g = (hexColor >> 8) & 255;

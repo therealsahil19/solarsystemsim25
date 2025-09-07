@@ -1,21 +1,47 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import * as dom from './ui/dom';
+import * as dom from './components/dom';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { showHud } from './ui/contextual-hud';
+import { showHud } from './components/contextual-hud';
+import { warnOnce } from './utils/three-helpers';
 
-// The simulation object is now simpler, as most state is in the store.
+/**
+ * A type definition for the simulation state object passed to interaction handlers.
+ * This holds mutable state related to user interaction and camera targets.
+ */
 export type Simulation = {
+    /** The currently selected `THREE.Object3D`. */
     selectedObject: THREE.Object3D | null;
+    /** The object the camera is currently moving towards or focused on. */
     focusTarget: THREE.Object3D | null;
+    /** The object the camera is actively following. */
     followTarget: THREE.Object3D | null;
+    /** The offset vector from the followed target to the camera. */
     followOffset: THREE.Vector3;
+    /** The smoothing factor for the camera following movement. */
     followSmoothing: number;
+    /** A flag indicating if the user is currently interacting with the camera controls. */
     isUserInteracting: boolean;
+    /** A flag indicating if the camera is currently in a tween animation. */
     isTweening: boolean;
+    /** A reference to the uniforms of the asteroid belt material for animation. */
     asteroidMaterialUniforms: { u_time: { value: number } } | null;
 };
 
+/**
+ * Sets up all user interaction handlers for the 3D scene.
+ * This includes mouse hovering, clicking on celestial bodies, and handling
+ * button clicks on various UI elements related to scene interaction.
+ *
+ * @param camera The main `THREE.PerspectiveCamera`.
+ * @param selectableObjects An array of `THREE.Object3D` that can be selected by the user.
+ * @param sun A reference to the Sun's `THREE.Object3D`.
+ * @param simulation The mutable simulation state object.
+ * @param onBodySelected A callback function to execute when a celestial body is selected.
+ * @param controls The `OrbitControls` instance.
+ * @param resetSimulation A function to reset the simulation to its initial state.
+ * @param orbits An array of all orbit line objects.
+ */
 export function setupInteractions(
     camera: THREE.PerspectiveCamera,
     selectableObjects: THREE.Object3D[],
@@ -31,6 +57,7 @@ export function setupInteractions(
     const tooltipElement = document.getElementById('body-tooltip')!;
     let hoverTimeout: number | undefined;
 
+    // --- Hover Tooltip Logic ---
     window.addEventListener('pointermove', (event: MouseEvent) => {
         clearTimeout(hoverTimeout);
         hoverTimeout = window.setTimeout(() => {
@@ -41,9 +68,7 @@ export function setupInteractions(
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                // Add defensive check for userData.data
-                const userData = hovered.userData;
-                const data = userData?.data;
+                const data = hovered.userData?.data;
                 const name = data?.name;
                 const radius = data?.radius;
 
@@ -53,7 +78,7 @@ export function setupInteractions(
                     tooltipElement.style.top = `${event.clientY + 15}px`;
                     tooltipElement.classList.remove('hidden');
                 } else {
-                    console.warn('Object missing valid userData.data:', hovered);
+                    warnOnce(hovered.uuid, 'Object missing valid userData.data:', hovered);
                     tooltipElement.classList.add('hidden');
                 }
             } else {
@@ -62,8 +87,10 @@ export function setupInteractions(
         }, 100);
     });
 
-    window.addEventListener('click', (event) => {
+    // --- Click Handling ---
+    window.addEventListener('click', (event: MouseEvent) => {
         tooltipElement.classList.add('hidden');
+        // Ignore clicks that land on UI elements
         const clickedOnUI = [
             dom.celestialSelector,
             dom.controlsPanel,
@@ -83,10 +110,15 @@ export function setupInteractions(
         const intersects = raycaster.intersectObjects(selectableObjects);
 
         if (intersects.length > 0) {
+            // Clicked on a celestial body
             const clicked = intersects[0].object;
-            onBodySelected(clicked.userData.name);
-            showHud(clicked, camera);
+            const bodyName = clicked.userData?.data?.name;
+            if (bodyName) {
+                onBodySelected(bodyName);
+                showHud(clicked, camera);
+            }
         } else {
+            // Clicked on empty space, pan the camera target
             const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
             const intersection = new THREE.Vector3();
             raycaster.ray.intersectPlane(groundPlane, intersection);
@@ -98,6 +130,7 @@ export function setupInteractions(
         }
     });
 
+    // --- UI Button Event Listeners ---
     dom.resetButton.addEventListener('click', () => {
         resetSimulation();
     });
@@ -116,12 +149,13 @@ export function setupInteractions(
         simulation.isUserInteracting = false;
     });
 
-    dom.smallInfoCard.addEventListener('click', (e) => {
+    dom.smallInfoCard.addEventListener('click', (e: MouseEvent) => {
         if ((e.target as HTMLElement).tagName !== 'BUTTON') {
             dom.infoPanel.classList.remove('hidden');
         }
     });
 
+    /** Adds a brief flash animation to a button to provide visual feedback. @private */
     function triggerButtonFlash(btn: HTMLElement) {
         btn.classList.add('flash');
         btn.addEventListener('animationend', () => {
@@ -130,8 +164,9 @@ export function setupInteractions(
     }
 
     dom.btnFrame.addEventListener('click', () => {
-        if (simulation.selectedObject) {
-            onBodySelected(simulation.selectedObject.userData.name);
+        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        if (bodyName) {
+            onBodySelected(bodyName);
             triggerButtonFlash(dom.btnFrame);
         }
     });
@@ -152,8 +187,9 @@ export function setupInteractions(
     });
 
     dom.btnOrbit.addEventListener('click', () => {
-        if (!simulation.selectedObject) return;
-        const bodyName = simulation.selectedObject.userData.name;
+        const bodyName = simulation.selectedObject?.userData?.data?.name;
+        if (!bodyName) return;
+
         const orbit = orbits.find(o => o.userData.name === bodyName);
         if (orbit) {
             orbit.visible = !orbit.visible;

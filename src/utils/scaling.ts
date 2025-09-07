@@ -2,15 +2,34 @@
 import * as THREE from 'three';
 import { ScalePreset } from '../state/store';
 
+/**
+ * Represents the state of a transition between two scale presets.
+ */
 export interface ScaleTransition {
+    /** Whether a transition is currently active. */
     active: boolean;
+    /** The progress of the transition, from 0.0 to 1.0. */
     progress: number;
+    /** The scale preset being transitioned from. */
     fromPreset: ScalePreset;
+    /** The scale preset being transitioned to. */
     toPreset: ScalePreset;
 }
 
-const BASE_DISTANCE_SCALE = 150.0; // Corresponds to 1 AU in scene units (meters)
+/**
+ * The base scale factor for distances, corresponding to 1 AU in scene units (meters).
+ * @private
+ */
+const BASE_DISTANCE_SCALE = 150.0;
 
+/**
+ * Calculates the display position for a given physical position and scale preset.
+ * This is a helper function and should not be called directly from outside this module.
+ * @private
+ * @param positionAu The physical position in Astronomical Units (AU).
+ * @param preset The target scale preset ('realistic', 'educational', 'hybrid').
+ * @returns A new THREE.Vector3 representing the scaled position for display.
+ */
 function calculateDisplayPositionForPreset(positionAu: THREE.Vector3, preset: ScalePreset): THREE.Vector3 {
     // Validate inputs
     if (!positionAu || typeof positionAu.x !== 'number' || typeof positionAu.y !== 'number' || typeof positionAu.z !== 'number') {
@@ -66,6 +85,12 @@ function calculateDisplayPositionForPreset(positionAu: THREE.Vector3, preset: Sc
     }
 }
 
+/**
+ * Calculates the display position of a celestial body, smoothly handling transitions between scale presets.
+ * @param positionAu The physical position of the body in Astronomical Units (AU).
+ * @param transition The current scale transition state.
+ * @returns A new THREE.Vector3 representing the final display position.
+ */
 export function calculateDisplayPosition(positionAu: THREE.Vector3, transition: ScaleTransition): THREE.Vector3 {
     // Validate input
     if (!positionAu || typeof positionAu.x !== 'number' || typeof positionAu.y !== 'number' || typeof positionAu.z !== 'number') {
@@ -99,10 +124,21 @@ export function calculateDisplayPosition(positionAu: THREE.Vector3, transition: 
     }
 }
 
+/** Scale factor for body sizes in 'realistic' mode. @private */
 const REALISTIC_SIZE_SCALE = 0.000005;
+/** Scale factor for body sizes in 'educational' mode. @private */
 const EDUCATIONAL_SIZE_SCALE = 0.0002;
+/** Scale factor for body sizes in 'hybrid' mode. @private */
 const HYBRID_SIZE_SCALE = 0.0001;
 
+/**
+ * Gets the display radius for a given physical radius and scale preset.
+ * This is a helper function and should not be called directly from outside this module.
+ * @private
+ * @param radiusKm The physical radius in kilometers.
+ * @param preset The target scale preset.
+ * @returns The scaled radius for display.
+ */
 function getDisplayRadiusForPreset(radiusKm: number, preset: ScalePreset): number {
     switch (preset) {
         case 'realistic':
@@ -114,6 +150,12 @@ function getDisplayRadiusForPreset(radiusKm: number, preset: ScalePreset): numbe
     }
 }
 
+/**
+ * Calculates the display radius of a celestial body, smoothly handling transitions between scale presets.
+ * @param radiusKm The physical radius of the body in kilometers.
+ * @param transition The current scale transition state.
+ * @returns The final display radius.
+ */
 export function getDisplayRadius(radiusKm: number, transition: ScaleTransition): number {
     if (transition.active) {
         const startRadius = getDisplayRadiusForPreset(radiusKm, transition.fromPreset);

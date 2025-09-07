@@ -1,23 +1,32 @@
 // src/e2e-hooks.ts
-// Lightweight helpers for Playwright e2e tests.
-// Gate: only loaded in test mode via import in src/main.ts
+/**
+ * This module provides lightweight helpers for Playwright End-to-End (E2E) tests.
+ * It is only loaded when the application is in 'test' mode, as controlled by an
+ * import statement in `src/main.ts`. It attaches helper functions to the `window`
+ * object, allowing test scripts to interact with the application's internal state.
+ */
 
-import { PanelManager } from './ui/panel-manager';
+import { PanelManager } from './components/panel-manager';
 
 // --- App Readiness ---
-// This provides a signal for Playwright to wait for, ensuring the app is fully initialized.
+// This system provides a signal for Playwright to wait for, ensuring the app is fully initialized.
 
-type AppLike = any; // Using 'any' as the app structure is complex and not formally typed.
+/** A type alias for the main application object, using `any` for flexibility in testing. @private */
+type AppLike = any;
 
+/** A queue for callbacks to be executed once the application is ready. @private */
 const _readyCallbacks: Array<(app?: AppLike) => void> = [];
 
-// Initialize flags on the window object.
+// Initialize flags on the window object for E2E test communication.
 (window as any).__APP_READY = false;
 (window as any).__APP_INSTANCE = null;
 
 /**
- * Allows queuing of callbacks that will be executed once the app is ready.
- * If the app is already ready, the callback is executed immediately.
+ * A global function attached to `window` that allows test scripts to queue callbacks
+ * which will be executed once the app is fully initialized. If the app is already
+ * ready, the callback is executed immediately.
+ * @param cb The callback function to execute. It receives the app instance as an argument.
+ * @internal
  */
 (window as any).__onAppReady = (cb: (app?: AppLike) => void) => {
   if ((window as any).__APP_READY) {
@@ -32,19 +41,24 @@ const _readyCallbacks: Array<(app?: AppLike) => void> = [];
 };
 
 /**
- * Attaches the main E2E helper object to the window.
- * This is called once the app is ready.
+ * Attaches the main E2E helper object (`__E2E__`) to the `window` object.
+ * This object contains functions that test scripts can call to manipulate the app's state.
+ * @param app The main application instance.
+ * @private
  */
 function attachE2EHelpers(app?: AppLike) {
   if (!app) {
     console.warn('E2E helpers attached without an app instance.');
   }
 
-  // Expose the E2E helper object.
+  /**
+   * The main E2E helper object exposed on the `window`.
+   * @internal
+   */
   (window as any).__E2E__ = {
     /**
-     * Opens a UI panel by its ID.
-     * These are the floating panels for settings, visuals, etc.
+     * Opens a UI panel by a simplified ID.
+     * @param panelId The alias for the panel to open.
      */
     openPanel: (panelId: 'info' | 'visuals' | 'settings' | 'edu' | 'celestialSelector' | 'presets') => {
       // Map E2E aliases to the actual IDs used when creating the panels.
@@ -52,7 +66,7 @@ function attachE2EHelpers(app?: AppLike) {
           info: 'infoPanel',
           visuals: 'visuals-panel',
           settings: 'settings-panel',
-          edu: 'infoPanel',
+          edu: 'infoPanel', // 'edu' is an alias for the info panel
           celestialSelector: 'celestialSelector',
           presets: 'presets',
       };
@@ -68,8 +82,8 @@ function attachE2EHelpers(app?: AppLike) {
 
     /**
      * Applies a named layout preset.
-     * NOTE: This will cause a page reload, as it's how the app currently handles presets.
-     * Tests using this should expect a reload. The current tests drive the UI directly, which is preferred.
+     * @deprecated This will cause a page reload and is not ideal for testing. Driving the UI directly is preferred.
+     * @param name The name of the preset to apply.
      */
     setPreset: (name: string) => {
       const preset = app.presets.getAllPresets().find((p: any) => p.name === name);
@@ -81,7 +95,8 @@ function attachE2EHelpers(app?: AppLike) {
     },
 
     /**
-     * Sets the distance unit used for display.
+     * Sets the distance unit used for displaying distances in the UI.
+     * @param unit The distance unit to set.
      */
     setUnits: (unit: 'au' | 'km' | 'earthR') => {
       app.store.getState().setDistanceUnit(unit);
@@ -89,7 +104,7 @@ function attachE2EHelpers(app?: AppLike) {
 
     /**
      * Toggles the visibility of orbital trails by updating the central state.
-     * The TrailManager will pick up this change on its next update cycle.
+     * @param on `true` to enable trails, `false` to disable them.
      */
     toggleTrails: (on: boolean) => {
       app.store.getState().setTrailsEnabled(on);
@@ -98,8 +113,11 @@ function attachE2EHelpers(app?: AppLike) {
 }
 
 /**
- * This function is called by the main application bootstrap (`main.ts`)
- * when the app is fully initialized and interactive.
+ * This function is called by the main application bootstrap (`main.ts`) when the app
+ * is fully initialized and interactive. It signals that the app is ready and executes
+ * any pending callbacks.
+ * @param app The main application instance.
+ * @internal
  */
 (window as any).__e2eNotifyReady = (app?: AppLike) => {
   (window as any).__APP_INSTANCE = app || null;
