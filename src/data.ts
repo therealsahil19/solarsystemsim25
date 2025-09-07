@@ -112,7 +112,7 @@ export interface CelestialBody {
   /** The eccentricity of the orbit (0 is a perfect circle). */
   eccentricity: number;
   /** An optional path to a texture file for the body's surface. */
-  texture?: string;
+  texture?: string | null;
   /** An optional `Rings` object describing the body's ring system. */
   rings?: Rings;
   /** The axial tilt of the body in degrees. */
