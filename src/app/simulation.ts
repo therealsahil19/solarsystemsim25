@@ -46,6 +46,12 @@ export class Simulation {
         step: 0.1,
     };
 
+    // Limit final renders to ~60 FPS while keeping physics/time updates unthrottled
+    private renderLimiter = {
+        lastRenderMs: 0,
+        minIntervalMs: 1000 / 60,
+    };
+
     // Throttle UI text updates to avoid per-frame DOM churn
     private uiUpdate = {
         lastStatsMs: 0,
@@ -73,6 +79,7 @@ export class Simulation {
         this.trailManager = new TrailManager(this.celestialObjects, scene);
         this.physicsWorker = new Worker(new URL('../physics.worker.ts', import.meta.url), { type: 'module' });
         this.setupScaleSubscription();
+        this.setupSelectionSubscription();
     }
 
     public start() {
@@ -125,7 +132,7 @@ export class Simulation {
             }
         }
 
-        // --- Time and Physics Update ---
+        // --- Time and Physics Update (always run, even if we skip rendering) ---
         const { timeScale, isPaused, simTime } = store.getState();
         // Convert elapsed real time to simulation days using timeScale (seconds per second)
         const deltaDays = (dt / 1000) * (timeScale / 86400);
@@ -134,6 +141,13 @@ export class Simulation {
             store.getState().setSimTime(newTimeDays);
         }
         this.physicsWorker.postMessage({ command: 'update', payload: { simTimeInDays: newTimeDays } });
+
+        // FPS throttle: only proceed to expensive updates+render at ~60 fps
+        const sinceLastRender = now - this.renderLimiter.lastRenderMs;
+        if (sinceLastRender < this.renderLimiter.minIntervalMs) {
+            return;
+        }
+        this.renderLimiter.lastRenderMs = now;
 
         // Drive shader animation with real elapsed seconds, independent of simTime units
         if (this.simulation.asteroidMaterialUniforms) {
@@ -332,6 +346,30 @@ export class Simulation {
                         .start();
                     lastPreset = to;
                 }
+            }
+        );
+    }
+
+    /** Subscribes to global selection changes to auto-focus the camera on the selected body. */
+    private setupSelectionSubscription() {
+        let lastId: string | null = store.getState().selectedBodyId;
+        store.subscribe(
+            (s: SimState) => s.selectedBodyId,
+            (id) => {
+                if (!id || id === lastId) return;
+                lastId = id;
+                const entry = this.bodyMap.get(id);
+                if (!entry) return;
+                // Avoid double-focusing if we already set the focus as part of a direct selection handler
+                if (this.simulation.focusTarget === entry.mesh) return;
+                this.simulation.focusTarget = entry.mesh;
+                try {
+                    const worldPos = new THREE.Vector3();
+                    entry.mesh.getWorldPosition(worldPos);
+                    camera.lookAt(worldPos);
+                } catch {}
+                this.frameObject(entry.mesh);
+                this.clampZoomForBody(entry.mesh);
             }
         );
     }
