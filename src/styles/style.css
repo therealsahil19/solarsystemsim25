@@ -674,9 +674,8 @@ canvas {
 
 /* --- Time Controls --- */
 #time-controls {
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static; /* Keep inside top bar flow */
+    transform: none;
 }
 
 .slider-tooltip {
@@ -705,6 +704,7 @@ canvas {
     width: 280px;
     display: flex;
     padding: 10px;
+    z-index: 1001; /* Float above most panels */
 }
 
 #card-thumb {

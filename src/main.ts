@@ -18,6 +18,7 @@ import { setupKeyboardShortcuts } from './keyboard';
 import { setupInteractions } from './interactions';
 import store from './state/store';
 import { camera, controls } from './scene';
+import { InfoPanelManager } from './components/info-panel-manager';
 
 async function start() {
     if (import.meta.env.MODE === 'test') {
@@ -28,9 +29,14 @@ async function start() {
 
     const { celestialObjects, selectableObjects, bodyMap, sun, asteroidUniforms } = await createScene();
     const simulation = new Simulation(celestialObjects, bodyMap, sun, asteroidUniforms);
+    const infoPanelManager = new InfoPanelManager();
 
     function onBodySelected(id: string) {
         simulation.onBodySelected(id, selectableObjects);
+        const entry = bodyMap.get(id);
+        if (entry) {
+            infoPanelManager.updateContent({ data: entry.data, mesh: entry.mesh });
+        }
     }
 
     createCelestialBodySelector(celestialBodyData, onBodySelected);
@@ -40,17 +46,22 @@ async function start() {
         if (sun) {
             simulation.simulation.focusTarget = sun;
         }
-        store.getState().setSelectedBodyId('Sun');
+        store.getState().setSelectedBodyId('sun');
         camera.position.set(0, 150, 400);
         controls.target.set(0, 0, 0);
         store.getState().setPaused(false);
-        onBodySelected('Sun');
+        onBodySelected('sun');
         dom.smallInfoCard.classList.add('hidden');
     }
 
     if (!sun) {
         throw new Error("Sun object was not initialized, cannot set up interactions.");
     }
+
+    // Start simulation first so orbits are created by OrbitManager.init()
+    simulation.start();
+
+    // After orbits exist, wire interactions and keyboard
     const allOrbits = celestialObjects.map((o: any) => o.orbit).filter(o => o) as THREE.Line[];
     setupInteractions(camera, selectableObjects, sun, simulation.simulation, onBodySelected, controls, resetSimulation, allOrbits);
     setupKeyboardShortcuts(simulation.simulation, [], onBodySelected, camera, controls);
@@ -65,7 +76,7 @@ async function start() {
 
     new LayoutManager().init();
 
-    simulation.start();
+    // Simulation already started above
 
     const app = {
         store: store,

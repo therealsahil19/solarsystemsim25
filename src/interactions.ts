@@ -47,7 +47,7 @@ export function setupInteractions(
     selectableObjects: THREE.Object3D[],
     sun: THREE.Object3D,
     simulation: Simulation,
-    onBodySelected: (name: string) => void,
+    onBodySelected: (id: string) => void,
     controls: OrbitControls,
     resetSimulation: () => void,
     orbits: THREE.Line[],
@@ -127,9 +127,9 @@ export function setupInteractions(
             // Clicked on a celestial body
             const clicked = intersects[0].object;
             const carrier = findDataCarrier(clicked);
-            const bodyName = carrier?.data?.name;
-            if (bodyName) {
-                onBodySelected(bodyName);
+            const bodyId = carrier?.data?.id;
+            if (bodyId) {
+                onBodySelected(bodyId);
                 showHud(clicked, camera);
             }
         } else {
@@ -159,6 +159,14 @@ export function setupInteractions(
 
     controls.addEventListener('start', () => {
         simulation.isUserInteracting = true;
+        try {
+            const active = (window as any)._activeCameraTween;
+            if (active && typeof active.stop === 'function') {
+                active.stop();
+                (window as any)._activeCameraTween = null;
+                simulation.isTweening = false;
+            }
+        } catch {}
     });
     controls.addEventListener('end', () => {
         simulation.isUserInteracting = false;
@@ -180,9 +188,9 @@ export function setupInteractions(
 
     dom.btnFrame.addEventListener('click', () => {
         const carrier = findDataCarrier(simulation.selectedObject as any);
-        const bodyName = carrier?.data?.name;
-        if (bodyName) {
-            onBodySelected(bodyName);
+        const bodyId = carrier?.data?.id;
+        if (bodyId) {
+            onBodySelected(bodyId);
             triggerButtonFlash(dom.btnFrame);
         }
     });
@@ -204,10 +212,10 @@ export function setupInteractions(
 
     dom.btnOrbit.addEventListener('click', () => {
         const carrier = findDataCarrier(simulation.selectedObject as any);
-        const bodyName = carrier?.data?.name;
-        if (!bodyName) return;
+        const bodyId = carrier?.data?.id;
+        if (!bodyId) return;
 
-        const orbit = orbits.find(o => o.userData.name === bodyName);
+        const orbit = orbits.find(o => o.userData && (o.userData.id === bodyId));
         if (orbit) {
             orbit.visible = !orbit.visible;
             const isPressed = dom.btnOrbit.getAttribute('aria-pressed') === 'true';
@@ -215,4 +223,47 @@ export function setupInteractions(
             triggerButtonFlash(dom.btnOrbit);
         }
     });
+
+    // Also wire up the small info card buttons specifically scoped within the card to avoid duplicate ID conflicts.
+    const cardFrameBtn = document.querySelector('#small-info-card #btn-frame') as HTMLButtonElement | null;
+    const cardFollowBtn = document.querySelector('#small-info-card #btn-follow') as HTMLButtonElement | null;
+    const cardOrbitBtn = document.querySelector('#small-info-card #btn-orbit') as HTMLButtonElement | null;
+
+    if (cardFrameBtn) {
+        cardFrameBtn.addEventListener('click', () => {
+            const carrier = findDataCarrier(simulation.selectedObject as any);
+            const bodyId = carrier?.data?.id;
+            if (bodyId) {
+                onBodySelected(bodyId);
+                triggerButtonFlash(cardFrameBtn);
+            }
+        });
+    }
+
+    if (cardFollowBtn) {
+        cardFollowBtn.addEventListener('click', () => {
+            if (!simulation.selectedObject) return;
+            const isFollowing = simulation.followTarget === simulation.selectedObject;
+            simulation.followTarget = isFollowing ? null : simulation.selectedObject;
+            if (!isFollowing) {
+                const targetPosition = new THREE.Vector3();
+                simulation.followTarget!.getWorldPosition(targetPosition);
+                simulation.followOffset = camera.position.clone().sub(targetPosition);
+            }
+            triggerButtonFlash(cardFollowBtn);
+        });
+    }
+
+    if (cardOrbitBtn) {
+        cardOrbitBtn.addEventListener('click', () => {
+            const carrier = findDataCarrier(simulation.selectedObject as any);
+            const bodyId = carrier?.data?.id;
+            if (!bodyId) return;
+            const orbit = orbits.find(o => o.userData && (o.userData.id === bodyId));
+            if (orbit) {
+                orbit.visible = !orbit.visible;
+                triggerButtonFlash(cardOrbitBtn);
+            }
+        });
+    }
 }

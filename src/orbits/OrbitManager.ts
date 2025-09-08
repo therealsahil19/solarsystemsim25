@@ -138,7 +138,9 @@ export class OrbitManager {
             const geometry = new THREE.BufferGeometry().setFromPoints(initialPoints);
 
             const line = new THREE.Line(geometry, material);
+            // Store both a human-readable name and the stable ID for lookups
             line.userData.name = `${body.name} Orbit`;
+            line.userData.id = body.id;
 
             // Attach the orbit line to its parent body's group
             const parent = bodyMap.get(body.parentId);

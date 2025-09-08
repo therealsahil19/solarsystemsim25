@@ -113,10 +113,10 @@ function handleResponsiveLayout() {
  * @private
  */
 function updateAppPadding() {
-    const topBarHeight = topBar.offsetHeight;
-    if (appContainer) {
-        appContainer.style.paddingTop = `${topBarHeight}px`;
-    }
+    // Layout is controlled by CSS grid in styles/layout.css.
+    // Adding extra padding here causes double spacing on some screens.
+    // Intentionally no-op.
+    return;
 }
 
 /**

@@ -20,17 +20,18 @@ export async function createScene() {
         let bodyMaterial;
 
         if (bodyData.name === 'Sun') {
-            const texture = await safeLoadTexture(bodyData.texture);
-            bodyMaterial = new THREE.MeshStandardMaterial({
-                emissive: 0xffff00,
-                emissiveIntensity: 1.5,
-                color: 0xffff00,
-                map: texture,
-                emissiveMap: texture,
-            });
+            // Use a simple unlit material to avoid banding/weird shading on the sun
+            bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+            // Tweak the scene's main point light which is attached later to the sun mesh
+            try { pointLight.intensity = 1.0; } catch {}
         } else {
-            const map = await safeLoadTexture(bodyData.texture);
-            bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff, map: map });
+            let map: THREE.Texture | null = null;
+            if (bodyData.texture) {
+                map = await safeLoadTexture(bodyData.texture);
+            }
+            bodyMaterial = map
+                ? new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff, map })
+                : new THREE.MeshStandardMaterial({ color: bodyData.color || 0xffffff });
         }
 
         const lod = new LOD();
@@ -87,8 +88,8 @@ export async function createScene() {
     });
 
     function createStarryBackground() {
-        const starVertices = [];
-        for (let i = 0; i < 10000; i++) {
+        const starVertices = [] as number[];
+        for (let i = 0; i < 8000; i++) {
             const x = (Math.random() - 0.5) * 4000;
             const y = (Math.random() - 0.5) * 4000;
             const z = (Math.random() - 0.5) * 4000;
@@ -96,7 +97,14 @@ export async function createScene() {
         }
         const starGeometry = new THREE.BufferGeometry();
         starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const starMaterial = new THREE.PointsMaterial({
+            color: 0x99a0aa,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.6,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
     }
@@ -153,27 +161,35 @@ export async function createScene() {
     }
 
     function createOortCloud() {
-        const count = 1000;
+        const count = 2000;
         const oortRadius = 1500;
-        const geom = new THREE.SphereGeometry(0.5, 6, 6);
-        const mat = new THREE.MeshStandardMaterial({ color: 0x446688, transparent: true, opacity: 0.5 });
-        const inst = new THREE.InstancedMesh(geom, mat, count);
-        initUserDataIfMissing(inst, { name: 'Oort Cloud' });
-        const dummy = new THREE.Object3D();
+        const positions = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
             const u = Math.random();
             const v = Math.random();
             const theta = 2 * Math.PI * u;
             const phi = Math.acos(2 * v - 1);
-            const x = oortRadius * Math.sin(phi) * Math.cos(theta);
-            const y = oortRadius * Math.sin(phi) * Math.sin(theta);
-            const z = oortRadius * Math.cos(phi);
-            dummy.position.set(x, y, z);
-            dummy.updateMatrix();
-            inst.setMatrixAt(i, dummy.matrix);
+            const radius = oortRadius * (0.85 + 0.3 * Math.random());
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.sin(phi) * Math.sin(theta);
+            const z = radius * Math.cos(phi);
+            positions[i * 3 + 0] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
         }
-        inst.instanceMatrix.needsUpdate = true;
-        scene.add(inst);
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const mat = new THREE.PointsMaterial({
+            color: 0x6b8fb5,
+            size: 1.2,
+            transparent: true,
+            opacity: 0.18,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+        const points = new THREE.Points(geom, mat);
+        initUserDataIfMissing(points, { name: 'Oort Cloud' });
+        scene.add(points);
     }
 
     createStarryBackground();

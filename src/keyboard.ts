@@ -20,7 +20,7 @@ import { Simulation } from './interactions';
 export function setupKeyboardShortcuts(
     simulation: Simulation,
     orbits: THREE.Line[],
-    onBodySelected: (name: string) => void,
+    onBodySelected: (id: string) => void,
     camera: THREE.PerspectiveCamera,
     controls: OrbitControls,
 ) {
@@ -53,7 +53,7 @@ export function setupKeyboardShortcuts(
         if (action.startsWith('select-body-')) {
             const index = parseInt(action.split('-')[2], 10) - 1;
             if (celestialBodyData[index]) {
-                onBodySelected(celestialBodyData[index].name);
+                onBodySelected(celestialBodyData[index].id);
             }
             return;
         }
@@ -85,15 +85,15 @@ export function setupKeyboardShortcuts(
             case 'close-modals': dom.helpOverlay.classList.add('hidden'); break;
             case 'frame-advance':
                 if(!isPaused) setPaused(true);
-                setSimTime(simTime + 86400); // Step 1 day
+                setSimTime(simTime + 1); // Step 1 day
                 break;
             case 'fine-step-forward':
                 if(!isPaused) setPaused(true);
-                setSimTime(simTime + 3600); // Step 1 hour
+                setSimTime(simTime + (1/24)); // Step 1 hour
                 break;
             case 'fine-step-backward':
                 if(!isPaused) setPaused(true);
-                setSimTime(simTime - 3600); // Step 1 hour back
+                setSimTime(simTime - (1/24)); // Step 1 hour back
                 break;
         }
     };

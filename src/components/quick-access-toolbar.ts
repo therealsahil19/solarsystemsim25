@@ -1,8 +1,8 @@
 import store from '../state/store';
 import { quickAccessToolbar } from './dom';
 
-/** The list of celestial bodies to feature in the quick access toolbar. @private */
-const QUICK_ACCESS_BODIES = ['Sun', 'Earth', 'Mars', 'Jupiter'];
+/** The list of celestial body IDs to feature in the quick access toolbar. @private */
+const QUICK_ACCESS_BODIES = ['sun', 'earth', 'mars', 'jupiter'];
 /** The time in milliseconds before the toolbar fades out. @private */
 const FADE_TIMEOUT = 4000; // 4 seconds
 
@@ -16,10 +16,8 @@ let fadeTimeoutId: number;
  */
 function handleBodyClick(event: MouseEvent) {
     const target = event.currentTarget as HTMLElement;
-    const bodyName = target.dataset.body;
-    if (bodyName) {
-        store.getState().setSelectedBodyId(bodyName);
-    }
+    const bodyId = target.dataset.body;
+    if (bodyId) store.getState().setSelectedBodyId(bodyId);
 }
 
 /**
@@ -56,11 +54,11 @@ export function setupQuickAccessToolbar() {
 
     // Populate buttons
     quickAccessToolbar.innerHTML = '';
-    QUICK_ACCESS_BODIES.forEach(name => {
+    QUICK_ACCESS_BODIES.forEach(id => {
         const button = document.createElement('button');
         button.className = 'quick-access-btn';
-        button.dataset.body = name;
-        button.textContent = name;
+        button.dataset.body = id;
+        button.textContent = id.charAt(0).toUpperCase() + id.slice(1);
         button.addEventListener('click', handleBodyClick);
         quickAccessToolbar.appendChild(button);
     });

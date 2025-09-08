@@ -49,7 +49,10 @@ function setupTourSteps() {
         id: 'step-1-quick-access',
         text: 'This is the new Quick Access Toolbar. Click on a planet to instantly focus on it.',
         attachTo: { element: '#quick-access-toolbar', on: 'bottom' },
-        buttons: [{ text: 'Next', action: tour.next }]
+        buttons: [
+            { text: 'Skip', action: tour.cancel },
+            { text: 'Next', action: tour.next }
+        ]
     });
 
     tour.addStep({
@@ -57,6 +60,7 @@ function setupTourSteps() {
         text: 'For more options, click here to open the detailed selector panel.',
         attachTo: { element: '#open-celestial-selector-btn', on: 'right' },
         buttons: [
+            { text: 'Skip', action: tour.cancel },
             { text: 'Back', action: tour.back },
             { text: 'Next', action: () => {
                 // Programmatically open the panel for the next step.
@@ -71,6 +75,7 @@ function setupTourSteps() {
         text: 'You can search, filter by type, and now filter by your favorite bodies! Click the star to favorite an item.',
         attachTo: { element: '#celestialSelector', on: 'left' },
         buttons: [
+            { text: 'Skip', action: () => { document.getElementById('celestialSelector-close')?.click(); tour.cancel(); } },
             { text: 'Back', action: () => {
                 document.getElementById('celestialSelector-close')?.click();
                 tour.back();
@@ -87,6 +92,7 @@ function setupTourSteps() {
         text: 'When you click a body in the 3D view, a small control hub will appear, giving you quick access to common actions.',
         attachTo: { element: '#bg', on: 'top' }, // Attach to the canvas background
         buttons: [
+            { text: 'Skip', action: tour.cancel },
             { text: 'Back', action: tour.back },
             { text: 'Next', action: tour.next }
         ]
@@ -97,6 +103,7 @@ function setupTourSteps() {
         text: 'Control the flow of time here. Play, pause, and adjust the simulation speed.',
         attachTo: { element: '#time-controls', on: 'bottom' },
         buttons: [
+            { text: 'Skip', action: tour.cancel },
             { text: 'Back', action: tour.back },
             { text: 'Next', action: tour.next }
         ]
@@ -107,6 +114,7 @@ function setupTourSteps() {
         text: 'Open the Visuals panel to adjust settings like trail length and the visual scale of planets.',
         attachTo: { element: '#visuals-toggle-btn', on: 'bottom' },
         buttons: [
+            { text: 'Skip', action: tour.cancel },
             { text: 'Back', action: tour.back },
             { text: 'Next', action: tour.next }
         ]
@@ -117,6 +125,7 @@ function setupTourSteps() {
         text: 'Click here anytime to see keyboard shortcuts or to restart this tour.',
         attachTo: { element: '#help-button', on: 'top' },
         buttons: [
+            { text: 'Skip', action: tour.cancel },
             { text: 'Back', action: tour.back },
             { text: 'Finish', action: tour.complete }
         ]

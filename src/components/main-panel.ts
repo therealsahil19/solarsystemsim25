@@ -7,10 +7,10 @@ import { sliderToTimeScale, timeScaleToSlider, TimeScaleConfig } from '../utils/
  * @private
  */
 const DEFAULT_TIME_CFG: TimeScaleConfig = {
-  minNonZero: 1e-6,
-  midScale: 100,
-  maxScale: 1e8,
-  pauseThreshold: 1e-7
+  minNonZero: 0.5,
+  midScale: 20,
+  maxScale: 1000,
+  pauseThreshold: 0.25
 };
 
 /**
@@ -37,7 +37,7 @@ function formatTimeScaleFriendly(scale: number): string {
  * @private
  */
 function formatTimestamp(simTime: number): string {
-    const date = new Date(new Date(2025, 0, 1).getTime() + simTime * 1000);
+    const date = new Date(new Date(2025, 0, 1).getTime() + simTime * 86400 * 1000);
     return date.toUTCString().substring(5, 25); // Simple formatting
 }
 
@@ -123,13 +123,13 @@ function initTimeControls() {
 
     stepForwardBtn.addEventListener('click', () => {
         const { simTime } = store.getState();
-        store.getState().setSimTime(simTime + 86400); // Step 1 day
+        store.getState().setSimTime(simTime + 1); // Step 1 day
         if (!store.getState().isPaused) store.getState().setPaused(true);
     });
 
     stepBackwardBtn.addEventListener('click', () => {
         const { simTime } = store.getState();
-        store.getState().setSimTime(simTime - 86400); // Step 1 day back
+        store.getState().setSimTime(simTime - 1); // Step 1 day back
         if (!store.getState().isPaused) store.getState().setPaused(true);
     });
 

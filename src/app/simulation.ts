@@ -5,7 +5,7 @@ import { camera, controls, renderer, scene } from '../scene';
 import { CelestialBody, celestialBodyData } from '../data';
 import { AU_TO_M, speedDisplayKmPerS } from '../utils/misc';
 import { calculateDisplayPosition, getDisplayRadius, ScaleTransition } from '../utils/scaling';
-import store from '../state/store';
+import store, { AppState, ScalePreset } from '../state/store';
 import { OrbitManager } from '../orbits/OrbitManager';
 import { TrailManager } from '../orbits/TrailManager';
 import * as dom from '../components/dom';
@@ -65,6 +65,7 @@ export class Simulation {
         this.orbitManager = new OrbitManager(this.celestialObjects);
         this.trailManager = new TrailManager(this.celestialObjects, scene);
         this.physicsWorker = new Worker(new URL('../physics.worker.ts', import.meta.url), { type: 'module' });
+        this.setupScaleSubscription();
     }
 
     public start() {
@@ -119,21 +120,28 @@ export class Simulation {
 
         // --- Time and Physics Update ---
         const { timeScale, isPaused, simTime } = store.getState();
-        const newTime = isPaused ? simTime : simTime + (dt / 1000) * timeScale;
+        // Convert elapsed real time to simulation days using timeScale (seconds per second)
+        const deltaDays = (dt / 1000) * (timeScale / 86400);
+        const newTimeDays = isPaused ? simTime : (simTime + deltaDays);
         if (!isPaused) {
-            store.getState().setSimTime(newTime);
+            store.getState().setSimTime(newTimeDays);
         }
-        this.physicsWorker.postMessage({ command: 'update', payload: { simTimeInDays: newTime } });
+        this.physicsWorker.postMessage({ command: 'update', payload: { simTimeInDays: newTimeDays } });
 
+        // Drive shader animation with real elapsed seconds, independent of simTime units
         if (this.simulation.asteroidMaterialUniforms) {
-            this.simulation.asteroidMaterialUniforms.u_time.value = newTime;
+            this.simulation.asteroidMaterialUniforms.u_time.value += dt / 1000;
         }
 
         // --- Object Position and Scale Updates ---
         this.celestialObjects.forEach(obj => {
             const displayPosition = calculateDisplayPosition(obj.physicsPosition, this.scaleTransition);
             obj.group.position.copy(displayPosition);
-            const displayRadius = getDisplayRadius(obj.radius, this.scaleTransition);
+            let displayRadius = getDisplayRadius(obj.radius, this.scaleTransition);
+            // Prevent the Sun from dwarfing inner orbits in hybrid/educational presets
+            if ((this.scaleTransition.toPreset === 'hybrid' || this.scaleTransition.toPreset === 'educational') && obj.id === 'sun') {
+                displayRadius = Math.min(displayRadius, 25);
+            }
             obj.mesh.scale.set(displayRadius, displayRadius, displayRadius);
         });
 
@@ -145,7 +153,7 @@ export class Simulation {
             } else {
                 this.simulation.focusTarget.getWorldPosition(cameraTarget);
             }
-            if (!this.simulation.isTweening) {
+            if (!this.simulation.isTweening && !this.simulation.isUserInteracting) {
                 controls.target.lerp(cameraTarget, 0.05);
             }
         }
@@ -232,6 +240,20 @@ export class Simulation {
         this.simulation.focusTarget = selectedObject;
         this.frameObject(selectedObject);
         this.clampZoomForBody(selectedObject);
+
+        // Update small info card UI
+        try {
+            const data = (selectedObject as any).userData?.data;
+            if (data) {
+                dom.cardTitle.textContent = data.name || '';
+                const thumb = data.edu?.thumbnail || data.edu?.image || '';
+                if (thumb) {
+                    dom.cardThumb.src = thumb;
+                    dom.cardThumb.alt = `Thumbnail of ${data.name}`;
+                }
+                dom.smallInfoCard.classList.remove('hidden');
+            }
+        } catch {}
     }
 
     private clampZoomForBody(bodyMesh: THREE.Object3D) {
@@ -280,5 +302,23 @@ export class Simulation {
             .onUpdate(() => camera.lookAt(controls.target))
             .start();
         (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
+    }
+
+    /** Subscribes to scale preset changes and animates transitions to avoid popping. */
+    private setupScaleSubscription() {
+        let lastPreset: ScalePreset = store.getState().scalePreset;
+        store.subscribe((state: AppState) => {
+            if (state.scalePreset !== lastPreset) {
+                const from = this.scaleTransition.toPreset;
+                const to = state.scalePreset;
+                this.scaleTransition = { active: true, progress: 0, fromPreset: from, toPreset: to };
+                new TWEEN.Tween(this.scaleTransition)
+                    .to({ progress: 1 }, 450)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .onComplete(() => { this.scaleTransition.active = false; })
+                    .start();
+                lastPreset = to;
+            }
+        });
     }
 }
