@@ -24,7 +24,12 @@ export function createControls(camera: THREE.PerspectiveCamera, renderer: THREE.
 
     // Enable panning and map it to the right mouse button
     controls.enablePan = true;
+    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
     controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+    // Disable middle mouse button (often used for dolly/zoom)
+    controls.mouseButtons.MIDDLE = null as any;
+    // Disable keyboard controls (arrow keys)
+    controls.enableKeys = false;
 
     // Prevent camera from flipping below the horizon
     controls.maxPolarAngle = Math.PI / 2;

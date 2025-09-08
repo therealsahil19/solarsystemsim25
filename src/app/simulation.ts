@@ -87,6 +87,11 @@ export class Simulation {
         this.trailManager.init();
         this.setupPhysicsWorker();
         this.setupControlsInteractionHandling();
+
+        dom.freeCameraButton.addEventListener('click', () => this.unfocusCamera());
+        dom.freeCameraButton.textContent = 'Free Camera';
+        dom.freeCameraButton.classList.add('hidden');
+
         this.animate(0);
     }
 
@@ -268,6 +273,7 @@ export class Simulation {
 
         store.getState().setSelectedBodyId(id);
         this.simulation.focusTarget = selectedObject;
+        dom.freeCameraButton.classList.remove('hidden');
         this.frameObject(selectedObject);
         this.clampZoomForBody(selectedObject);
 
@@ -284,6 +290,11 @@ export class Simulation {
                 dom.smallInfoCard.classList.remove('hidden');
             }
         } catch {}
+    }
+
+    public unfocusCamera() {
+        this.simulation.focusTarget = null;
+        dom.freeCameraButton.classList.add('hidden');
     }
 
     private clampZoomForBody(bodyMesh: THREE.Object3D) {
