@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import store from '../state/store';
+import simStore from '../state/simStore';
 import { Trail } from './Trail';
 import { calculateDisplayPosition, ScaleTransition } from '../utils/scaling';
 import { SceneBody } from '../types/scene';
@@ -55,7 +55,7 @@ export class TrailManager {
      * @param scaleTransition The current scale transition state, used for positioning points.
      */
     public update(scaleTransition: ScaleTransition) {
-        const { trailsEnabled, simTime } = store.getState();
+        const { trailsEnabled, simTime } = simStore.getState();
 
         this.trails.forEach((trail, id) => {
             trail.setVisible(trailsEnabled);

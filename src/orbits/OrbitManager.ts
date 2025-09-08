@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CelestialBody } from '../data';
-import store from '../state/store';
+import simStore from '../state/simStore';
 import { calculateDisplayPosition, ScaleTransition } from '../utils/scaling';
 import { keplerToCartesianFromMeanAnomaly, OrbitalElements as KeplerOrbitalElements } from './kepler';
 import { KM_PER_AU } from '../utils/units';
@@ -134,7 +134,7 @@ export class OrbitManager {
             if (auPoints.high.length === 0) return;
 
             // Start with the low-LOD points
-            const initialPoints = auPoints.low.map(p => calculateDisplayPosition(p, { active: false, progress: 1, fromPreset: 'realistic', toPreset: store.getState().scalePreset }));
+            const initialPoints = auPoints.low.map(p => calculateDisplayPosition(p, { active: false, progress: 1, fromPreset: 'realistic', toPreset: simStore.getState().scalePreset }));
             const geometry = new THREE.BufferGeometry().setFromPoints(initialPoints);
 
             const line = new THREE.Line(geometry, material);

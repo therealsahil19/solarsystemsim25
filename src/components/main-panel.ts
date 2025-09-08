@@ -1,4 +1,6 @@
-import store, { AppState } from '../state/store';
+import simStore, { SimState } from '../state/simStore';
+import uiStore, { UIState } from '../state/uiStore';
+import { shallow } from 'zustand/shallow';
 import { DistanceUnit } from '../utils/units';
 import { sliderToTimeScale, timeScaleToSlider, TimeScaleConfig } from '../utils/timeScaleMap';
 
@@ -83,7 +85,7 @@ function initTimeControls() {
 
     /** Updates the entire time control UI based on the current state from the store. */
     function updateUiFromState() {
-        const { isPaused, timeScale, simTime } = store.getState();
+        const { isPaused, timeScale, simTime } = simStore.getState();
         playPauseBtn.textContent = isPaused ? '▶' : '❚❚';
         slider.value = timeScaleToSlider(timeScale, DEFAULT_TIME_CFG).toString();
         label.textContent = formatTimeScaleFriendly(timeScale);
@@ -96,12 +98,12 @@ function initTimeControls() {
 
     // Event Listeners
     playPauseBtn.addEventListener('click', () => {
-        store.getState().setPaused(!store.getState().isPaused);
+        simStore.getState().setPaused(!simStore.getState().isPaused);
     });
 
     slider.addEventListener('input', () => {
         const scale = sliderToTimeScale(parseFloat(slider.value), DEFAULT_TIME_CFG);
-        store.getState().setTimeScale(scale);
+        simStore.getState().setTimeScale(scale);
         updateSliderTooltip();
     });
 
@@ -117,24 +119,49 @@ function initTimeControls() {
     presetButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const speed = parseFloat((btn as HTMLElement).dataset.speed!);
-            store.getState().setTimeScale(speed);
+            simStore.getState().setTimeScale(speed);
         });
     });
 
     stepForwardBtn.addEventListener('click', () => {
-        const { simTime } = store.getState();
-        store.getState().setSimTime(simTime + 1); // Step 1 day
-        if (!store.getState().isPaused) store.getState().setPaused(true);
+        const { simTime } = simStore.getState();
+        simStore.getState().setSimTime(simTime + 1); // Step 1 day
+        if (!simStore.getState().isPaused) simStore.getState().setPaused(true);
     });
 
     stepBackwardBtn.addEventListener('click', () => {
-        const { simTime } = store.getState();
-        store.getState().setSimTime(simTime - 1); // Step 1 day back
-        if (!store.getState().isPaused) store.getState().setPaused(true);
+        const { simTime } = simStore.getState();
+        simStore.getState().setSimTime(simTime - 1); // Step 1 day back
+        if (!simStore.getState().isPaused) simStore.getState().setPaused(true);
     });
 
-    // Subscribe to store changes
-    store.subscribe(updateUiFromState);
+    // Selective subscriptions to avoid unnecessary re-renders
+    // 1) Subscribe to isPaused and timeScale with shallow equality
+    simStore.subscribe(
+        (s: SimState) => ({ isPaused: s.isPaused, timeScale: s.timeScale }),
+        ({ isPaused, timeScale }) => {
+            playPauseBtn.textContent = isPaused ? '▶' : '❚❚';
+            const sliderVal = timeScaleToSlider(timeScale, DEFAULT_TIME_CFG);
+            if (parseFloat(slider.value) !== sliderVal) {
+                slider.value = sliderVal.toString();
+            }
+            label.textContent = formatTimeScaleFriendly(timeScale);
+            updateSliderTooltip();
+        },
+        { equalityFn: shallow }
+    );
+
+    // 2) Subscribe to simTime separately and debounce DOM update
+    let simTimeUpdateTimeout: number | null = null;
+    simStore.subscribe(
+        (s: SimState) => s.simTime,
+        (simTime) => {
+            if (simTimeUpdateTimeout) window.clearTimeout(simTimeUpdateTimeout);
+            simTimeUpdateTimeout = window.setTimeout(() => {
+                timestampDisplay.textContent = formatTimestamp(simTime);
+            }, 100); // update at most every 100ms
+        }
+    );
 }
 
 /**
@@ -146,27 +173,31 @@ function initVisualsPanel() {
     const trailLengthSlider = document.getElementById('trail-length-slider') as HTMLInputElement;
 
     // Set initial values from store
-    trailsEnabledToggle.checked = store.getState().trailsEnabled;
-    trailLengthSlider.value = String(store.getState().trailLength);
+    trailsEnabledToggle.checked = simStore.getState().trailsEnabled;
+    trailLengthSlider.value = String(simStore.getState().trailLength);
 
     // Add event listeners
     trailsEnabledToggle.addEventListener('change', () => {
-        store.getState().setTrailsEnabled(trailsEnabledToggle.checked);
+        simStore.getState().setTrailsEnabled(trailsEnabledToggle.checked);
     });
 
     trailLengthSlider.addEventListener('input', () => {
-        store.getState().setTrailLength(parseFloat(trailLengthSlider.value));
+        simStore.getState().setTrailLength(parseFloat(trailLengthSlider.value));
     });
 
-    // Subscribe to store changes to keep UI in sync
-    store.subscribe((state: AppState) => {
-        if (trailsEnabledToggle.checked !== state.trailsEnabled) {
-            trailsEnabledToggle.checked = state.trailsEnabled;
-        }
-        if (parseFloat(trailLengthSlider.value) !== state.trailLength) {
-            trailLengthSlider.value = String(state.trailLength);
-        }
-    });
+    // Subscribe only to the specific fields we need
+    simStore.subscribe(
+        (s: SimState) => ({ trailsEnabled: s.trailsEnabled, trailLength: s.trailLength }),
+        ({ trailsEnabled, trailLength }) => {
+            if (trailsEnabledToggle.checked !== trailsEnabled) {
+                trailsEnabledToggle.checked = trailsEnabled;
+            }
+            if (parseFloat(trailLengthSlider.value) !== trailLength) {
+                trailLengthSlider.value = String(trailLength);
+            }
+        },
+        { equalityFn: shallow }
+    );
 }
 
 /**
@@ -177,17 +208,20 @@ function initGlobalControls() {
     const distanceUnitSelect = document.getElementById('distance-unit-select') as HTMLSelectElement;
 
     // Set initial values from store
-    distanceUnitSelect.value = store.getState().distanceUnit;
+    distanceUnitSelect.value = uiStore.getState().distanceUnit;
 
     // Add event listeners
     distanceUnitSelect.addEventListener('change', () => {
-        store.getState().setDistanceUnit(distanceUnitSelect.value as DistanceUnit);
+        uiStore.getState().setDistanceUnit(distanceUnitSelect.value as DistanceUnit);
     });
 
-    // Subscribe to store changes to keep UI in sync (e.g., when a preset is loaded)
-    store.subscribe((state: AppState) => {
-        if (distanceUnitSelect.value !== state.distanceUnit) {
-            distanceUnitSelect.value = state.distanceUnit;
+    // Subscribe only to distanceUnit changes
+    uiStore.subscribe(
+        (s: UIState) => s.distanceUnit,
+        (distanceUnit) => {
+            if (distanceUnitSelect.value !== distanceUnit) {
+                distanceUnitSelect.value = distanceUnit;
+            }
         }
-    });
+    );
 }

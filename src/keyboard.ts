@@ -5,7 +5,7 @@ import { celestialBodyData } from './data';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getShortcuts, ShortcutAction } from './state/shortcuts';
 import { renderShortcutsList } from './components/shortcuts-panel';
-import store from './state/store';
+import simStore from './state/simStore';
 import { Simulation } from './interactions';
 
 /**
@@ -58,7 +58,7 @@ export function setupKeyboardShortcuts(
             return;
         }
 
-        const { timeScale, setTimeScale, isPaused, setPaused, setSimTime, simTime } = store.getState();
+        const { timeScale, setTimeScale, isPaused, setPaused, setSimTime, simTime } = simStore.getState();
 
         switch (action) {
             case 'toggle-pause': setPaused(!isPaused); break;

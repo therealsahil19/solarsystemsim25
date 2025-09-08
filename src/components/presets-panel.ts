@@ -1,5 +1,5 @@
 import { camera, controls, renderer } from '../scene';
-import store from '../state/store';
+import simStore from '../state/simStore';
 import { Preset, PanelState, getAllPresets, addPreset, deletePreset } from '../state/presets';
 import { v4 as uuidv4 } from 'uuid';
 import { PanelManager } from './panel-manager';
@@ -19,7 +19,7 @@ const PANEL_STATE_KEY = 'solarsim.panel.v1';
  */
 function captureCurrentState(name: string): Preset {
     const panelState: PanelState = JSON.parse(localStorage.getItem(PANEL_STATE_KEY) || '{}');
-    const { simTime, timeScale, isPaused, selectedBodyId, perfPreset } = store.getState();
+    const { simTime, timeScale, isPaused, selectedBodyId, perfPreset } = simStore.getState();
     const shadowsEnabled = (document.getElementById('shadow-toggle') as HTMLInputElement).checked;
 
     return {
@@ -61,17 +61,17 @@ function applyPreset(preset: Preset) {
     controls.update();
 
     // Apply time state
-    store.getState().setSimTime(preset.time.simTime);
-    store.getState().setTimeScale(preset.time.timeScale);
-    store.getState().setPaused(preset.time.isPaused);
+    simStore.getState().setSimTime(preset.time.simTime);
+    simStore.getState().setTimeScale(preset.time.timeScale);
+    simStore.getState().setPaused(preset.time.isPaused);
 
     // Apply render state
     (document.getElementById('shadow-toggle') as HTMLInputElement).checked = preset.render.shadowsEnabled;
-    store.getState().setPerfPreset(preset.render.performancePreset);
+    simStore.getState().setPerfPreset(preset.render.performancePreset);
 
     // Apply UI state
     if(preset.ui.selectedBodyId) {
-        store.getState().setSelectedBodyId(preset.ui.selectedBodyId);
+        simStore.getState().setSelectedBodyId(preset.ui.selectedBodyId);
     }
 }
 

@@ -1,4 +1,4 @@
-import store, { AppState, ScalePreset } from '../state/store';
+import simStore, { SimState, ScalePreset } from '../state/simStore';
 
 // --- Module-level variables for DOM Element References ---
 /** @private */
@@ -132,29 +132,31 @@ function setupEventListeners() {
 
     scalePresetSelect.addEventListener('change', (e) => {
         const preset = (e.target as HTMLSelectElement).value as ScalePreset;
-        store.getState().setScalePreset(preset);
+        simStore.getState().setScalePreset(preset);
     });
 
-    // Subscribe to the global store to keep the UI in sync with the state
-    store.subscribe((state: AppState) => {
-        const preset = state.scalePreset;
-        if (scalePresetSelect.value !== preset) {
-            scalePresetSelect.value = preset;
-        }
+    // Subscribe only to scalePreset changes to avoid unnecessary updates
+    simStore.subscribe(
+        (s: SimState) => s.scalePreset,
+        (preset) => {
+            if (scalePresetSelect.value !== preset) {
+                scalePresetSelect.value = preset;
+            }
 
-        // Update the scale badge text based on the current preset
-        switch (preset) {
-            case 'realistic':
-                scaleBadge.textContent = '1:1 Scale';
-                break;
-            case 'educational':
-                scaleBadge.textContent = 'Large Planets';
-                break;
-            case 'hybrid':
-                scaleBadge.textContent = 'Log Distance';
-                break;
+            // Update the scale badge text based on the current preset
+            switch (preset) {
+                case 'realistic':
+                    scaleBadge.textContent = '1:1 Scale';
+                    break;
+                case 'educational':
+                    scaleBadge.textContent = 'Large Planets';
+                    break;
+                case 'hybrid':
+                    scaleBadge.textContent = 'Log Distance';
+                    break;
+            }
         }
-    });
+    );
 
     // Add a global click listener to close the "More" menu when clicking outside of it.
     document.addEventListener('click', (e) => {

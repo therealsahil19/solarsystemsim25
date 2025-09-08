@@ -1,6 +1,6 @@
 // src/utils/scaling.ts
 import * as THREE from 'three';
-import { ScalePreset } from '../state/store';
+import { ScalePreset } from '../state/simStore';
 
 /**
  * Represents the state of a transition between two scale presets.

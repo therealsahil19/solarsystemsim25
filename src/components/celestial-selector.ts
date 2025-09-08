@@ -2,7 +2,7 @@ import { CelestialBody } from '../data';
 import { celestialSelectorMenu } from './dom';
 import { buildTree, CelestialBodyType, TreeNode } from './tree-view';
 import Fuse from 'fuse.js';
-import store from '../state/store';
+import simStore from '../state/simStore';
 import { PanelManager } from './panel-manager';
 
 /** Defines the two main view modes for the selector: hierarchical tree or flat list grouped by type. */
@@ -31,6 +31,8 @@ let currentFilterType: CelestialBodyType | 'all' = 'all';
 const favoritedIds = new Set<string>();
 /** @private A flag indicating whether to show only favorited items. */
 let showFavoritesOnly = false;
+/** @private Unsubscribe handle for the selection subscription to avoid duplicate subscriptions. */
+let unsubscribeSelection: (() => void) | null = null;
 
 /**
  * Creates a favorite button for a tree node.
@@ -289,7 +291,8 @@ function updateDomVisibility() {
         }
     });
 
-    store.subscribe(updateSelectionFromState);
+    // Selection subscription is managed once during initialization to avoid duplicates.
+    // Just update selection now to reflect the latest state.
     updateSelectionFromState();
 }
 
@@ -410,7 +413,7 @@ function setActiveNode(nodeId: string | null) {
  * @private
  */
 function updateSelectionFromState() {
-    const { selectedBodyId } = store.getState();
+    const { selectedBodyId } = simStore.getState();
     flatNodeMap.forEach((node) => {
         if (node.element) {
             if (node.id === selectedBodyId) {
@@ -516,6 +519,17 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
     fuse = new Fuse(fuseData, { keys: ['name', 'type'], threshold: 0.4, includeScore: true });
 
     render();
+
+    // Ensure we subscribe only once to selection changes
+    if (unsubscribeSelection) {
+        unsubscribeSelection();
+        unsubscribeSelection = null;
+    }
+    unsubscribeSelection = simStore.subscribe(
+        (s) => s.selectedBodyId,
+        () => updateSelectionFromState()
+    );
+    updateSelectionFromState();
 
     // Add Favorites Toggle Button
     const categoryTabsContainer = document.getElementById('category-tabs');

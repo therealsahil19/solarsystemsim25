@@ -5,7 +5,8 @@ import { camera, controls, renderer, scene } from '../scene';
 import { CelestialBody, celestialBodyData } from '../data';
 import { AU_TO_M, speedDisplayKmPerS } from '../utils/misc';
 import { calculateDisplayPosition, getDisplayRadius, ScaleTransition } from '../utils/scaling';
-import store, { AppState, ScalePreset } from '../state/store';
+import store, { SimState, ScalePreset } from '../state/simStore';
+import uiStore from '../state/uiStore';
 import { OrbitManager } from '../orbits/OrbitManager';
 import { TrailManager } from '../orbits/TrailManager';
 import * as dom from '../components/dom';
@@ -43,6 +44,12 @@ export class Simulation {
         upperMs: 22, // Corresponds to ~45 FPS
         lowerMs: 13, // Corresponds to ~75 FPS
         step: 0.1,
+    };
+
+    // Throttle UI text updates to avoid per-frame DOM churn
+    private uiUpdate = {
+        lastStatsMs: 0,
+        statsInterval: 150,
     };
 
     private celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D; physicsPosition: THREE.Vector3 })[];
@@ -168,28 +175,32 @@ export class Simulation {
             dom.btnFollow.setAttribute('aria-pressed', 'false');
         }
 
-        // --- UI Updates ---
+        // --- UI Updates (throttled) ---
         if (store.getState().selectedBodyId) {
-            const selectedBody = this.celestialObjects.find(c => c.id === store.getState().selectedBodyId);
-            if (selectedBody && selectedBody.name !== 'Sun') {
-                const parent = this.bodyMap.get(selectedBody.parentId!);
-                const parentPosition = parent ? parent.physicsPosition : new THREE.Vector3(0, 0, 0);
-                const r_au = selectedBody.physicsPosition.distanceTo(parentPosition);
-                const r_km = r_au * KM_PER_AU;
-                const r_m = r_au * AU_TO_M;
-                const a_au = selectedBody.parentId === 'sun' ? selectedBody.semiMajorAxis : (selectedBody.semiMajorAxisKm || 0) / KM_PER_AU;
-                const a_m = a_au * AU_TO_M;
-                let speed_m_s = 0;
-                if (a_m > 0) {
-                    const parentMass10e24kg = parent?.data.mass || celestialBodyData[0].mass!;
-                    const G = 6.67430e-11;
-                    const mu = G * parentMass10e24kg * 1e24;
-                    speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m, mu });
+            const nowMs = now; // reuse "now" as ms timestamp
+            if (nowMs - this.uiUpdate.lastStatsMs >= this.uiUpdate.statsInterval) {
+                this.uiUpdate.lastStatsMs = nowMs;
+                const selectedBody = this.celestialObjects.find(c => c.id === store.getState().selectedBodyId);
+                if (selectedBody && selectedBody.name !== 'Sun') {
+                    const parent = this.bodyMap.get(selectedBody.parentId!);
+                    const parentPosition = parent ? parent.physicsPosition : new THREE.Vector3(0, 0, 0);
+                    const r_au = selectedBody.physicsPosition.distanceTo(parentPosition);
+                    const r_km = r_au * KM_PER_AU;
+                    const r_m = r_au * AU_TO_M;
+                    const a_au = selectedBody.parentId === 'sun' ? selectedBody.semiMajorAxis : (selectedBody.semiMajorAxisKm || 0) / KM_PER_AU;
+                    const a_m = a_au * AU_TO_M;
+                    let speed_m_s = 0;
+                    if (a_m > 0) {
+                        const parentMass10e24kg = parent?.data.mass || celestialBodyData[0].mass!;
+                        const G = 6.67430e-11;
+                        const mu = G * parentMass10e24kg * 1e24;
+                        speed_m_s = instantaneousOrbitalSpeed({ a_m, r_m, mu });
+                    }
+                    const distanceUnit = uiStore.getState().distanceUnit;
+                    dom.cardStats.textContent = `Dist: ${formatDistance(r_km, distanceUnit)} • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
+                } else if (selectedBody) {
+                    dom.cardStats.textContent = 'At the center of the solar system';
                 }
-                const distanceUnit = store.getState().distanceUnit;
-                dom.cardStats.textContent = `Dist: ${formatDistance(r_km, distanceUnit)} • Speed: ${speedDisplayKmPerS(speed_m_s)}`;
-            } else if (selectedBody) {
-                dom.cardStats.textContent = 'At the center of the solar system';
             }
         }
 
@@ -307,18 +318,21 @@ export class Simulation {
     /** Subscribes to scale preset changes and animates transitions to avoid popping. */
     private setupScaleSubscription() {
         let lastPreset: ScalePreset = store.getState().scalePreset;
-        store.subscribe((state: AppState) => {
-            if (state.scalePreset !== lastPreset) {
-                const from = this.scaleTransition.toPreset;
-                const to = state.scalePreset;
-                this.scaleTransition = { active: true, progress: 0, fromPreset: from, toPreset: to };
-                new TWEEN.Tween(this.scaleTransition)
-                    .to({ progress: 1 }, 450)
-                    .easing(TWEEN.Easing.Cubic.InOut)
-                    .onComplete(() => { this.scaleTransition.active = false; })
-                    .start();
-                lastPreset = to;
+        store.subscribe(
+            (s: SimState) => s.scalePreset,
+            (preset) => {
+                if (preset !== lastPreset) {
+                    const from = this.scaleTransition.toPreset;
+                    const to = preset;
+                    this.scaleTransition = { active: true, progress: 0, fromPreset: from, toPreset: to };
+                    new TWEEN.Tween(this.scaleTransition)
+                        .to({ progress: 1 }, 450)
+                        .easing(TWEEN.Easing.Cubic.InOut)
+                        .onComplete(() => { this.scaleTransition.active = false; })
+                        .start();
+                    lastPreset = to;
+                }
             }
-        });
+        );
     }
 }

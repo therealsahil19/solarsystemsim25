@@ -16,7 +16,8 @@ import { createCelestialBodySelector } from './components/celestial-selector';
 import { celestialBodyData } from './data';
 import { setupKeyboardShortcuts } from './keyboard';
 import { setupInteractions } from './interactions';
-import store from './state/store';
+import simStore from './state/simStore';
+import uiStore from './state/uiStore';
 import { camera, controls } from './scene';
 import { InfoPanelManager } from './components/info-panel-manager';
 
@@ -42,14 +43,14 @@ async function start() {
     createCelestialBodySelector(celestialBodyData, onBodySelected);
 
     function resetSimulation() {
-        store.getState().setSimTime(0);
+        simStore.getState().setSimTime(0);
         if (sun) {
             simulation.simulation.focusTarget = sun;
         }
-        store.getState().setSelectedBodyId('sun');
+        simStore.getState().setSelectedBodyId('sun');
         camera.position.set(0, 150, 400);
         controls.target.set(0, 0, 0);
-        store.getState().setPaused(false);
+        simStore.getState().setPaused(false);
         onBodySelected('sun');
         dom.smallInfoCard.classList.add('hidden');
     }
@@ -79,11 +80,16 @@ async function start() {
     // Simulation already started above
 
     const app = {
-        store: store,
-        // renderer: {
-        //     trails: trailManager
-        // },
-    };
+        // Back-compat: expose a store-like object for E2E helpers expecting app.store.getState()
+        store: {
+            getState: () => ({
+                ...simStore.getState(),
+                // UI slice values/actions exposed for tests
+                distanceUnit: uiStore.getState().distanceUnit,
+                setDistanceUnit: uiStore.getState().setDistanceUnit,
+            })
+        },
+    } as any;
     if ((window as any).__e2eNotifyReady) {
         (window as any).__e2eNotifyReady(app);
     } else {

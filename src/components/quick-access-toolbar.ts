@@ -1,4 +1,4 @@
-import store from '../state/store';
+import simStore from '../state/simStore';
 import { quickAccessToolbar } from './dom';
 
 /** The list of celestial body IDs to feature in the quick access toolbar. @private */
@@ -17,7 +17,7 @@ let fadeTimeoutId: number;
 function handleBodyClick(event: MouseEvent) {
     const target = event.currentTarget as HTMLElement;
     const bodyId = target.dataset.body;
-    if (bodyId) store.getState().setSelectedBodyId(bodyId);
+    if (bodyId) simStore.getState().setSelectedBodyId(bodyId);
 }
 
 /**
