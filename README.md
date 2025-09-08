@@ -31,9 +31,12 @@ This will open the simulation in your default browser at `http://localhost:5173`
 The simulation is built with a modular architecture to separate concerns. Here's a high-level overview:
 
 -   **Rendering Engine**: Core 3D rendering is handled by **Three.js**. The scene setup, camera, lighting, and renderer are initialized in the `src/scene/` directory.
--   **State Management**: Global application state (e.g., selected body, time scale, UI settings) is managed by **Zustand**. This provides a simple, centralized store for state that can be accessed and updated from any part of the application. See `src/state/store.ts`.
+-   **State Management**: Global application state is managed by **Zustand**, split into focused slices:
+    - `src/state/simStore.ts` for simulation state (time, scale preset, selection, trails, perf, etc.)
+    - `src/state/uiStore.ts` for UI-only state (distance units)
+    This keeps updates localized and reduces unnecessary work.
 -   **Physics Engine**: Orbital calculations are offloaded to a **Web Worker** (`src/physics.worker.ts`) to prevent blocking the main UI thread. The main thread sends the current simulation time to the worker, and the worker calculates and sends back the new positions of all celestial bodies.
--   **UI Components**: The user interface is built with standard HTML, CSS, and TypeScript. A custom `PanelManager` (`src/ui/panel-manager.ts`) provides a windowing system for draggable, resizable, and pinnable panels.
+-   **UI Components**: The user interface is built with standard HTML, CSS, and TypeScript. A custom `PanelManager` (`src/components/panel-manager.ts`) provides a windowing system for draggable, resizable, and pinnable panels.
 
 ## Code Structure
 
@@ -42,7 +45,9 @@ The source code is located in the `src/` directory and is organized as follows:
 -   `main.ts`: The main entry point of the application. It initializes all modules and starts the animation loop.
 -   `data.ts`: Contains all the static data for celestial bodies, including their physical properties, orbital parameters, and educational content.
 -   `scene/`: Manages the Three.js scene, camera, renderer, and controls.
--   `state/`: Contains the Zustand store, state definitions, and preset/shortcut management.
+-   `state/`: Contains the Zustand slices and state helpers:
+    - `simStore.ts` (simulation slice), `uiStore.ts` (UI slice)
+    - `presets.ts`, `shortcuts.ts` and other state utilities
 -   `bodies/`: Code for creating the 3D models of celestial bodies, including complex ring systems.
 -   `orbits/`: Manages the creation and rendering of both static orbit lines and dynamic trails.
 -   `ui/`: Contains all UI-related code, including the panel manager, celestial body selector, info panels, and various UI components.
@@ -139,6 +144,75 @@ git clean -fdx || true
 *   **Detailed Planetary Systems:**
     *   **Earth's Clouds:** Earth is rendered with a dynamic, transparent cloud layer.
     *   **Realistic Planetary Rings:** Each of the four gas giants features a unique and detailed ring system.
+
+## Recent changes (2025-09-08)
+
+These changes improve performance and state organization. If you have a fork or local changes, skim the migration notes below.
+
+- **Store split into slices (Zustand)**
+  - Added `src/state/simStore.ts` for simulation state: `selectedBodyId`, `isPaused`, `simTime`, `timeScale`, `scalePreset`, `trailsEnabled`, `trailLength`, `followingId`, `perfPreset` and their setters.
+  - Added `src/state/uiStore.ts` for UI-only state: `distanceUnit` and `setDistanceUnit`.
+  - The legacy `src/state/store.ts` is deprecated and no longer imported.
+
+- **Performance optimizations**
+  - Selective subscriptions + shallow equality in `src/components/main-panel.ts` and `src/components/top-bar.ts` to avoid updates on unrelated state changes (e.g., `simTime`).
+  - Debounced timestamp updates in `main-panel.ts` (100ms) to reduce DOM churn during fast time updates.
+  - Throttled info-card stats updates in `src/app/simulation.ts` (~150ms) to avoid per-frame text layout.
+  - Fixed potential duplicate subscription in `src/components/celestial-selector.ts` by managing a single unsubscribe handle and subscribing specifically to `selectedBodyId`.
+
+- **Backwards-compatible E2E helper**
+  - `src/main.ts` exposes a compatibility wrapper at `app.store.getState()` that merges sim and UI actions used by tests (`setDistanceUnit`, `setTrailsEnabled`, etc.). Existing tests continue to work.
+
+- **Migration notes for contributors**
+  - Use `simStore` for simulation concerns:
+    `selectedBodyId`, `isPaused`, `simTime`, `timeScale`, `scalePreset`, `trailsEnabled`, `trailLength`, `followingId`, `perfPreset`.
+  - Use `uiStore` for UI concerns: `distanceUnit`.
+  - Example imports:
+    ```ts
+    import simStore from '../state/simStore';
+    import uiStore from '../state/uiStore';
+    ```
+  - Prefer selective subscriptions over full-state listeners:
+    ```ts
+    const unsub = simStore.subscribe(s => s.simTime, (t) => { /* ... */ });
+    ```
+  - When selecting multiple fields, use shallow equality:
+    ```ts
+    import { shallow } from 'zustand/shallow';
+    simStore.subscribe(
+      s => ({ isPaused: s.isPaused, timeScale: s.timeScale }),
+      ({ isPaused, timeScale }) => { /* ... */ },
+      { equalityFn: shallow }
+    );
+    ```
+  - Avoid per-frame DOM writes. Debounce/throttle UI updates that reflect fast-changing state like `simTime`.
+
+- **Affected files (high level)**
+  - Added: `src/state/simStore.ts`, `src/state/uiStore.ts`.
+  - Updated to use slices and selective subscriptions:
+    `src/app/simulation.ts`,
+    `src/components/main-panel.ts`,
+    `src/components/top-bar.ts`,
+    `src/components/celestial-selector.ts`,
+    `src/components/presets-panel.ts`,
+    `src/components/quick-access-toolbar.ts`,
+    `src/orbits/TrailManager.ts`,
+    `src/orbits/OrbitManager.ts`,
+    `src/keyboard.ts`,
+    `src/utils/scaling.ts`,
+    `src/main.ts`.
+  - Tests and E2E remain compatible via the `app.store.getState()` wrapper.
+
+### Verifying the setup
+
+- Type check
+  ```sh
+  npm run typecheck
+  ```
+- Tests
+  ```sh
+  npm test
+  ```
 
 ## Contributing
 
