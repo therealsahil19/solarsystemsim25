@@ -36,6 +36,10 @@ const SNAP_THRESHOLD = 32;
 const SNAP_DISTANCE = 16;
 /** The distance the mouse must move away from a snapped edge to unsnap the panel. */
 const UNSNAP_DISTANCE = 24;
+/** Gap between docked panels when snapped to an edge (in px). */
+const DOCK_GAP = 8;
+/** General safe margin from viewport edges (in px). */
+const SAFE_MARGIN = 10;
 
 /**
  * Creates a public-facing `PanelController` from a `PanelManager` instance.
@@ -79,6 +83,7 @@ export class PanelManager {
     public static panels: Map<string, PanelManager> = new Map();
     private static controllers: Map<string, PanelController> = new Map();
     private static snapGlow: HTMLElement;
+    private static resizeListenerAttached = false;
 
     public state: PanelState;
     private isDragging = false;
@@ -175,6 +180,16 @@ export class PanelManager {
         }
 
         this.panel.addEventListener('mousedown', () => this.updateFocus(), true);
+
+        // Ensure panels start within viewport and avoid initial overlaps
+        this.clampToViewport();
+        this.repositionIfOverlapping('init');
+
+        // Attach a single global resize listener to re-layout docked panels
+        if (!PanelManager.resizeListenerAttached) {
+            window.addEventListener('resize', () => PanelManager.relayoutAllDocked());
+            PanelManager.resizeListenerAttached = true;
+        }
     }
 
     /** Unregisters the panel and removes its element from the DOM. */
@@ -288,6 +303,14 @@ export class PanelManager {
             Backdrop.show();
         }
         this.emit('show');
+
+        // After showing, ensure panel fits viewport and doesn't collide
+        this.clampToViewport();
+        if (this.state.snapped) {
+            PanelManager.layoutDockedPanelsForEdge(this.state.snapped);
+        } else {
+            this.repositionIfOverlapping('show');
+        }
     }
 
     /** Hides the panel. */
@@ -430,6 +453,14 @@ export class PanelManager {
             this.flashSnapConfirmation();
         }
         this.saveState();
+
+        // When drag ends, prevent overlaps and stack docked panels
+        this.clampToViewport();
+        if (this.state.snapped) {
+            PanelManager.layoutDockedPanelsForEdge(this.state.snapped);
+        } else {
+            this.repositionIfOverlapping('dragend');
+        }
     }
 
     private handleSnapping() {
@@ -542,11 +573,189 @@ export class PanelManager {
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
             this.saveState();
+
+            // After resize, keep in viewport and resolve collisions
+            this.clampToViewport();
+            if (this.state.snapped) {
+                PanelManager.layoutDockedPanelsForEdge(this.state.snapped);
+            } else {
+                this.repositionIfOverlapping('resizeend');
+            }
         };
 
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
         document.body.style.cursor = `${dir}-resize`;
         document.body.style.userSelect = 'none';
+    }
+
+    // =================================================================
+    // Collision Detection and Docking Layout
+    // =================================================================
+
+    /** Returns the current bounding rect of this panel based on state. */
+    private getRect(): DOMRect {
+        // Use state values as source of truth
+        return new DOMRect(this.state.x, this.state.y, this.state.w, this.state.h);
+    }
+
+    /** Ensures panel stays within the viewport with a small margin. */
+    private clampToViewport() {
+        const maxX = Math.max(0, window.innerWidth - this.state.w - SAFE_MARGIN);
+        const maxY = Math.max(PanelManager.getSafeTopBoundary(), window.innerHeight - this.state.h - SAFE_MARGIN);
+        const minX = SAFE_MARGIN;
+        const minY = PanelManager.getSafeTopBoundary();
+        this.state.x = Math.min(Math.max(this.state.x, minX), maxX);
+        this.state.y = Math.min(Math.max(this.state.y, minY), Math.max(minY, window.innerHeight - this.state.h - SAFE_MARGIN));
+        this.applyState();
+        this.saveState();
+    }
+
+    /** Attempts to resolve overlaps with other panels by nudging this panel. */
+    private repositionIfOverlapping(context: 'init' | 'show' | 'dragend' | 'resizeend' = 'init') {
+        const others = PanelManager.getVisibleInstances().filter(p => p !== this && !p.state.minimized);
+        if (others.length === 0) return;
+
+        // If snapped, dock layout will handle stacking
+        if (this.state.snapped) {
+            PanelManager.layoutDockedPanelsForEdge(this.state.snapped);
+            return;
+        }
+
+        let rect = this.getRect();
+        const maxIterations = 200;
+        let iterations = 0;
+        // Choose an initial nudge direction – down-right
+        const stepX = 16;
+        const stepY = 16;
+
+        function overlapsAny(r: DOMRect, list: PanelManager[]): boolean {
+            return list.some(o => PanelManager.rectsOverlap(r, o.getRect()));
+        }
+
+        while (overlapsAny(rect, others) && iterations < maxIterations) {
+            // Try to move minimally either horizontally or vertically depending on which resolves faster
+            // Prefer moving down first to avoid the top bar
+            const tryDown = new DOMRect(rect.x, rect.y + stepY, rect.width, rect.height);
+            const tryRight = new DOMRect(rect.x + stepX, rect.y, rect.width, rect.height);
+            const canDown = tryDown.y + tryDown.height <= window.innerHeight - SAFE_MARGIN;
+            const canRight = tryRight.x + tryRight.width <= window.innerWidth - SAFE_MARGIN;
+
+            if (canDown && !overlapsAny(tryDown, others)) {
+                rect = tryDown;
+            } else if (canRight && !overlapsAny(tryRight, others)) {
+                rect = tryRight;
+            } else {
+                // Move diagonally if both single-axis moves still overlap or are constrained
+                const tryDiag = new DOMRect(rect.x + stepX, rect.y + stepY, rect.width, rect.height);
+                rect = tryDiag;
+            }
+
+            iterations++;
+        }
+
+        // Apply the resolved position
+        this.state.x = Math.round(rect.x);
+        this.state.y = Math.round(Math.max(rect.y, PanelManager.getSafeTopBoundary()));
+        this.applyState();
+        this.saveState();
+    }
+
+    /** Returns visible, non-hidden PanelManager instances. */
+    private static getVisibleInstances(): PanelManager[] {
+        return Array.from(this.panels.values()).filter(p => p.state.visible && !p.state.minimized);
+    }
+
+    /** Overlap test for two rects. */
+    private static rectsOverlap(a: DOMRect, b: DOMRect): boolean {
+        return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+
+    /** Computes a safe top boundary based on fixed UI like the top bar. */
+    private static getSafeTopBoundary(): number {
+        const topBar = document.getElementById('top-bar');
+        let topBoundary = SAFE_MARGIN;
+        if (topBar) {
+            const rect = topBar.getBoundingClientRect();
+            topBoundary = Math.max(topBoundary, rect.bottom + SAFE_MARGIN);
+        }
+        return topBoundary;
+    }
+
+    /** Public for internal use: returns safe top boundary for instance methods. */
+    private static _safeTop(): number { return this.getSafeTopBoundary(); }
+
+    /** Stacks panels docked to a given edge to avoid overlaps. */
+    private static layoutDockedPanelsForEdge(edge: PanelSnapEdge) {
+        if (!edge) return;
+        const panels = this.getVisibleInstances().filter(p => p.state.snapped === edge);
+        if (panels.length === 0) return;
+
+        // Sort by lastFocused so the most recently used panel stays nearer the primary corner
+        panels.sort((a, b) => b.state.lastFocused - a.state.lastFocused);
+
+        const safeTop = this.getSafeTopBoundary();
+        let cursorX = SAFE_MARGIN;
+        let cursorY = safeTop;
+        const viewportW = window.innerWidth;
+        const viewportH = window.innerHeight;
+
+        if (edge === 'left') {
+            cursorX = 0;
+            cursorY = safeTop;
+            for (const p of panels) {
+                p.state.x = 0;
+                // Wrap vertically if would overflow; start a new column
+                if (cursorY + p.state.h > viewportH - SAFE_MARGIN) {
+                    cursorY = safeTop;
+                }
+                p.state.y = cursorY;
+                cursorY += p.state.h + DOCK_GAP;
+                p.applyState();
+                p.saveState();
+            }
+        } else if (edge === 'right') {
+            cursorX = viewportW;
+            cursorY = safeTop;
+            for (const p of panels) {
+                p.state.x = Math.max(0, viewportW - p.state.w);
+                if (cursorY + p.state.h > viewportH - SAFE_MARGIN) {
+                    cursorY = safeTop;
+                }
+                p.state.y = cursorY;
+                cursorY += p.state.h + DOCK_GAP;
+                p.applyState();
+                p.saveState();
+            }
+        } else if (edge === 'top') {
+            cursorX = SAFE_MARGIN;
+            for (const p of panels) {
+                p.state.y = safeTop;
+                if (cursorX + p.state.w > viewportW - SAFE_MARGIN) {
+                    cursorX = SAFE_MARGIN; // wrap
+                }
+                p.state.x = cursorX;
+                cursorX += p.state.w + DOCK_GAP;
+                p.applyState();
+                p.saveState();
+            }
+        } else if (edge === 'bottom') {
+            cursorX = SAFE_MARGIN;
+            for (const p of panels) {
+                p.state.y = Math.max(0, viewportH - p.state.h);
+                if (cursorX + p.state.w > viewportW - SAFE_MARGIN) {
+                    cursorX = SAFE_MARGIN; // wrap
+                }
+                p.state.x = cursorX;
+                cursorX += p.state.w + DOCK_GAP;
+                p.applyState();
+                p.saveState();
+            }
+        }
+    }
+
+    /** Re-layouts all docked panels for all edges. */
+    private static relayoutAllDocked() {
+        (['left', 'right', 'top', 'bottom'] as PanelSnapEdge[]).forEach(edge => this.layoutDockedPanelsForEdge(edge));
     }
 }
