@@ -16,11 +16,11 @@ export function createControls(camera: THREE.PerspectiveCamera, renderer: THREE.
 
     // Enable damping for smoother camera movements
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.dampingFactor = 0.04; // Slightly lower for smoother feel
 
-    // Adjust speeds for rotation and zooming
-    controls.rotateSpeed = 0.9;
-    controls.zoomSpeed = 1.2;
+    // Adjust speeds for rotation and zooming - reduced for more precise control
+    controls.rotateSpeed = 0.7; // Reduced from 0.9 for less sensitivity
+    controls.zoomSpeed = 1.0;   // Reduced from 1.2 for smoother zooming
 
     // Enable panning and map it to the right mouse button
     controls.enablePan = true;

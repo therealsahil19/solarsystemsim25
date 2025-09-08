@@ -11,7 +11,7 @@ export function createRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        logarithmicDepthBuffer: false // Note: Can cause issues with custom shaders/effects
+        logarithmicDepthBuffer: true // Enabled for better precision at astronomical scales
     });
 
     // Set initial size and enable shadow mapping

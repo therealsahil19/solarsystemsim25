@@ -86,6 +86,7 @@ export class Simulation {
         this.orbitManager.init(scene, this.bodyMap);
         this.trailManager.init();
         this.setupPhysicsWorker();
+        this.setupControlsInteractionHandling();
         this.animate(0);
     }
 
@@ -174,8 +175,12 @@ export class Simulation {
             } else {
                 this.simulation.focusTarget.getWorldPosition(cameraTarget);
             }
-            if (!this.simulation.isTweening && !this.simulation.isUserInteracting) {
-                controls.target.lerp(cameraTarget, 0.05);
+            
+            // Enhanced interpolation with user interaction awareness
+            if (!this.simulation.isTweening) {
+                // When user is interacting (dragging), reduce interpolation to prevent fighting
+                const lerpFactor = this.simulation.isUserInteracting ? 0.01 : 0.05;
+                controls.target.lerp(cameraTarget, lerpFactor);
             }
         }
         if (this.simulation.followTarget) {
@@ -284,12 +289,37 @@ export class Simulation {
     private clampZoomForBody(bodyMesh: THREE.Object3D) {
         const box = new THREE.Box3().setFromObject(bodyMesh);
         const sphere = box.getBoundingSphere(new THREE.Sphere());
-        const min = Math.max(sphere.radius * 1.2, 1);
-        const max = Math.max(sphere.radius * 100, 1e6);
-        controls.minDistance = min;
-        controls.maxDistance = max;
-        camera.near = Math.max(sphere.radius * 0.001, 0.01);
-        camera.far = Math.max(sphere.radius * 2000, 1e7);
+        const radius = Math.max(sphere.radius, 0.001); // Ensure minimum radius to prevent zero values
+        
+        // Prevent extreme values that could cause rendering issues
+        const safeRadius = Math.max(radius, 1.0); // Ensure minimum scale
+        
+        // More conservative near/far calculations to prevent vanishing
+        const minDistance = Math.max(safeRadius * 1.5, 1.0); // Prevent camera too close
+        const maxDistance = Math.min(Math.max(safeRadius * 500, 1000), 1e6); // Cap max distance
+        
+        controls.minDistance = minDistance;
+        controls.maxDistance = maxDistance;
+        
+        // Use safer near/far plane values
+        const baseNear = Math.max(safeRadius * 0.1, 0.5);
+        const baseFar = Math.min(Math.max(safeRadius * 1000, 5000), 1e7);
+        
+        camera.near = Math.max(baseNear, 0.1);
+        camera.far = Math.max(baseFar, camera.near * 1000); // Ensure far > near
+        
+        // Ensure reasonable near/far ratio
+        const nearFarRatio = camera.far / camera.near;
+        if (nearFarRatio > 10000) {
+            // More conservative adjustment
+            camera.near = Math.max(camera.far / 10000, 0.1);
+        }
+        
+        // Final safety checks
+        camera.near = Math.max(camera.near, 0.01);
+        camera.far = Math.max(camera.far, camera.near * 100);
+        camera.far = Math.min(camera.far, 1e8); // Cap far plane
+        
         camera.updateProjectionMatrix();
     }
 
@@ -307,26 +337,72 @@ export class Simulation {
         const { duration, fitOffset } = { ...DEFAULT, ...opts };
         const dur = prefersReduced ? Math.min(duration, 150) : duration;
         this.simulation.isTweening = true;
+        
+        // Safety check for valid object
+        if (!object3D || !object3D.parent) {
+            this.simulation.isTweening = false;
+            return;
+        }
+        
         const box = new THREE.Box3().setFromObject(object3D);
+        
+        // Ensure valid bounding box
+        if (!box.isEmpty() && !isFinite(box.min.x)) {
+            // Fallback to a reasonable position if bounding box is invalid
+            const fallbackPos = new THREE.Vector3(0, 0, 0);
+            camera.position.set(0, 50, 100);
+            controls.target.copy(fallbackPos);
+            camera.lookAt(fallbackPos);
+            this.simulation.isTweening = false;
+            return;
+        }
+        
         const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3()).length() || 1;
+        const size = Math.max(box.getSize(new THREE.Vector3()).length(), 1); // Ensure minimum size
         const fov = camera.fov * (Math.PI / 180);
-        const distance = Math.abs(size / Math.sin(fov / 2)) * fitOffset;
-        const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+        
+        // Calculate safe distance with bounds
+        const rawDistance = Math.abs(size / Math.sin(fov / 2)) * fitOffset;
+        const distance = Math.max(Math.min(rawDistance, 10000), 10); // Clamp distance
+        
+        // Ensure valid direction vector
+        const currentDir = new THREE.Vector3().subVectors(camera.position, controls.target);
+        if (currentDir.lengthSq() < 0.001) {
+            // Fallback direction if current direction is invalid
+            currentDir.set(0, 0, 1);
+        }
+        const dir = currentDir.normalize();
+        
         const newPos = center.clone().add(dir.multiplyScalar(distance));
+        
+        // Ensure new position is valid
+        if (!isFinite(newPos.x) || !isFinite(newPos.y) || !isFinite(newPos.z)) {
+            newPos.set(center.x, center.y + 50, center.z + 100);
+        }
+        
         this.cancelActiveCameraTween();
-        const t1 = new TWEEN.Tween(controls.target)
-            .to(center, dur)
-            .easing(TWEEN.Easing.Quintic.InOut)
-            .onUpdate(() => controls.update())
-            .onComplete(() => this.simulation.isTweening = false)
-            .start();
-        const t2 = new TWEEN.Tween(camera.position)
-            .to(newPos, dur)
-            .easing(TWEEN.Easing.Quintic.InOut)
-            .onUpdate(() => camera.lookAt(controls.target))
-            .start();
-        (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
+        
+        try {
+            const t1 = new TWEEN.Tween(controls.target)
+                .to(center, dur)
+                .easing(TWEEN.Easing.Quintic.InOut)
+                .onUpdate(() => controls.update())
+                .onComplete(() => this.simulation.isTweening = false)
+                .start();
+            const t2 = new TWEEN.Tween(camera.position)
+                .to(newPos, dur)
+                .easing(TWEEN.Easing.Quintic.InOut)
+                .onUpdate(() => camera.lookAt(controls.target))
+                .start();
+            (window as any)._activeCameraTween = { stop: () => { t1.stop(); t2.stop(); } };
+        } catch (error) {
+            // Fallback if TWEEN fails
+            console.warn('Camera animation failed, using immediate positioning', error);
+            controls.target.copy(center);
+            camera.position.copy(newPos);
+            camera.lookAt(controls.target);
+            this.simulation.isTweening = false;
+        }
     }
 
     /** Subscribes to scale preset changes and animates transitions to avoid popping. */
@@ -351,6 +427,35 @@ export class Simulation {
     }
 
     /** Subscribes to global selection changes to auto-focus the camera on the selected body. */
+    private setupControlsInteractionHandling() {
+        let interactionTimeout: number | null = null;
+        
+        // Track user interaction state to prevent wobble during mouse drags
+        controls.addEventListener('start', () => {
+            this.simulation.isUserInteracting = true;
+            if (interactionTimeout) {
+                clearTimeout(interactionTimeout);
+                interactionTimeout = null;
+            }
+        });
+        
+        controls.addEventListener('end', () => {
+            // Add a small delay before re-enabling smooth following
+            interactionTimeout = window.setTimeout(() => {
+                this.simulation.isUserInteracting = false;
+            }, 100);
+        });
+        
+        controls.addEventListener('change', () => {
+            // Mark as interacting when controls are actively being used
+            this.simulation.isUserInteracting = true;
+            if (interactionTimeout) {
+                clearTimeout(interactionTimeout);
+                interactionTimeout = null;
+            }
+        });
+    }
+
     private setupSelectionSubscription() {
         let lastId: string | null = store.getState().selectedBodyId;
         store.subscribe(
