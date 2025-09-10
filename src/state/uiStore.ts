@@ -5,14 +5,28 @@ import type { DistanceUnit } from '../utils/units';
 
 export interface UIState {
   distanceUnit: DistanceUnit;
+  isLeftSidebarCollapsed: boolean;
+  isRightSidebarCollapsed: boolean;
   setDistanceUnit: (unit: DistanceUnit) => void;
+  toggleLeftSidebar: () => void;
+  toggleRightSidebar: () => void;
 }
 
 const uiStore = createStore<UIState>()(
   subscribeWithSelector(
     immer((set) => ({
       distanceUnit: 'au' as DistanceUnit,
+      isLeftSidebarCollapsed: false,
+      isRightSidebarCollapsed: false,
       setDistanceUnit: (unit) => set({ distanceUnit: unit }),
+      toggleLeftSidebar: () =>
+        set((state) => {
+          state.isLeftSidebarCollapsed = !state.isLeftSidebarCollapsed;
+        }),
+      toggleRightSidebar: () =>
+        set((state) => {
+          state.isRightSidebarCollapsed = !state.isRightSidebarCollapsed;
+        }),
     }))
   )
 );
