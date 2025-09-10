@@ -78,6 +78,10 @@ export class Simulation {
         this.orbitManager = new OrbitManager(this.celestialObjects);
         this.trailManager = new TrailManager(this.celestialObjects, scene);
         this.physicsWorker = new Worker(new URL('../physics.worker.ts', import.meta.url), { type: 'module' });
+        console.log('Physics worker created:', this.physicsWorker);
+        this.physicsWorker.onerror = (event) => {
+            console.error('Physics worker error:', event);
+        };
         this.setupScaleSubscription();
         this.setupSelectionSubscription();
     }
@@ -106,7 +110,8 @@ export class Simulation {
         this.physicsWorker.postMessage({ command: 'init', payload: { bodies: workerBodies } });
         this.physicsWorker.onmessage = (e: MessageEvent) => {
             if (e.data.type === 'update') {
-                const positions = new Float32Array(e.data.positions);
+                console.log('Received position update from worker');
+                const positions = e.data.positions;
                 this.celestialObjects.forEach((body, i) => {
                     const bodyState = this.bodyMap.get(body.id);
                     if (bodyState) {

@@ -89,6 +89,7 @@ async function start() {
                 setDistanceUnit: uiStore.getState().setDistanceUnit,
             })
         },
+        simulation,
     } as any;
     if ((window as any).__e2eNotifyReady) {
         (window as any).__e2eNotifyReady(app);
