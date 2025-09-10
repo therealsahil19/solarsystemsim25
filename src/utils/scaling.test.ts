@@ -89,6 +89,12 @@ describe('scaling utilities', () => {
         const displayPosition = calculateDisplayPosition(position, transition as ScaleTransition);
         expect(displayPosition).toEqual(new THREE.Vector3(0, 0, 0));
     });
+
+    it('should return a zero vector for invalid transition input', () => {
+        // @ts-expect-error: Testing invalid input
+        const displayPosition = calculateDisplayPosition(position, null);
+        expect(displayPosition).toEqual(new THREE.Vector3(0, 0, 0));
+    });
   });
 
   describe('getDisplayRadius', () => {
