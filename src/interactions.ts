@@ -132,16 +132,6 @@ export function setupInteractions(
                 onBodySelected(bodyId);
                 showHud(clicked, camera);
             }
-        } else {
-            // Clicked on empty space, pan the camera target
-            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-            const intersection = new THREE.Vector3();
-            raycaster.ray.intersectPlane(groundPlane, intersection);
-
-            new TWEEN.Tween(controls.target)
-                .to({ x: intersection.x, y: intersection.y, z: intersection.z }, 500)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start();
         }
     });
 
