@@ -20,14 +20,19 @@ let simulationTime = 0;
  * 'update': Receives the absolute simulation time from the main thread and triggers a position calculation.
  */
 self.onmessage = (e: MessageEvent) => {
-    const { command, payload } = e.data;
+    try {
+        const { command, payload } = e.data;
+        console.log(`Worker received command: ${command}`);
 
-    if (command === 'init') {
-        bodies = payload.bodies;
-    } else if (command === 'update') {
-        // Use the absolute simulation time from the main thread for calculations.
-        simulationTime = payload.simTimeInDays;
-        postPositions();
+        if (command === 'init') {
+            bodies = payload.bodies;
+        } else if (command === 'update') {
+            // Use the absolute simulation time from the main thread for calculations.
+            simulationTime = payload.simTimeInDays;
+            postPositions();
+        }
+    } catch (error) {
+        console.error('Error in physics worker:', error);
     }
 };
 
@@ -76,6 +81,6 @@ function postPositions() {
         positions[i * 3 + 2] = z;
     });
 
-    // Post the positions back to the main thread. The buffer is transferred for efficiency.
-    self.postMessage({ type: 'update', positions: positions.buffer }, [positions.buffer]);
+    // Post the positions back to the main thread.
+    self.postMessage({ type: 'update', positions: positions });
 }
