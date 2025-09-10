@@ -140,12 +140,6 @@ export function setupInteractions(
         resetSimulation();
     });
 
-    dom.freeCameraButton.addEventListener('click', () => {
-        simulation.focusTarget = null;
-        dom.freeCameraButton.classList.add('hidden');
-        controls.minDistance = 0;
-        controls.maxDistance = 1700;
-    });
 
     controls.addEventListener('start', () => {
         simulation.isUserInteracting = true;
