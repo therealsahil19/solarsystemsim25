@@ -87,9 +87,10 @@ export class Simulation {
         this.trailManager.init();
         this.setupPhysicsWorker();
         this.setupControlsInteractionHandling();
+        this.setupCustomPanning();
 
         dom.freeCameraButton.addEventListener('click', () => this.unfocusCamera());
-        dom.freeCameraButton.textContent = 'Free Camera';
+        dom.freeCameraButton.textContent = 'Unfocus';
         dom.freeCameraButton.classList.add('hidden');
 
         this.animate(0);
@@ -173,29 +174,36 @@ export class Simulation {
         });
 
         // --- Camera Control ---
-        const cameraTarget = new THREE.Vector3();
-        if (this.simulation.focusTarget) {
-            if (this.simulation.focusTarget === this.sun) {
+        if (this.simulation.followTarget) {
+            const targetPosition = new THREE.Vector3();
+            this.simulation.followTarget.getWorldPosition(targetPosition);
+
+            // If a tween isn't running, update camera position and target
+            if (!this.simulation.isTweening) {
+                // Update camera position to maintain offset
+                const desiredCamPos = targetPosition.clone().add(this.simulation.followOffset);
+                camera.position.lerp(desiredCamPos, this.simulation.followSmoothing);
+
+                // Update controls target to look at the followed object
+                controls.target.copy(targetPosition);
+            }
+            dom.btnFollow.setAttribute('aria-pressed', 'true');
+        } else if (this.simulation.focusTarget) {
+            // This logic runs when an object is focused but not followed,
+            // e.g., during the initial tween before follow kicks in.
+            const cameraTarget = new THREE.Vector3();
+             if (this.simulation.focusTarget === this.sun) {
                 cameraTarget.set(0, 0, 0);
             } else {
                 this.simulation.focusTarget.getWorldPosition(cameraTarget);
             }
-            
-            // Enhanced interpolation with user interaction awareness
             if (!this.simulation.isTweening) {
-                // When user is interacting (dragging), reduce interpolation to prevent fighting
                 const lerpFactor = this.simulation.isUserInteracting ? 0.01 : 0.05;
                 controls.target.lerp(cameraTarget, lerpFactor);
             }
-        }
-        if (this.simulation.followTarget) {
-            const targetPosition = new THREE.Vector3();
-            this.simulation.followTarget.getWorldPosition(targetPosition);
-            const desiredCamPos = targetPosition.clone().add(this.simulation.followOffset);
-            camera.position.lerp(desiredCamPos, this.simulation.followSmoothing);
-            controls.target.lerp(targetPosition, this.simulation.followSmoothing);
-            dom.btnFollow.setAttribute('aria-pressed', 'true');
+            dom.btnFollow.setAttribute('aria-pressed', 'false');
         } else {
+            // No focus or follow target, hide the follow button
             dom.btnFollow.setAttribute('aria-pressed', 'false');
         }
 
@@ -273,7 +281,14 @@ export class Simulation {
 
         store.getState().setSelectedBodyId(id);
         this.simulation.focusTarget = selectedObject;
+        this.simulation.followTarget = selectedObject;
         dom.freeCameraButton.classList.remove('hidden');
+
+        // Enable focused controls
+        controls.enableRotate = true;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+
         this.frameObject(selectedObject);
         this.clampZoomForBody(selectedObject);
 
@@ -294,7 +309,15 @@ export class Simulation {
 
     public unfocusCamera() {
         this.simulation.focusTarget = null;
+        this.simulation.followTarget = null;
         dom.freeCameraButton.classList.add('hidden');
+
+        // Re-enable free-roam controls
+        controls.enableRotate = true;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.minDistance = 0;
+        controls.maxDistance = 5000; // A large number for solar system scale
     }
 
     private clampZoomForBody(bodyMesh: THREE.Object3D) {
@@ -398,7 +421,14 @@ export class Simulation {
                 .to(center, dur)
                 .easing(TWEEN.Easing.Quintic.InOut)
                 .onUpdate(() => controls.update())
-                .onComplete(() => this.simulation.isTweening = false)
+                .onComplete(() => {
+                    this.simulation.isTweening = false;
+                    if (this.simulation.followTarget) {
+                        const targetPosition = new THREE.Vector3();
+                        this.simulation.followTarget.getWorldPosition(targetPosition);
+                        this.simulation.followOffset.copy(camera.position).sub(targetPosition);
+                    }
+                })
                 .start();
             const t2 = new TWEEN.Tween(camera.position)
                 .to(newPos, dur)
@@ -479,6 +509,7 @@ export class Simulation {
                 // Avoid double-focusing if we already set the focus as part of a direct selection handler
                 if (this.simulation.focusTarget === entry.mesh) return;
                 this.simulation.focusTarget = entry.mesh;
+                this.simulation.followTarget = entry.mesh;
                 try {
                     const worldPos = new THREE.Vector3();
                     entry.mesh.getWorldPosition(worldPos);
@@ -488,5 +519,62 @@ export class Simulation {
                 this.clampZoomForBody(entry.mesh);
             }
         );
+    }
+
+    private setupCustomPanning() {
+        let isPanning = false;
+        const panStart = new THREE.Vector2();
+        const panEnd = new THREE.Vector2();
+        const panDelta = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('pointerdown', (event) => {
+            if (event.button === 2 && this.simulation.followTarget) { // Right-click and focused
+                isPanning = true;
+                panStart.set(event.clientX, event.clientY);
+            }
+        });
+
+        renderer.domElement.addEventListener('pointermove', (event) => {
+            if (isPanning) {
+                panEnd.set(event.clientX, event.clientY);
+                panDelta.subVectors(panEnd, panStart).multiplyScalar(0.005);
+
+                this.handleCustomPan(panDelta);
+
+                panStart.copy(panEnd);
+            }
+        });
+
+        renderer.domElement.addEventListener('pointerup', (event) => {
+            if (event.button === 2) {
+                isPanning = false;
+            }
+        });
+
+        // Prevent context menu on right-click
+        renderer.domElement.addEventListener('contextmenu', (event) => event.preventDefault());
+    }
+
+    private handleCustomPan(delta: THREE.Vector2) {
+        if (!this.simulation.followTarget) return;
+
+        const targetPosition = controls.target;
+        const offset = new THREE.Vector3().subVectors(camera.position, targetPosition);
+
+        // Up/Down panning (rotate around the camera's right axis)
+        const planetUp = new THREE.Vector3(0, 1, 0); // World up vector
+        const cameraRight = new THREE.Vector3().crossVectors(offset, planetUp).normalize();
+        const upQuaternion = new THREE.Quaternion().setFromAxisAngle(cameraRight, delta.y);
+
+        // Left/Right panning (rotate around the planet's up axis)
+        const leftQuaternion = new THREE.Quaternion().setFromAxisAngle(planetUp, -delta.x);
+
+        // Apply rotations to the offset vector
+        offset.applyQuaternion(upQuaternion);
+        offset.applyQuaternion(leftQuaternion);
+
+        // Set new camera position and update the follow offset for the main animation loop
+        camera.position.copy(targetPosition).add(offset);
+        this.simulation.followOffset.copy(offset);
     }
 }
