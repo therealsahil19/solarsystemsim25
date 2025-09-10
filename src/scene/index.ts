@@ -43,13 +43,14 @@ export function initScene(canvas: HTMLCanvasElement) {
         throw new Error("FATAL: Canvas element not provided to initScene. App cannot start.");
     }
     // Set initial camera position
-    camera.position.z = 80;
-    camera.position.y = 30;
+    camera.position.set(0, 150, 400);
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
 
     // Create the renderer and controls
     renderer = createRenderer(canvas);
     controls = createControls(camera, renderer);
+    controls.target.set(0, 0, 0);
 
     // Configure the main point light (the Sun)
     pointLight.castShadow = true;
