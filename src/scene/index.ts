@@ -62,4 +62,5 @@ export function initScene(canvas: HTMLCanvasElement) {
     // Add a soft ambient light to illuminate the entire scene
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
+    scene.add(pointLight);
 }

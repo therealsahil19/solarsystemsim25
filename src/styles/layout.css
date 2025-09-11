@@ -63,8 +63,8 @@
             "header header"
             "sidebar main"
             "sidebar controls";
-        grid-template-columns: 320px 1fr;
-        grid-template-rows: 60px 1fr auto;
+        grid-template-columns: 280px 1fr;
+        grid-template-rows: 50px 1fr auto;
     }
 
     .sidebar {
@@ -118,8 +118,8 @@
             "sidebar header header"
             "sidebar main controls"
             "sidebar footer footer";
-        grid-template-columns: 320px 1fr 250px;
-        grid-template-rows: 60px 1fr 40px;
+        grid-template-columns: 280px 1fr 250px;
+        grid-template-rows: 50px 1fr 30px;
         transition: grid-template-columns 0.3s ease;
     }
 
@@ -128,7 +128,7 @@
     }
 
     .app-container.controls-collapsed {
-        grid-template-columns: 320px 1fr 40px;
+        grid-template-columns: 280px 1fr 40px;
     }
 
     .app-container.sidebar-collapsed.controls-collapsed {
@@ -139,7 +139,7 @@
 /* --- Large Desktop (min-width: 1440px) --- */
 @media (min-width: 1440px) {
     .app-container {
-        grid-template-columns: 320px 1fr 300px;
+        grid-template-columns: 280px 1fr 300px;
     }
 }
 
@@ -147,7 +147,7 @@
 .header, .sidebar, .main, .controls, .footer {
     position: relative;
     overflow: auto; /* Add scroll for overflow content */
-    padding: 10px;
+    padding: 5px;
     box-sizing: border-box;
 }
 
