@@ -22,8 +22,6 @@ export async function createScene() {
         if (bodyData.name === 'Sun') {
             // Use a simple unlit material to avoid banding/weird shading on the sun
             bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xffe066 });
-            // Tweak the scene's main point light which is attached later to the sun mesh
-            try { pointLight.intensity = 1.0; } catch {}
         } else {
             let map: THREE.Texture | null = null;
             if (bodyData.texture) {
@@ -54,7 +52,7 @@ export async function createScene() {
             sun!.add(pointLight);
         }
 
-        bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData };
+        bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.type, data: bodyData };
         bodyGroup.add(bodyMesh);
 
         const celestialObject = { ...bodyData, group: bodyGroup, mesh: bodyMesh, physicsPosition: new THREE.Vector3() };

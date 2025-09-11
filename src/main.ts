@@ -69,7 +69,7 @@ async function start() {
     initShortcutsPanel();
     initPresetsPanel();
     initMainPanel();
-    initTopBar();
+    initTopBar(simulation);
     initContextualHud();
     // initOnboardingTour();
 

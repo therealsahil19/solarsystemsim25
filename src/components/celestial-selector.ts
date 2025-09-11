@@ -459,8 +459,8 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
         'Celestial Selector',
         panelEl,
         {
-            width: 380,
-            height: Math.min(window.innerHeight * 0.8, 800),
+            width: 320,
+            height: Math.min(window.innerHeight * 0.7, 600),
         }
     );
 

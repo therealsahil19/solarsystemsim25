@@ -1,3 +1,4 @@
+import { Simulation } from '../app/simulation';
 import simStore, { SimState, ScalePreset } from '../state/simStore';
 
 // --- Module-level variables for DOM Element References ---
@@ -173,8 +174,26 @@ function setupEventListeners() {
  * Initializes the top bar component by caching DOM elements, setting up
  * event listeners, and running an initial responsive layout check.
  */
-export function initTopBar() {
+export function initTopBar(simulation: Simulation) {
     cacheDOMElements();
     setupEventListeners();
     handleResponsiveLayout(); // Initial check
+
+    const freeCameraButton = document.getElementById('free-camera-btn') as HTMLButtonElement;
+    if (freeCameraButton) {
+        freeCameraButton.addEventListener('click', () => {
+            simulation.unfocusCamera();
+        });
+
+        simStore.subscribe(
+            (s: SimState) => s.selectedBodyId,
+            (id) => {
+                if (id) {
+                    freeCameraButton.classList.remove('hidden');
+                } else {
+                    freeCameraButton.classList.add('hidden');
+                }
+            }
+        );
+    }
 }
