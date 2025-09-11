@@ -8,7 +8,6 @@ import { initShortcutsPanel } from './components/shortcuts-panel';
 import { initPresetsPanel } from './components/presets-panel';
 import { initMainPanel } from './components/main-panel';
 import { initTopBar } from './components/top-bar';
-import { setupQuickAccessToolbar } from './components/quick-access-toolbar';
 import { initContextualHud } from './components/contextual-hud';
 import { initOnboardingTour } from './components/onboarding-tour';
 import { LayoutManager } from './components/layout-manager';
@@ -71,7 +70,6 @@ async function start() {
     initPresetsPanel();
     initMainPanel();
     initTopBar();
-    setupQuickAccessToolbar();
     initContextualHud();
     // initOnboardingTour();
 
