@@ -316,6 +316,7 @@ export class Simulation {
         console.log('unfocusCamera called');
         this.simulation.focusTarget = null;
         this.simulation.followTarget = null;
+        store.getState().setSelectedBodyId(null);
 
         // Re-enable free-roam controls
         controls.enableRotate = true;

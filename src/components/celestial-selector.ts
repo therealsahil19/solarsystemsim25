@@ -22,7 +22,7 @@ let fuse: Fuse<FuseDataItem>;
 /** @private The ID of the currently focused node for keyboard navigation. */
 let activeNodeId: string | null = null;
 /** @private The currently active view mode. */
-let currentView: ViewMode = 'hierarchy';
+let currentView: ViewMode = 'type';
 /** @private The callback function to execute when a body is selected. */
 let onSelectCallback: (id: string) => void;
 /** @private The currently selected filter category. */
@@ -135,82 +135,6 @@ function renderListItem(node: TreeNode): HTMLLIElement {
  * @returns An HTMLLIElement representing the node and its subtree.
  * @private
  */
-function renderNode(node: TreeNode): HTMLLIElement {
-    const li = document.createElement('li');
-    li.dataset.id = node.id;
-    li.className = 'tree-node';
-    li.style.paddingLeft = `${node.depth * 18}px`;
-    li.setAttribute('role', 'treeitem');
-    li.setAttribute('aria-expanded', String(node.children.length > 0 ? node.expanded : false));
-    if (node.spec.edu?.shortDescription) {
-        li.title = node.spec.edu.shortDescription;
-    }
-
-    const content = document.createElement('div');
-    content.className = 'tree-node-content';
-
-    const chevron = document.createElement('span');
-    chevron.className = 'chevron';
-    if (node.children.length > 0) {
-        chevron.textContent = node.expanded ? '▼' : '▶';
-    }
-    content.appendChild(chevron);
-
-    const colorDot = document.createElement('span');
-    colorDot.className = 'color-dot';
-    colorDot.style.backgroundColor = `#${node.spec.color.toString(16).padStart(6, '0')}`;
-    content.appendChild(colorDot);
-
-    const icon = document.createElement('img');
-    icon.className = 'icon';
-    icon.src = `assets/${node.type}.svg`;
-    icon.alt = `${node.type} icon`;
-    content.appendChild(icon);
-
-    const name = document.createElement('span');
-    name.className = 'node-name';
-    name.textContent = node.name;
-    content.appendChild(name);
-
-    content.appendChild(createTypeSpan(node));
-
-    const stats = document.createElement('span');
-    stats.className = 'node-stats';
-    stats.textContent = `${node.spec.radius.toLocaleString()} km`;
-    content.appendChild(stats);
-
-    content.appendChild(createFavoriteButton(node));
-
-    li.appendChild(content);
-
-    if (node.children.length > 0) {
-        const ul = document.createElement('ul');
-        ul.className = 'tree-level';
-        ul.setAttribute('role', 'group');
-        ul.style.display = node.expanded ? 'block' : 'none';
-        node.children.forEach(child => {
-            const childEl = renderNode(child);
-            child.element = childEl;
-            ul.appendChild(childEl);
-        });
-        li.appendChild(ul);
-    }
-
-    node.element = li;
-    return li;
-}
-
-/**
- * Renders the entire selector content in "hierarchy" view mode.
- * @private
- */
-function renderHierarchyView() {
-    const ul = document.createElement('ul');
-    ul.className = 'tree-root';
-    ul.setAttribute('role', 'tree');
-    treeNodes.forEach(node => ul.appendChild(renderNode(node)));
-    celestialSelectorMenu.appendChild(ul);
-}
 
 /**
  * Renders the entire selector content in "group by type" view mode.
@@ -225,7 +149,6 @@ function renderByTypeView() {
         nodesByType.get(node.type)!.push(node);
     });
 
-    nodesByType.forEach(nodes => nodes.sort((a, b) => a.name.localeCompare(b.name)));
 
     const ul = document.createElement('ul');
     ul.className = 'list-root';
@@ -262,38 +185,8 @@ function renderByTypeView() {
  */
 function render() {
     celestialSelectorMenu.innerHTML = '';
-    if (currentView === 'hierarchy') {
-        renderHierarchyView();
-    } else {
-        renderByTypeView();
-    }
+    renderByTypeView();
     filterTree();
-}
-
-/**
- * Updates the visibility of DOM elements in the hierarchy view based on node state.
- * @private
- */
-function updateDomVisibility() {
-    flatNodeMap.forEach(node => {
-        if (node.element) {
-            const isVisible = node.visible && (!node.parent || node.parent.expanded && node.parent.element?.style.display !== 'none');
-            node.element.style.display = isVisible ? '' : 'none';
-            if (node.children.length > 0) {
-                const ul = node.element.querySelector('ul');
-                if (ul) ul.style.display = node.expanded ? 'block' : 'none';
-                const chevron = node.element.querySelector('.chevron');
-                if (chevron) {
-                    chevron.textContent = node.expanded ? '▼' : '▶';
-                    node.element.setAttribute('aria-expanded', String(node.expanded));
-                }
-            }
-        }
-    });
-
-    // Selection subscription is managed once during initialization to avoid duplicates.
-    // Just update selection now to reflect the latest state.
-    updateSelectionFromState();
 }
 
 /**
@@ -334,36 +227,18 @@ function filterTree() {
         }
     }
 
-    if (currentView === 'hierarchy') {
-        allNodes.forEach(node => node.visible = false);
-        finalVisibleIds.forEach(id => {
-            let current = flatNodeMap.get(id);
-            while(current) {
-                current.visible = true;
-                if (!noFilters) { // Expand parents only when filters are active
-                    current.expanded = true;
-                }
-                current = current.parent || undefined;
-            }
-        });
-        if (noFilters) {
-             allNodes.forEach(n => n.expanded = false); // Collapse all when filters are cleared
+    allNodes.forEach(node => {
+        if (node.element) {
+            node.element.style.display = finalVisibleIds.has(node.id) ? '' : 'none';
         }
-        updateDomVisibility();
-    } else { // Type view
-        allNodes.forEach(node => {
-            if (node.element) {
-                node.element.style.display = finalVisibleIds.has(node.id) ? '' : 'none';
-            }
-        });
-        document.querySelectorAll('.list-group').forEach(group => {
-            const children = group.querySelector('.list-group-children');
-            const hasVisibleChild = Array.from(children?.querySelectorAll('.tree-node') || []).some(
-                child => (child as HTMLElement).style.display !== 'none'
-            );
-            (group as HTMLElement).style.display = hasVisibleChild ? '' : 'none';
-        });
-    }
+    });
+    document.querySelectorAll('.list-group').forEach(group => {
+        const children = group.querySelector('.list-group-children');
+        const hasVisibleChild = Array.from(children?.querySelectorAll('.tree-node') || []).some(
+            child => (child as HTMLElement).style.display !== 'none'
+        );
+        (group as HTMLElement).style.display = hasVisibleChild ? '' : 'none';
+    });
 }
 
 /**
@@ -372,21 +247,7 @@ function filterTree() {
  * @private
  */
 function getVisibleNodes(): TreeNode[] {
-    if (currentView === 'type') return []; // Disable keyboard nav for type view for now
-
-    const visible: TreeNode[] = [];
-    function traverse(nodes: TreeNode[]) {
-        for (const node of nodes) {
-            if (node.visible && node.element && node.element.style.display !== 'none') {
-                visible.push(node);
-                if (node.expanded && node.children.length > 0) {
-                    traverse(node.children);
-                }
-            }
-        }
-    }
-    traverse(treeNodes);
-    return visible;
+    return []; // Disable keyboard nav for now
 }
 
 /**
@@ -557,7 +418,7 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
         const target = e.target as HTMLElement;
 
         const groupHeader = target.closest('.list-group-header');
-        if (currentView === 'type' && groupHeader) {
+        if (groupHeader) {
             const childrenUl = groupHeader.nextElementSibling as HTMLUListElement;
             const chevron = groupHeader.querySelector('.chevron');
             if (childrenUl) {
@@ -572,13 +433,7 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
         if (!nodeEl || !(nodeEl instanceof HTMLLIElement)) return;
         const nodeId = nodeEl.dataset.id!;
         const node = flatNodeMap.get(nodeId)!;
-
-        if (currentView === 'hierarchy' && target.classList.contains('chevron')) {
-            node.expanded = !node.expanded;
-            updateDomVisibility();
-        } else {
-            onSelectCallback(node.id);
-        }
+        onSelectCallback(node.id);
     });
 
     const searchInput = document.getElementById('selector-search-input') as HTMLInputElement;
@@ -608,13 +463,6 @@ export function createCelestialBodySelector(bodies: CelestialBody[], onSelect: (
         categoryTabs.appendChild(tab);
     });
 
-    const viewRadios = document.querySelectorAll<HTMLInputElement>('input[name="selector-view"]');
-    viewRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            currentView = radio.value as ViewMode;
-            render();
-        });
-    });
 
     searchInput.addEventListener('keydown', (e: KeyboardEvent) => {
         const visibleNodes = getVisibleNodes();
