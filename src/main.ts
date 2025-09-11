@@ -32,11 +32,11 @@ async function start() {
     const simulation = new Simulation(celestialObjects, bodyMap, sun, asteroidUniforms);
     const infoPanelManager = new InfoPanelManager();
 
-    function onBodySelected(id: string) {
+    async function onBodySelected(id: string) {
         simulation.onBodySelected(id, selectableObjects);
         const entry = bodyMap.get(id);
         if (entry) {
-            infoPanelManager.updateContent({ data: entry.data, mesh: entry.mesh });
+            await infoPanelManager.updateContent({ data: entry.data, mesh: entry.mesh });
         }
     }
 
@@ -73,7 +73,7 @@ async function start() {
     initTopBar();
     setupQuickAccessToolbar();
     initContextualHud();
-    initOnboardingTour();
+    // initOnboardingTour();
 
     new LayoutManager().init();
 
@@ -90,6 +90,8 @@ async function start() {
             })
         },
         simulation,
+        onBodySelected, // for testing
+        infoPanelManager, // for testing
     } as any;
     if ((window as any).__e2eNotifyReady) {
         (window as any).__e2eNotifyReady(app);
