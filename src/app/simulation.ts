@@ -59,7 +59,7 @@ export class Simulation {
     };
 
     private celestialObjects: (CelestialBody & { group: THREE.Group; mesh: THREE.Object3D; physicsPosition: THREE.Vector3 })[];
-    private bodyMap: Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D, physicsPosition: THREE.Vector3 }>;
+    public bodyMap: Map<string, { data: CelestialBody, group: THREE.Group, mesh: THREE.Object3D, physicsPosition: THREE.Vector3 }>;
     private sun: THREE.Object3D | undefined;
     private orbitManager: OrbitManager;
     private trailManager: TrailManager;
@@ -112,10 +112,14 @@ export class Simulation {
             if (e.data.type === 'update') {
                 console.log('Received position update from worker');
                 const positions = e.data.positions;
+                console.log('Positions:', Array.from(positions));
                 this.celestialObjects.forEach((body, i) => {
                     const bodyState = this.bodyMap.get(body.id);
                     if (bodyState) {
                         bodyState.physicsPosition.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+                        if (body.id === 'mars') {
+                            console.log('Mars position updated:', bodyState.physicsPosition);
+                        }
                     }
                 });
             }
@@ -313,6 +317,7 @@ export class Simulation {
     }
 
     public unfocusCamera() {
+        console.log('unfocusCamera called');
         this.simulation.focusTarget = null;
         this.simulation.followTarget = null;
         dom.freeCameraButton.classList.add('hidden');

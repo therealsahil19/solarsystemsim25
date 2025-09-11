@@ -47,7 +47,12 @@ function formatTimestamp(simTime: number): string {
  * Initializes all controls within the main settings panel by calling the
  * specific initializer for each section.
  */
+import { PanelManager } from './panel-manager';
+
 export function initMainPanel() {
+    const panelEl = document.getElementById('mainPanel');
+    if (!panelEl) return;
+    PanelManager.createPanel('mainPanel', 'Main Controls', panelEl);
     initTimeControls();
     initVisualsPanel();
     initGlobalControls();

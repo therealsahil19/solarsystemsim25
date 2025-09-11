@@ -56,4 +56,6 @@ export interface PanelController {
     getState(): PanelState;
     /** Sets the position of the panel. */
     setPosition(x: number, y: number): void;
+    /** Sets the size of the panel. */
+    setSize(width: number, height: number): void;
 }

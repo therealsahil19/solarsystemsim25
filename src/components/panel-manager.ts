@@ -68,6 +68,7 @@ function createController(instance: PanelManager): PanelController {
         on: (event, cb) => instance.on(event, cb),
         getState: () => instance.state,
         setPosition: (x: number, y: number) => instance.setPosition(x, y),
+        setSize: (width: number, height: number) => instance.setSize(width, height),
     };
 }
 
@@ -291,6 +292,7 @@ export class PanelManager {
 
     /** Makes the panel visible and brings it into focus. */
     public show() {
+        console.log(`Showing panel ${this.id}`);
         if (this.state.visible) {
             this.updateFocus(); // Still bring to front if already visible
             return;
@@ -340,8 +342,16 @@ export class PanelManager {
      * @param y The new y-coordinate.
      */
     public setPosition(x: number, y: number) {
+        console.log(`Setting position of panel ${this.id} to (${x}, ${y})`);
         this.state.x = x;
         this.state.y = y;
+        this.applyState();
+        this.saveState();
+    }
+
+    public setSize(width: number, height: number) {
+        this.state.w = width;
+        this.state.h = height;
         this.applyState();
         this.saveState();
     }
@@ -391,6 +401,7 @@ export class PanelManager {
     }
 
     private onDragStart(e: MouseEvent) {
+        console.log('onDragStart called');
         if (e.button !== 0 || this.state.pinned) return;
         // Ignore clicks on interactive elements within the header
         if ((e.target as HTMLElement).closest('button, input, select, textarea')) {
@@ -428,6 +439,7 @@ export class PanelManager {
     }
 
     private onDragMove(e: MouseEvent) {
+        console.log('onDragMove called');
         if (!this.isDragging) return;
 
         const dx = e.clientX - this.dragStartX;
@@ -443,6 +455,7 @@ export class PanelManager {
     }
 
     private onDragEnd() {
+        console.log('onDragEnd called');
         this.isDragging = false;
         this.header.style.cursor = 'grab';
         document.body.style.userSelect = '';

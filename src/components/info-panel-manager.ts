@@ -54,6 +54,10 @@ export class InfoPanelManager {
      */
     private fadeOut(): Promise<void> {
         return new Promise(resolve => {
+            if (import.meta.env.MODE === 'test') {
+                dom.infoPanel.classList.add('fade-out');
+                return resolve();
+            }
             const onTransitionEnd = () => {
                 dom.infoPanel.removeEventListener('transitionend', onTransitionEnd);
                 resolve();
@@ -69,6 +73,10 @@ export class InfoPanelManager {
      */
     private fadeIn(): Promise<void> {
         return new Promise(resolve => {
+            if (import.meta.env.MODE === 'test') {
+                dom.infoPanel.classList.remove('fade-out');
+                return resolve();
+            }
             const onTransitionEnd = () => {
                 dom.infoPanel.removeEventListener('transitionend', onTransitionEnd);
                 resolve();

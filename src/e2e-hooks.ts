@@ -7,6 +7,9 @@
  */
 
 import { PanelManager } from './components/panel-manager';
+import * as THREE from 'three';
+
+(window as any).THREE = THREE;
 
 // --- App Readiness ---
 // This system provides a signal for Playwright to wait for, ensuring the app is fully initialized.
@@ -46,7 +49,10 @@ const _readyCallbacks: Array<(app?: AppLike) => void> = [];
  * @param app The main application instance.
  * @private
  */
+import { controls, scene } from './scene';
+
 function attachE2EHelpers(app?: AppLike) {
+  console.log('Attaching E2E helpers');
   if (!app) {
     console.warn('E2E helpers attached without an app instance.');
   }
@@ -56,16 +62,19 @@ function attachE2EHelpers(app?: AppLike) {
    * @internal
    */
   (window as any).__E2E__ = {
+    controls, // for testing
+    scene, // for testing
     /**
      * Opens a UI panel by a simplified ID.
      * @param panelId The alias for the panel to open.
      */
-    openPanel: (panelId: 'info' | 'visuals' | 'settings' | 'edu' | 'celestialSelector' | 'presets') => {
+    openPanel: (panelId: 'info' | 'visuals' | 'settings' | 'edu' | 'celestialSelector' | 'presets' | 'main') => {
       // Map E2E aliases to the actual IDs used when creating the panels.
       const panelMap = {
           info: 'infoPanel',
           visuals: 'visuals-panel',
-          settings: 'settings-panel',
+          settings: 'mainPanel',
+          main: 'mainPanel',
           edu: 'infoPanel', // 'edu' is an alias for the info panel
           celestialSelector: 'celestialSelector',
           presets: 'presets',
@@ -78,6 +87,40 @@ function attachE2EHelpers(app?: AppLike) {
       } else {
         console.error(`E2E: Panel controller with ID "${effectiveId}" not found.`);
       }
+    },
+
+    isPanelPinned: (panelId: string) => {
+        const controller = PanelManager.getController(panelId);
+        if (controller) {
+            return controller.isPinned();
+        }
+        return false;
+    },
+
+    setPanelSize: (panelId: string, width: number, height: number) => {
+        const controller = PanelManager.getController(panelId);
+        if (controller) {
+            controller.setSize(width, height);
+        }
+    },
+
+    setPanelPosition: (panelId: string, x: number, y: number) => {
+        console.log(`Setting position of panel ${panelId} to (${x}, ${y}) via E2E helper`);
+        const controller = PanelManager.getController(panelId);
+        if (controller) {
+            controller.setPosition(x, y);
+        }
+    },
+
+    showTooltip: (statId: string) => {
+        const statElement = document.querySelector(`[data-e2e="${statId}"]`);
+        if (statElement) {
+            const tooltipText = statElement.querySelector('.tooltip-text') as HTMLElement;
+            if (tooltipText) {
+                tooltipText.style.visibility = 'visible';
+                tooltipText.style.opacity = '1';
+            }
+        }
     },
 
     /**
@@ -120,6 +163,7 @@ function attachE2EHelpers(app?: AppLike) {
  * @internal
  */
 (window as any).__e2eNotifyReady = (app?: AppLike) => {
+  console.log('__e2eNotifyReady called with app:', !!app);
   (window as any).__APP_INSTANCE = app || null;
   attachE2EHelpers(app);
 
