@@ -87,11 +87,26 @@ export class LayoutManager {
     initialIcon: string
   ): HTMLElement {
     const button = document.createElement('button');
-    button.className = `sidebar-collapse-toggle ${position}`;
+    button.className = `sidebar-collapse-toggle`;
     button.innerHTML = initialIcon;
     button.setAttribute('aria-label', `Collapse ${position} sidebar`);
     button.addEventListener('click', action);
-    parent.prepend(button);
+
+    document.body.appendChild(button);
+
+    const updatePosition = () => {
+      const parentRect = parent.getBoundingClientRect();
+      button.style.top = `${parentRect.top + 10}px`;
+      if (position === 'left') {
+        button.style.left = `${parentRect.right - 15}px`;
+      } else {
+        button.style.left = `${parentRect.left - 15}px`;
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+
     return button;
   }
 

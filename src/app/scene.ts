@@ -54,18 +54,7 @@ export async function createScene() {
             sun!.add(pointLight);
         }
 
-        const glowColor = bodyData.name === 'Sun' ? 0xffd700 : getGlowColor(bodyData.color);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: glowColor,
-            transparent: true,
-            opacity: 0.7,
-            side: THREE.BackSide,
-        });
-        const glowMesh = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), glowMaterial);
-        glowMesh.visible = false;
-        bodyMesh.add(glowMesh);
-
-        bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData, glowMesh };
+        bodyMesh.userData = { id: bodyData.id, name: bodyData.name, type: bodyData.parentId === 'sun' || bodyData.parentId === null ? 'planet' : 'moon', data: bodyData };
         bodyGroup.add(bodyMesh);
 
         const celestialObject = { ...bodyData, group: bodyGroup, mesh: bodyMesh, physicsPosition: new THREE.Vector3() };

@@ -81,7 +81,7 @@
 }
 
 .sidebar-collapse-toggle {
-    position: absolute;
+    position: fixed;
     top: 10px;
     z-index: 10;
     width: 30px;
@@ -94,15 +94,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s, right 0.3s ease, left 0.3s ease;
-}
-
-.sidebar-collapse-toggle.left {
-    right: -15px;
-}
-
-.sidebar-collapse-toggle.right {
-    left: -15px;
+    transition: background-color 0.2s, left 0.3s ease;
 }
 
 .sidebar-collapse-toggle:hover {
