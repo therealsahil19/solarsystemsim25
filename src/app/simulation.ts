@@ -93,9 +93,6 @@ export class Simulation {
         this.setupControlsInteractionHandling();
         this.setupCustomPanning();
 
-        dom.freeCameraButton.addEventListener('click', () => this.unfocusCamera());
-        dom.freeCameraButton.textContent = 'Unfocus';
-        dom.freeCameraButton.classList.add('hidden');
 
         this.animate(0);
     }
@@ -291,7 +288,6 @@ export class Simulation {
         store.getState().setSelectedBodyId(id);
         this.simulation.focusTarget = selectedObject;
         this.simulation.followTarget = selectedObject;
-        dom.freeCameraButton.classList.remove('hidden');
 
         // Enable focused controls
         controls.enableRotate = true;
@@ -320,7 +316,6 @@ export class Simulation {
         console.log('unfocusCamera called');
         this.simulation.focusTarget = null;
         this.simulation.followTarget = null;
-        dom.freeCameraButton.classList.add('hidden');
 
         // Re-enable free-roam controls
         controls.enableRotate = true;
