@@ -1,0 +1,42 @@
+Here is the revised plan for the Solar System Simulator, streamlined for easier and faster deployment.
+
+Project Goal
+Build a lightweight, web-based 3D solar-system simulator rendering the Sun and the eight planets with basic interactivity. The primary focus is on core functionality and rapid deployment, prioritizing a stable 60 fps on mid-tier desktops.
+
+Core Features
+
+Basic Planetary System: Render the Sun and all eight planets (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune).
+
+Texture Mapping: Apply the provided 16:9 planetary textures to spherical models for each planet using an equirectangular projection.
+
+Orbital Mechanics: Implement basic elliptical orbits for all planets based on Keplerian data.
+
+Time Control: Include a simple UI control to adjust the simulation speed (e.g., 1×, 10×, 100×).
+
+Basic Camera Controls: Allow users to pan, zoom, and orbit the camera around the Sun and selected planets.
+
+Toggleable Orbit Paths: A simple UI toggle to show or hide the orbital paths of the planets.
+
+Removed/Postponed Features for Initial Deployment
+
+Moons and Rings: Major moons (like Earth's moon or the Galilean moons) and Saturn's rings will be excluded from the initial version to simplify orbital calculations and reduce asset complexity.
+
+Asteroid Belt and Oort Cloud: These features require significant performance management (instancing, particle systems) and are not critical to the core experience. They are postponed for future updates.
+
+Advanced UI: The floating labels and detailed info drawer will be omitted. A simple label for the currently focused planet will suffice.
+
+Advanced Background: The HDR starfield is replaced with a simpler static star map to reduce loading times and performance overhead.
+
+High-Level Performance Optimizations: Advanced techniques like LOD (Level of Detail) and frustum culling will be considered post-launch if performance issues arise. The initial focus is on clean, efficient code with modest asset sizes.
+
+Extensive Testing Coverage: The 80% unit test coverage goal is reduced to focus on critical components like orbital calculations. E2E testing will cover primary user flows only.
+
+Streamlined Roadmap (2-week sprints)
+
+#	Deliverable	Core Diagnostics
+1	Project Scaffold — repo, Vite/React-TS, CI setup, blank Three.js canvas	App loads; all initial tests pass
+2	Base Scene & Textures — Render the Sun and all eight planets with static positions. Ensure the 16:9 textures are correctly UV-wrapped onto the spheres.	Renders at 60 fps; no visual defects or seams on textures.
+3	Orbital Mechanics — Implement Keplerian orbits for all planets. Add a basic time-step manager.	Planets follow accurate orbital paths.
+4	UI & Controls — Add a speed selector UI. Implement camera focus-switching (click-to-focus) and orbit controls. Add a toggle for orbital paths.	UI is responsive; speed changes are smooth; camera controls are intuitive.
+5	Testing & Polish — Achieve core test coverage for orbital mechanics. Refine the user experience and prepare documentation for the asset pipeline.	Critical functions are tested; docs are clear.
+6	Deploy — Deploy the application to a CDN with HTTPS. Ensure the first paint is under 3 seconds.	Application is live and accessible with no blocking errors.
